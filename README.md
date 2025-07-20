@@ -128,4 +128,4 @@ This project uses the `@fluffylabs/shared-ui` library which provides:
 
 ## License
 
-This project is private and proprietary to FluffyLabs.
+This source code is licensed under the Mozilla Public License, v. 2.0. You can obtain a copy at https://mozilla.org/MPL/2.0/.
