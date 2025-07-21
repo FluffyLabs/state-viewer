@@ -79,7 +79,7 @@ describe('App', () => {
     expect(mainHeading).toBeInTheDocument();
     expect(mainHeading).toHaveTextContent('State View');
     
-    const description = screen.getByText('Upload or paste JSON content to visualize state transitions and chain specifications');
+    const description = screen.getByText('Upload or paste JSON files to visualize state transitions and chain specifications');
     expect(description).toBeInTheDocument();
   });
 
@@ -100,10 +100,10 @@ describe('App', () => {
   it('has correct main content area styling', () => {
     renderApp();
     
-    const contentArea = screen.getByText('State View').closest('div')?.parentElement?.parentElement?.parentElement;
+    const contentArea = screen.getByText('State View').closest('div')?.parentElement?.parentElement?.parentElement?.parentElement;
     expect(contentArea).toHaveClass('w-full', 'bg-background', 'h-[calc(100dvh-87px)]');
     
-    const innerContent = screen.getByText('State View').closest('div')?.parentElement?.parentElement;
+    const innerContent = screen.getByText('State View').closest('div')?.parentElement?.parentElement?.parentElement;
     expect(innerContent).toHaveClass('p-4', 'h-full', 'overflow-y-auto');
   });
 
@@ -111,6 +111,7 @@ describe('App', () => {
     renderApp(['/']);
     
     // Should render UploadScreen component on root route
-    expect(screen.getByText('State View')).toBeInTheDocument();
+    expect(screen.getByText('Drop your JSON file here')).toBeInTheDocument();
+    expect(screen.getByText('Select file')).toBeInTheDocument();
   });
 });
