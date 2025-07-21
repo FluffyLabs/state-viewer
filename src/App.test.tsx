@@ -72,15 +72,15 @@ describe('App', () => {
     expect(sidebar).toHaveClass('h-full');
   });
 
-  it('renders the HelloWorld component on the main route', () => {
+  it('renders the UploadScreen component on the main route', () => {
     renderApp();
     
-    const helloWorldHeading = screen.getByRole('heading', { level: 1 });
-    expect(helloWorldHeading).toBeInTheDocument();
-    expect(helloWorldHeading).toHaveTextContent('Hello World!');
+    const mainHeading = screen.getByRole('heading', { level: 1 });
+    expect(mainHeading).toBeInTheDocument();
+    expect(mainHeading).toHaveTextContent('State View');
     
-    const welcomeMessage = screen.getByText('Welcome to State View - your app is now running!');
-    expect(welcomeMessage).toBeInTheDocument();
+    const description = screen.getByText('Upload or paste JSON content to visualize state transitions and chain specifications');
+    expect(description).toBeInTheDocument();
   });
 
   it('has correct header height', () => {
@@ -100,17 +100,17 @@ describe('App', () => {
   it('has correct main content area styling', () => {
     renderApp();
     
-    const contentArea = screen.getByText('Hello World!').closest('div')?.parentElement?.parentElement;
+    const contentArea = screen.getByText('State View').closest('div')?.parentElement?.parentElement?.parentElement;
     expect(contentArea).toHaveClass('w-full', 'bg-background', 'h-[calc(100dvh-87px)]');
     
-    const innerContent = screen.getByText('Hello World!').closest('div')?.parentElement;
+    const innerContent = screen.getByText('State View').closest('div')?.parentElement?.parentElement;
     expect(innerContent).toHaveClass('p-4', 'h-full', 'overflow-y-auto');
   });
 
   it('renders navigation routes correctly', () => {
     renderApp(['/']);
     
-    // Should render HelloWorld component on root route
-    expect(screen.getByText('Hello World!')).toBeInTheDocument();
+    // Should render UploadScreen component on root route
+    expect(screen.getByText('State View')).toBeInTheDocument();
   });
 });
