@@ -3,7 +3,7 @@ import { useDropzone } from 'react-dropzone';
 import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
 import { oneDark } from '@codemirror/theme-one-dark';
-import { Upload, FileText, AlertCircle, Edit, X } from 'lucide-react';
+import { Upload, FileText, AlertCircle, Edit, X, FolderOpen } from 'lucide-react';
 
 interface UploadState {
   file: File | null;
@@ -49,7 +49,7 @@ const UploadScreen = () => {
       observer.disconnect();
       mediaQuery.removeEventListener('change', checkDarkMode);
     };
-  });
+  }, []);
 
   const validateJsonFile = useCallback((file: File): Promise<{ content: string; isValid: boolean; error: string | null }> => {
     return new Promise((resolve) => {
@@ -105,12 +105,13 @@ const UploadScreen = () => {
     });
   }, [validateJsonFile]);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop: handleFileDrop,
     accept: {
       'application/json': ['.json'],
     },
     multiple: false,
+    noClick: true, // Disable click on the dropzone area itself
   });
 
   const handleManualEdit = () => {
@@ -160,32 +161,32 @@ const UploadScreen = () => {
       <div className="mb-6">
         <div
           {...getRootProps()}
-          role="button"
-          aria-label="Upload JSON file by dragging and dropping or clicking to browse"
-          className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
+          className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
             isDragActive
-              ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
+              ? 'border-primary bg-primary/5'
               : uploadState.error
-              ? 'border-red-300 bg-red-50 dark:bg-red-950/20'
+              ? 'border-destructive bg-destructive/5'
               : uploadState.isValidJson
-              ? 'border-green-300 bg-green-50 dark:bg-green-950/20'
-              : 'border-muted-foreground/25 bg-background hover:border-muted-foreground/50'
+              ? 'border-primary bg-primary/5'
+              : 'border-muted-foreground/25 bg-muted/5 hover:border-muted-foreground/50 hover:bg-muted/10'
           }`}
         >
           <input {...getInputProps()} />
-          <div className="flex flex-col items-center space-y-4">
+          <div className="flex flex-col items-center space-y-6">
             {uploadState.error ? (
-              <AlertCircle className="h-12 w-12 text-red-500" />
+              <AlertCircle className="h-12 w-12 text-destructive" />
             ) : uploadState.isValidJson ? (
-              <FileText className="h-12 w-12 text-green-500" />
+              <FileText className="h-12 w-12 text-primary" />
             ) : (
               <Upload className="h-12 w-12 text-muted-foreground" />
             )}
             
             {isDragActive ? (
-              <p className="text-blue-600 dark:text-blue-400 font-medium">
-                Drop the JSON file here...
-              </p>
+              <div className="space-y-2">
+                <p className="text-primary font-medium">
+                  Drop the JSON file here...
+                </p>
+              </div>
             ) : uploadState.file ? (
               <div className="space-y-2">
                 <p className="text-foreground font-medium">{uploadState.file.name}</p>
@@ -194,13 +195,24 @@ const UploadScreen = () => {
                 </p>
               </div>
             ) : (
-              <div className="space-y-2">
-                <p className="text-foreground font-medium">
-                  Drag & drop your JSON file here, or click to browse
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Supports .json files up to 10MB
-                </p>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <p className="text-foreground font-medium">
+                    Drag & drop your JSON file here
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Supports .json files up to 10MB
+                  </p>
+                </div>
+                
+                {/* Browse Button */}
+                <button
+                  onClick={open}
+                  className="inline-flex items-center space-x-2 px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-medium transition-colors"
+                >
+                  <FolderOpen className="h-4 w-4" />
+                  <span>Browse Files</span>
+                </button>
               </div>
             )}
           </div>
@@ -208,27 +220,27 @@ const UploadScreen = () => {
 
         {/* Error Message */}
         {uploadState.error && (
-          <div className="mt-4 p-4 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <div className="mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
             <div className="flex items-center space-x-2">
-              <AlertCircle className="h-5 w-5 text-red-500" />
-              <p className="text-red-700 dark:text-red-400">{uploadState.error}</p>
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              <p className="text-destructive">{uploadState.error}</p>
             </div>
           </div>
         )}
 
         {/* Success Message */}
         {uploadState.isValidJson && !uploadState.error && (
-          <div className="mt-4 p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
+          <div className="mt-4 p-4 bg-primary/10 border border-primary/20 rounded-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <FileText className="h-5 w-5 text-green-500" />
-                <p className="text-green-700 dark:text-green-400">
+                <FileText className="h-5 w-5 text-primary" />
+                <p className="text-primary">
                   JSON file loaded successfully!
                 </p>
               </div>
               <button
                 onClick={clearUpload}
-                className="text-green-700 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300"
+                className="text-primary hover:text-primary/80"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -238,19 +250,32 @@ const UploadScreen = () => {
       </div>
 
       {/* Action Buttons */}
-      <div className="flex flex-wrap gap-4 justify-center">
+      <div className="flex flex-wrap gap-3 justify-center">
+        {/* Browse Button (if no file uploaded) */}
+        {!uploadState.file && !uploadState.content && (
+          <button
+            onClick={open}
+            className="flex items-center space-x-2 px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-medium transition-colors"
+          >
+            <FolderOpen className="h-4 w-4" />
+            <span>Browse Files</span>
+          </button>
+        )}
+
+        {/* Manual JSON Editor - More subtle */}
         <button
           onClick={handleManualEdit}
-          className="flex items-center space-x-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+          className="flex items-center space-x-2 px-6 py-3 border border-muted-foreground/25 hover:border-muted-foreground/50 hover:bg-muted/5 text-foreground rounded-lg font-medium transition-colors"
         >
           <Edit className="h-4 w-4" />
           <span>Manual JSON Editor</span>
         </button>
 
+        {/* Clear Button */}
         {(uploadState.file || uploadState.content) && (
           <button
             onClick={clearUpload}
-            className="flex items-center space-x-2 px-6 py-3 border border-muted-foreground/25 hover:border-muted-foreground/50 text-foreground rounded-lg font-medium transition-colors"
+            className="flex items-center space-x-2 px-6 py-3 border border-muted-foreground/25 hover:border-muted-foreground/50 hover:bg-muted/5 text-muted-foreground hover:text-foreground rounded-lg font-medium transition-colors"
           >
             <X className="h-4 w-4" />
             <span>Clear</span>
@@ -260,8 +285,8 @@ const UploadScreen = () => {
 
       {/* Manual Editor Dialog */}
       {isDialogOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-background border border-border rounded-lg shadow-lg max-w-4xl w-full max-h-[80vh] flex flex-col">
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-background border border-border rounded-lg shadow-lg max-w-5xl w-full max-h-[90vh] flex flex-col">
             {/* Dialog Header */}
             <div className="flex items-center justify-between p-6 border-b border-border">
               <h2 className="text-xl font-semibold text-foreground">
@@ -270,70 +295,52 @@ const UploadScreen = () => {
               <button
                 onClick={() => setIsDialogOpen(false)}
                 aria-label="Close dialog"
-                className="text-muted-foreground hover:text-foreground"
+                className="text-muted-foreground hover:text-foreground rounded-lg p-1 hover:bg-muted/10 transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             {/* Editor */}
-            <div className="flex-1 p-6 overflow-hidden">
-              <div className="h-96 border border-border rounded-lg overflow-hidden">
+            <div className="flex-1 p-6 overflow-hidden min-h-0">
+              <div className="h-full border border-border rounded-lg overflow-hidden">
                 <CodeMirror
                   value={editorContent}
                   onChange={(value) => setEditorContent(value)}
                   extensions={[json()]}
                   theme={isDark ? oneDark : undefined}
-                  className="h-full"
+                  height="500px"
+                  style={{
+                    fontSize: '14px',
+                    textAlign: 'left',
+                  }}
                   basicSetup={{
                     lineNumbers: true,
                     foldGutter: true,
                     dropCursor: false,
                     allowMultipleSelections: false,
+                    searchKeymap: true,
+                    tabSize: 2,
                   }}
                 />
               </div>
             </div>
 
             {/* Dialog Footer */}
-            <div className="flex justify-end space-x-4 p-6 border-t border-border">
+            <div className="flex justify-end space-x-3 p-6 border-t border-border">
               <button
                 onClick={() => setIsDialogOpen(false)}
-                className="px-4 py-2 border border-muted-foreground/25 hover:border-muted-foreground/50 text-foreground rounded-lg font-medium transition-colors"
+                className="px-4 py-2 border border-muted-foreground/25 hover:border-muted-foreground/50 hover:bg-muted/5 text-foreground rounded-lg font-medium transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveManualEdit}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-medium transition-colors"
               >
                 Save JSON
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* JSON Preview (if valid JSON is loaded) */}
-      {uploadState.isValidJson && uploadState.content && !isDialogOpen && (
-        <div className="mt-8">
-          <h3 className="text-lg font-semibold text-foreground mb-4">
-            JSON Preview
-          </h3>
-          <div className="border border-border rounded-lg overflow-hidden">
-            <CodeMirror
-              value={uploadState.content}
-              editable={false}
-              extensions={[json()]}
-              theme={isDark ? oneDark : undefined}
-              className="max-h-96"
-              basicSetup={{
-                lineNumbers: true,
-                foldGutter: true,
-                dropCursor: false,
-                allowMultipleSelections: false,
-              }}
-            />
           </div>
         </div>
       )}

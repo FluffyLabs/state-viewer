@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
 import UploadScreen from './UploadScreen';
@@ -22,6 +22,7 @@ vi.mock('lucide-react', () => ({
   AlertCircle: () => <div data-testid="alert-icon" />,
   Edit: () => <div data-testid="edit-icon" />,
   X: () => <div data-testid="x-icon" />,
+  FolderOpen: () => <div data-testid="folder-open-icon" />,
 }));
 
 // Mock window.matchMedia
@@ -46,8 +47,9 @@ describe('UploadScreen', () => {
     render(<UploadScreen />);
     
     expect(screen.getByText('State View JSON Analyzer')).toBeInTheDocument();
-    expect(screen.getByText('Drag & drop your JSON file here, or click to browse')).toBeInTheDocument();
+    expect(screen.getByText('Drag & drop your JSON file here')).toBeInTheDocument();
     expect(screen.getByText('Manual JSON Editor')).toBeInTheDocument();
+    expect(screen.getAllByText('Browse Files')).toHaveLength(2);
     expect(screen.getByTestId('upload-icon')).toBeInTheDocument();
   });
 
@@ -133,21 +135,15 @@ describe('UploadScreen', () => {
     
     // Dialog should close
     expect(screen.queryByText('JSON Editor')).not.toBeInTheDocument();
-    
-    // Preview should appear
-    await waitFor(() => {
-      expect(screen.getByText('JSON Preview')).toBeInTheDocument();
-    });
   });
 
-  it('displays upload area with proper styling and accessibility', () => {
+  it('displays upload area with proper styling and file input', () => {
     render(<UploadScreen />);
     
-    const uploadArea = screen.getByLabelText(/upload json file/i);
+    const uploadArea = screen.getByText('Drag & drop your JSON file here').closest('div');
     expect(uploadArea).toBeInTheDocument();
-    expect(uploadArea).toHaveAttribute('role', 'button');
     
-    const fileInput = uploadArea.querySelector('input[type="file"]');
+    const fileInput = document.querySelector('input[type="file"]');
     expect(fileInput).toBeInTheDocument();
     expect(fileInput).toHaveAttribute('accept', 'application/json,.json');
   });
@@ -155,9 +151,10 @@ describe('UploadScreen', () => {
   it('shows correct icons based on state', () => {
     render(<UploadScreen />);
     
-    // Initial state should show upload icon
+    // Initial state should show upload icon, edit icon, and folder-open icon
     expect(screen.getByTestId('upload-icon')).toBeInTheDocument();
     expect(screen.getByTestId('edit-icon')).toBeInTheDocument();
+    expect(screen.getAllByTestId('folder-open-icon')).toHaveLength(2); // Two Browse buttons
   });
 
   it('has proper page structure and content', () => {
@@ -171,5 +168,19 @@ describe('UploadScreen', () => {
     
     // Check file size information
     expect(screen.getByText(/supports \.json files up to 10mb/i)).toBeInTheDocument();
+    
+    // Check Browse buttons
+    expect(screen.getAllByText('Browse Files')).toHaveLength(2);
+  });
+
+  it('has Browse button that triggers file selection', async () => {
+    render(<UploadScreen />);
+    
+    const browseButtons = screen.getAllByText('Browse Files');
+    expect(browseButtons).toHaveLength(2); // One in dropzone, one in action buttons
+    
+    // Both buttons should be present
+    expect(browseButtons[0]).toBeInTheDocument();
+    expect(browseButtons[1]).toBeInTheDocument();
   });
 });

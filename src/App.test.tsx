@@ -126,7 +126,7 @@ describe('App', () => {
     renderApp(['/']);
     
     // Should render UploadScreen component on root route
-    expect(screen.getByText('Drag & drop your JSON file here, or click to browse')).toBeInTheDocument();
+    expect(screen.getByText('Drag & drop your JSON file here')).toBeInTheDocument();
     expect(screen.getByText('Manual JSON Editor')).toBeInTheDocument();
   });
 });
