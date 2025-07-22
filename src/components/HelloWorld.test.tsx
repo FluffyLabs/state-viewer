@@ -25,10 +25,10 @@ describe('HelloWorld', () => {
     expect(container).toHaveClass('flex', 'flex-col', 'items-center', 'justify-center', 'h-full');
     
     const heading = screen.getByRole('heading', { level: 1 });
-    expect(heading).toHaveClass('text-4xl', 'font-bold', 'text-white', 'mb-4');
+    expect(heading).toHaveClass('text-4xl', 'font-bold', 'text-foreground', 'mb-4');
     
     const paragraph = screen.getByText('Welcome to State View - your app is now running!');
-    expect(paragraph).toHaveClass('text-lg', 'text-gray-300');
+    expect(paragraph).toHaveClass('text-lg', 'text-muted-foreground');
   });
 
   it('renders without crashing', () => {

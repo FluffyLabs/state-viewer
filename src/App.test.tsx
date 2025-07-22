@@ -31,6 +31,21 @@ vi.mock('@/assets/tool-name.svg', () => ({
   default: 'mocked-tool-name.svg'
 }));
 
+// Mock window.matchMedia
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
 describe('App', () => {
   const renderApp = (initialEntries = ['/']) => {
     return render(
@@ -68,7 +83,7 @@ describe('App', () => {
     const sidebar = screen.getByTestId('apps-sidebar');
     expect(sidebar).toBeInTheDocument();
     expect(sidebar).toHaveAttribute('data-active-link', 'trie');
-    expect(sidebar).toHaveAttribute('data-dark-mode-toggle', 'false');
+    expect(sidebar).toHaveAttribute('data-dark-mode-toggle', 'true');
     expect(sidebar).toHaveClass('h-full');
   });
 
@@ -77,9 +92,9 @@ describe('App', () => {
     
     const mainHeading = screen.getByRole('heading', { level: 1 });
     expect(mainHeading).toBeInTheDocument();
-    expect(mainHeading).toHaveTextContent('State View');
+    expect(mainHeading).toHaveTextContent('State View JSON Analyzer');
     
-    const description = screen.getByText('Upload or paste JSON files to visualize state transitions and chain specifications');
+    const description = screen.getByText('Upload a JSON file to analyze its structure and content, or create one manually.');
     expect(description).toBeInTheDocument();
   });
 
@@ -100,10 +115,10 @@ describe('App', () => {
   it('has correct main content area styling', () => {
     renderApp();
     
-    const contentArea = screen.getByText('State View').closest('div')?.parentElement?.parentElement?.parentElement?.parentElement;
+    const contentArea = screen.getByText('State View JSON Analyzer').closest('div')?.parentElement?.parentElement?.parentElement;
     expect(contentArea).toHaveClass('w-full', 'bg-background', 'h-[calc(100dvh-87px)]');
     
-    const innerContent = screen.getByText('State View').closest('div')?.parentElement?.parentElement?.parentElement;
+    const innerContent = screen.getByText('State View JSON Analyzer').closest('div')?.parentElement?.parentElement;
     expect(innerContent).toHaveClass('p-4', 'h-full', 'overflow-y-auto');
   });
 
@@ -111,7 +126,7 @@ describe('App', () => {
     renderApp(['/']);
     
     // Should render UploadScreen component on root route
-    expect(screen.getByText('Drop your JSON file here')).toBeInTheDocument();
-    expect(screen.getByText('Select file')).toBeInTheDocument();
+    expect(screen.getByText('Drag & drop your JSON file here, or click to browse')).toBeInTheDocument();
+    expect(screen.getByText('Manual JSON Editor')).toBeInTheDocument();
   });
 });

@@ -1,7 +1,7 @@
 import { Route, Routes } from "react-router";
 import { Header, AppsSidebar } from "@fluffylabs/shared-ui";
 import ToolName from "@/assets/tool-name.svg";
-import { HelloWorld } from "@/components";
+import { HelloWorld, UploadScreen } from "@/components";
 
 const AppHeader = () => {
   return (
@@ -32,7 +32,8 @@ function App() {
         <div className="w-full bg-background h-[calc(100dvh-87px)]">
           <div className="p-4 h-full overflow-y-auto">
             <Routes>
-              <Route index element={<HelloWorld />} />
+              <Route index element={<UploadScreen />} />
+              <Route path="/hello" element={<HelloWorld />} />
             </Routes>
           </div>
         </div>
