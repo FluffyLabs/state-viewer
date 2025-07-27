@@ -46,17 +46,17 @@ describe('UploadScreen', () => {
   it('renders upload screen with initial state', () => {
     render(<UploadScreen />);
 
-    expect(screen.getByText('State View JSON Analyzer')).toBeInTheDocument();
-    expect(screen.getByText('Drag & drop your JSON file here')).toBeInTheDocument();
-    expect(screen.getByText('Manual JSON Editor')).toBeInTheDocument();
-    expect(screen.getAllByText('Browse Files')).toHaveLength(2);
+    expect(screen.getByText('JAM State Viewer')).toBeInTheDocument();
+    expect(screen.getByText('Drag & drop your state JSON here')).toBeInTheDocument();
+    expect(screen.getByText('JSON')).toBeInTheDocument();
+    expect(screen.getByText('Browse')).toBeInTheDocument();
     expect(screen.getByTestId('upload-icon')).toBeInTheDocument();
   });
 
   it('opens manual editor dialog when button is clicked', async () => {
     render(<UploadScreen />);
 
-    const editorButton = screen.getByText('Manual JSON Editor');
+    const editorButton = screen.getByText('JSON');
     await user.click(editorButton);
 
     expect(screen.getByText('JSON Editor')).toBeInTheDocument();
@@ -69,7 +69,7 @@ describe('UploadScreen', () => {
     render(<UploadScreen />);
 
     // Open dialog
-    const editorButton = screen.getByText('Manual JSON Editor');
+    const editorButton = screen.getByText('JSON');
     await user.click(editorButton);
 
     expect(screen.getByText('JSON Editor')).toBeInTheDocument();
@@ -85,7 +85,7 @@ describe('UploadScreen', () => {
     render(<UploadScreen />);
 
     // Open dialog
-    const editorButton = screen.getByText('Manual JSON Editor');
+    const editorButton = screen.getByText('JSON');
     await user.click(editorButton);
 
     expect(screen.getByText('JSON Editor')).toBeInTheDocument();
@@ -100,7 +100,7 @@ describe('UploadScreen', () => {
   it('shows default JSON structure in editor when opened', async () => {
     render(<UploadScreen />);
 
-    const editorButton = screen.getByText('Manual JSON Editor');
+    const editorButton = screen.getByText('JSON');
     await user.click(editorButton);
 
     const textarea = screen.getByTestId('codemirror');
@@ -110,7 +110,7 @@ describe('UploadScreen', () => {
   it('allows editing content in the manual editor', async () => {
     render(<UploadScreen />);
 
-    const editorButton = screen.getByText('Manual JSON Editor');
+    const editorButton = screen.getByText('JSON');
     await user.click(editorButton);
 
     const textarea = screen.getByTestId('codemirror');
@@ -123,7 +123,7 @@ describe('UploadScreen', () => {
   it('saves valid JSON from manual editor and shows preview', async () => {
     render(<UploadScreen />);
 
-    const editorButton = screen.getByText('Manual JSON Editor');
+    const editorButton = screen.getByText('JSON');
     await user.click(editorButton);
 
     const textarea = screen.getByTestId('codemirror');
@@ -140,7 +140,7 @@ describe('UploadScreen', () => {
   it('displays upload area with proper styling and file input', () => {
     render(<UploadScreen />);
 
-    const uploadArea = screen.getByText('Drag & drop your JSON file here').closest('div');
+    const uploadArea = screen.getByText('Drag & drop your state JSON here').closest('div');
     expect(uploadArea).toBeInTheDocument();
 
     const fileInput = document.querySelector('input[type="file"]');
@@ -154,33 +154,29 @@ describe('UploadScreen', () => {
     // Initial state should show upload icon, edit icon, and folder-open icon
     expect(screen.getByTestId('upload-icon')).toBeInTheDocument();
     expect(screen.getByTestId('edit-icon')).toBeInTheDocument();
-    expect(screen.getAllByTestId('folder-open-icon')).toHaveLength(2); // Two Browse buttons
+    expect(screen.getByTestId('folder-open-icon')).toBeInTheDocument(); // Browse button
   });
 
   it('has proper page structure and content', () => {
     render(<UploadScreen />);
 
     // Check main heading
-    expect(screen.getByRole('heading', { name: /state view json analyzer/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /jam state viewer/i })).toBeInTheDocument();
 
     // Check description
-    expect(screen.getByText(/upload a json file to analyze/i)).toBeInTheDocument();
+    expect(screen.getByText(/upload a serialized state dump to inspect it/i)).toBeInTheDocument();
 
-    // Check file size information
-    expect(screen.getByText(/supports \.json files up to 10mb/i)).toBeInTheDocument();
+    // Check file type information
+    expect(screen.getByText(/supports stf test vectors.*and jip-4 chain spec/i)).toBeInTheDocument();
 
-    // Check Browse buttons
-    expect(screen.getAllByText('Browse')).toHaveLength(2);
+    // Check Browse button
+    expect(screen.getByText('Browse')).toBeInTheDocument();
   });
 
   it('has Browse button that triggers file selection', async () => {
     render(<UploadScreen />);
 
-    const browseButtons = screen.getAllByText('Browse');
-    expect(browseButtons).toHaveLength(1);
-
-    // Both buttons should be present
-    expect(browseButtons[0]).toBeInTheDocument();
-    expect(browseButtons[1]).toBeInTheDocument();
+    const browseButton = screen.getByText('Browse');
+    expect(browseButton).toBeInTheDocument();
   });
 });

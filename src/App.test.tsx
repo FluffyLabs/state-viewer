@@ -93,9 +93,9 @@ describe('App', () => {
     
     const mainHeading = screen.getByRole('heading', { level: 1 });
     expect(mainHeading).toBeInTheDocument();
-    expect(mainHeading).toHaveTextContent('State View JSON Analyzer');
+    expect(mainHeading).toHaveTextContent('JAM State Viewer');
     
-    const description = screen.getByText('Upload a JSON file to analyze its structure and content, or create one manually.');
+    const description = screen.getByText('Upload a serialized state dump to inspect it.');
     expect(description).toBeInTheDocument();
   });
 
@@ -116,10 +116,10 @@ describe('App', () => {
   it('has correct main content area styling', () => {
     renderApp();
     
-    const contentArea = screen.getByText('State View JSON Analyzer').closest('div')?.parentElement?.parentElement?.parentElement;
+    const contentArea = screen.getByText('JAM State Viewer').closest('div')?.parentElement?.parentElement?.parentElement;
     expect(contentArea).toHaveClass('w-full', 'bg-background', 'h-[calc(100dvh-87px)]');
     
-    const innerContent = screen.getByText('State View JSON Analyzer').closest('div')?.parentElement?.parentElement;
+    const innerContent = screen.getByText('JAM State Viewer').closest('div')?.parentElement?.parentElement;
     expect(innerContent).toHaveClass('p-4', 'h-full', 'overflow-y-auto');
   });
 
@@ -127,7 +127,7 @@ describe('App', () => {
     renderApp(['/']);
     
     // Should render UploadScreen component on root route
-    expect(screen.getByText('Drag & drop your JSON file here')).toBeInTheDocument();
-    expect(screen.getByText('Manual JSON Editor')).toBeInTheDocument();
+    expect(screen.getByText('Drag & drop your state JSON here')).toBeInTheDocument();
+    expect(screen.getByText('JSON')).toBeInTheDocument();
   });
 });

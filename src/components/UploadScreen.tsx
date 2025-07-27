@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, FileText, AlertCircle, Edit, X, FolderOpen } from 'lucide-react';
+import { Upload, FileText, AlertCircle, Edit, FolderOpen } from 'lucide-react';
 import JsonEditorDialog from './JsonEditorDialog';
 import { Button } from './Button';
+import { validateJsonFile } from '../utils';
 
 interface UploadState {
   file: File | null;
@@ -21,47 +22,19 @@ const UploadScreen = () => {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const validateJsonFile = useCallback((file: File): Promise<{ content: string; isValid: boolean; error: string | null }> => {
-    return new Promise((resolve) => {
-      if (!file.type.includes('json') && !file.name.endsWith('.json')) {
-        resolve({
-          content: '',
-          isValid: false,
-          error: 'Please upload a valid JSON file',
-        });
-        return;
-      }
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const content = e.target?.result as string;
-          JSON.parse(content); // Validate JSON
-          resolve({
-            content,
-            isValid: true,
-            error: null,
-          });
-        } catch {
-          resolve({
-            content: e.target?.result as string || '',
-            isValid: false,
-            error: 'Invalid JSON format. Please check your file and try again.',
-          });
-        }
-      };
-      reader.onerror = () => {
-        resolve({
-          content: '',
-          isValid: false,
-          error: 'Failed to read the file. Please try again.',
-        });
-      };
-      reader.readAsText(file);
+
+  const clearUpload = useCallback(() => {
+    setUploadState({
+      file: null,
+      content: '',
+      error: null,
+      isValidJson: false,
     });
   }, []);
 
   const handleFileDrop = useCallback(async (acceptedFiles: File[]) => {
+    clearUpload();
     const file = acceptedFiles[0];
     if (!file) return;
 
@@ -73,7 +46,7 @@ const UploadScreen = () => {
       error: validation.error,
       isValidJson: validation.isValid,
     });
-  }, [validateJsonFile]);
+  }, [clearUpload]);
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop: handleFileDrop,
@@ -84,11 +57,11 @@ const UploadScreen = () => {
     noClick: true, // Disable click on the dropzone area itself
   });
 
-  const handleManualEdit = () => {
+  const handleManualEdit = useCallback(() => {
     setIsDialogOpen(true);
-  };
+  }, []);
 
-  const handleSaveManualEdit = (content: string) => {
+  const handleSaveManualEdit = useCallback((content: string) => {
     setUploadState(prev => ({
       ...prev,
       content,
@@ -96,16 +69,7 @@ const UploadScreen = () => {
       isValidJson: true,
       file: null, // Clear file since this is manual input
     }));
-  };
-
-  const clearUpload = () => {
-    setUploadState({
-      file: null,
-      content: '',
-      error: null,
-      isValidJson: false,
-    });
-  };
+  }, []);
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -172,16 +136,14 @@ const UploadScreen = () => {
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-3 justify-center">
               {/* Browse Button (if no file uploaded) */}
-              {!uploadState.file && !uploadState.content && (
                 <Button
                   onClick={open}
                   variant="primary"
                   size="lg"
                 >
                   <FolderOpen className="h-4 w-4" />
-                  <span>Browse</span>
+                  <span>{(!uploadState.file && !uploadState.content) ? 'Browse' : 'Change'}</span>
                 </Button>
-              )}
 
               <Button
                 onClick={handleManualEdit}
@@ -189,7 +151,7 @@ const UploadScreen = () => {
                 size="lg"
               >
                 <Edit className="h-4 w-4" />
-                <span>JSON</span>
+                <span>{(!uploadState.file && !uploadState.content) ? 'JSON' : 'View'}</span>
               </Button>
             </div>
           </div>
@@ -211,17 +173,10 @@ const UploadScreen = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <FileText className="h-5 w-5 text-primary" />
-                <p className="text-primary">
+                <p className="text-success">
                   JSON file loaded successfully!
                 </p>
               </div>
-              <Button
-                onClick={clearUpload}
-                variant="ghost"
-                size="icon"
-              >
-                <X className="h-4 w-4" />
-              </Button>
             </div>
           </div>
         )}

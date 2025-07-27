@@ -1,0 +1,1 @@
+export { validateJsonFile, type JsonValidationResult } from './jsonValidation';
