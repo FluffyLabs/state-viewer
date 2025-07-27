@@ -24,6 +24,7 @@ vi.mock('@fluffylabs/shared-ui', () => ({
       Mocked AppsSidebar
     </div>
   ),
+  cn: (...args: (string | undefined | null | boolean)[]) => args.filter(Boolean).join(' '),
 }));
 
 // Mock the tool name SVG

@@ -6,19 +6,33 @@
   color: var(--color-brand-dark);
 }
 
-:root {
+html {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+html, html.light {
+    color-scheme: light;
+    --foreground: #213547;
+    --color-foreground: #213547;
+    --background: #f8f8f8;
+    --color-background: #f8f8f8;
+}
+
+html.dark {
+    color-scheme: dark;
+    --foreground: #f8f8f8;
+    --color-foreground: #f8f8f8;
+    --background: #242424;
+    --color-background: #242424;
 }
 
 body {
@@ -33,11 +47,4 @@ body {
   width: 100%;
   margin: 0 auto;
   text-align: center;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
 }
