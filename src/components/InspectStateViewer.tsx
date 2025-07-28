@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { loadState, config, bytes } from "@typeberry/state-merkleization";
+import { CompositeViewer } from './viewer';
 
 interface InspectStateViewerProps {
   state: Record<string, string>;
@@ -82,10 +83,7 @@ const InspectStateViewer = ({ state, title = "State Data" }: InspectStateViewerP
                     <div className="mt-2">
                       {key in stateAccess ? (
                         <div className="bg-gray-100 p-2 rounded text-xs">
-                          {(() => {
-                            const value = stateAccess[key as keyof typeof stateAccess];
-                            return <CompositeViewer value={value} />;
-                          })()}
+                          <CompositeViewer value={stateAccess[key as keyof typeof stateAccess]} />
                         </div>
                       ) : (
                         <div className="text-xs text-gray-400">Not found</div>
@@ -102,63 +100,6 @@ const InspectStateViewer = ({ state, title = "State Data" }: InspectStateViewerP
   );
 };
 
-const CompositeViewer = ({ value }: { value: unknown }) => {
-  if (value === null) {
-    return <span className="text-gray-500 italic">null</span>;
-  }
-  if (Array.isArray(value)) {
-    return <ArrayViewer array={value} />;
-  }
-  if (typeof value === 'object' && Object.hasOwnProperty.call(value, 'toJSON')) {
-    return <ToStringViewer value={value} />;
-  }
-  if (typeof value === 'object' && Object.prototype.toString === value.toString) {
-    return <ObjectViewer value={value as Record<string, unknown>} />;
-  }
-  return <ToStringViewer value={value} />;
-};
 
-const ArrayViewer = ({ array }: { array: unknown[] }) => {
-  return (
-    <div className="space-y-1">
-      <div className="text-xs text-gray-500 mb-2">Array ({array.length} items)</div>
-      {array.map((item, index) => (
-        <details key={index} className="border-l-2 border-gray-200 pl-2">
-          <summary className="cursor-pointer text-xs text-gray-600 hover:text-gray-800">
-            [{index}] {item === null ? 'null' : typeof item === 'object' ? '{...}' : String(item).slice(0, 50)}
-            {typeof item !== 'object' && String(item).length > 50 && '...'}
-          </summary>
-          <CompositeViewer value={item} />
-        </details>
-      ))}
-    </div>
-  );
-};
-
-const ObjectViewer = ({ value }: { value: Record<string, unknown> }) => {
-    return (
-      <div className="space-y-1">
-        {Object.keys(value).map((key) => {
-          const item = value[key];
-          return (
-          <details key={key} className="border-l-2 border-gray-200 pl-2">
-            <summary className="cursor-pointer text-xs text-gray-600 hover:text-gray-800">
-              {key}: {item === null ? 'null' : typeof item === 'object' ? '{...}' : String(item).slice(0, 50)}
-              {typeof item !== 'object' && String(item).length > 50 && '...'}
-            </summary>
-            <CompositeViewer value={item} />
-          </details>
-        );})}
-      </div>
-    );
-  };
-
-const ToStringViewer = ({ value }: { value: unknown }) => {
-  return (
-  <pre className="mt-1 pl-2 text-xs font-mono bg-gray-50 rounded p-2 break-all overflow-auto">
-    {value === null ? <span className="text-gray-500 italic">null</span> : String(value)}
-    </pre>
-  );
-};
 
 export default InspectStateViewer;
