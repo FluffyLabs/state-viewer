@@ -115,35 +115,20 @@ const JsonEditorDialog = ({
           </button>
         </div>
 
-        {/* Error Messages */}
-        {(jsonError || formatError) && (
+        {/* Format Error Only */}
+        {formatError && (
           <div className="px-6 py-4 border-b border-border">
-            {jsonError && (
-              <div className="flex items-start gap-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg mb-3">
-                <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="text-sm font-medium text-red-900 dark:text-red-100">
-                    JSON Syntax Error
-                  </h4>
-                  <p className="text-sm text-red-700 dark:text-red-200 mt-1">
-                    {jsonError}
-                  </p>
-                </div>
+            <div className="flex items-start gap-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+              <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-sm font-medium text-yellow-900 dark:text-yellow-100">
+                  Format Validation Error
+                </h4>
+                <p className="text-sm text-yellow-700 dark:text-yellow-200 mt-1">
+                  {formatError}
+                </p>
               </div>
-            )}
-            {formatError && (
-              <div className="flex items-start gap-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="text-sm font-medium text-yellow-900 dark:text-yellow-100">
-                    Format Validation Error
-                  </h4>
-                  <p className="text-sm text-yellow-700 dark:text-yellow-200 mt-1">
-                    {formatError}
-                  </p>
-                </div>
-              </div>
-            )}
+            </div>
           </div>
         )}
 
@@ -173,21 +158,38 @@ const JsonEditorDialog = ({
         </div>
 
         {/* Dialog Footer */}
-        <div className="flex justify-end space-x-3 p-6 border-t border-border">
-          <Button
-            onClick={handleCancel}
-            variant="secondary"
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSave}
-            variant="primary"
-            disabled={!isJsonValid}
-            className={!isJsonValid ? 'opacity-50 cursor-not-allowed' : ''}
-          >
-            Save JSON
-          </Button>
+        <div className="p-6 border-t border-border">
+          {/* JSON Error Message */}
+          {jsonError && (
+            <div className="flex items-start gap-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg mb-4">
+              <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-sm font-medium text-red-900 dark:text-red-100">
+                  JSON Syntax Error
+                </h4>
+                <p className="text-sm text-red-700 dark:text-red-200 mt-1">
+                  {jsonError}
+                </p>
+              </div>
+            </div>
+          )}
+          
+          <div className="flex justify-end space-x-3">
+            <Button
+              onClick={handleCancel}
+              variant="secondary"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSave}
+              variant="primary"
+              disabled={!isJsonValid}
+              className={!isJsonValid ? 'opacity-50 cursor-not-allowed' : ''}
+            >
+              Save JSON
+            </Button>
+          </div>
         </div>
       </div>
     </div>
