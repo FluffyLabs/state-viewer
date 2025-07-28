@@ -3,7 +3,7 @@ import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, AlertCircle, Edit, FolderOpen } from 'lucide-react';
 import JsonEditorDialog from './JsonEditorDialog';
 import StateViewer from './StateViewer';
-import { Button } from './Button';
+import { Button } from './ui/Button';
 import { validateJsonFile, validateJsonContent, extractGenesisState, type JsonFileFormat, type StfStateType } from '../utils';
 
 interface UploadState {

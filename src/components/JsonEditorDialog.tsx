@@ -3,7 +3,7 @@ import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { X, AlertCircle } from 'lucide-react';
-import { Button } from './Button';
+import { Button } from './ui/Button';
 
 interface JsonEditorDialogProps {
   isOpen: boolean;
