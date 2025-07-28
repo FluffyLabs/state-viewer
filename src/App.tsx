@@ -12,8 +12,6 @@ const AppHeader = () => {
   );
 };
 
-
-
 function App() {
   return (
     <div className="flex flex-col overflow-hidden h-[100dvh]">

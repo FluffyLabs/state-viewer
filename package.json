@@ -20,6 +20,7 @@
     "@codemirror/view": "^6.38.1",
     "@fluffylabs/shared-ui": "^0.1.0",
     "@tailwindcss/vite": "^4.0.3",
+    "@typeberry/state-merkleization": "^0.0.1-9982ef99",
     "@uiw/react-codemirror": "^4.24.1",
     "lucide-react": "^0.525.0",
     "react": "^19.0.0",
