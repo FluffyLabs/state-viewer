@@ -306,4 +306,125 @@ describe('StateViewer', () => {
     // Should display the full diff with proper grouping
     expect(screen.getByTitle('0x12ab34cd → 0x12ef34gh')).toBeInTheDocument();
   });
+
+  describe('Diff Mode', () => {
+    const preState = {
+      '0x01': '0x123456',
+      '0x02': '0x789abc',
+      '0x03': '0xdeadbeef',
+    };
+
+    const postState = {
+      '0x01': '0x654321', // changed
+      '0x02': '0x789abc', // same
+      '0x04': '0xnewvalue', // added
+      // 0x03 removed
+    };
+
+    it('should render diff mode correctly', () => {
+      render(<StateViewer preState={preState} postState={postState} diffMode={true} title="Diff View" />);
+      
+      // Should show diff badges
+      expect(screen.getByText('CHANGED')).toBeInTheDocument();
+      expect(screen.getByText('ADDED')).toBeInTheDocument();
+      expect(screen.getByText('REMOVED')).toBeInTheDocument();
+      
+      // Should show the diff keys
+      expect(screen.getByText('0x01')).toBeInTheDocument(); // changed key
+      expect(screen.getByText('0x04')).toBeInTheDocument(); // added key  
+      expect(screen.getByText('0x03')).toBeInTheDocument(); // removed key
+      
+      // Should NOT show unchanged key 0x02
+      expect(screen.queryByText('0x02')).not.toBeInTheDocument();
+    });
+
+    it('should work with both Raw and Decoded tabs in diff mode', () => {
+      render(<StateViewer preState={preState} postState={postState} diffMode={true} />);
+      
+      // Should be on Raw tab by default
+      expect(screen.getByText('CHANGED')).toBeInTheDocument();
+      
+      // Switch to Decoded tab
+      const decodedTab = screen.getByText('Decoded');
+      fireEvent.click(decodedTab);
+      
+      // Note: The decoded view might show errors due to mock limitations
+      // but the component should still render without crashing
+      expect(decodedTab).toBeInTheDocument();
+    });
+
+    it('should maintain backward compatibility with single state prop', () => {
+      render(<StateViewer state={mockState} />);
+      
+      // Should render normally without diff mode
+      expect(screen.getByText('0x01')).toBeInTheDocument();
+      expect(screen.getByText('0x123456')).toBeInTheDocument();
+      expect(screen.queryByText('CHANGED')).not.toBeInTheDocument();
+    });
+
+    it('should handle diff mode without changes', () => {
+      const sameState = {
+        '0x01': '0x123456',
+        '0x02': '0x789abc',
+      };
+      
+      render(<StateViewer preState={sameState} postState={sameState} diffMode={true} />);
+      
+      // When states are identical, diff produces empty result, so should show no data
+      expect(screen.getByText('No state data to display')).toBeInTheDocument();
+      expect(screen.queryByText('CHANGED')).not.toBeInTheDocument();
+      expect(screen.queryByText('ADDED')).not.toBeInTheDocument();
+      expect(screen.queryByText('REMOVED')).not.toBeInTheDocument();
+    });
+
+    it('should handle missing pre or post state gracefully', () => {
+      render(<StateViewer postState={postState} diffMode={true} />);
+      
+      // Should still render the post state
+      expect(screen.getByText('0x01')).toBeInTheDocument();
+      expect(screen.getByText('0x654321')).toBeInTheDocument();
+    });
+
+    it('should search through diff entries', () => {
+      render(<StateViewer preState={preState} postState={postState} diffMode={true} />);
+      
+      const searchInput = screen.getByPlaceholderText('Search keys or values...');
+      
+      // Search for added entry
+      fireEvent.change(searchInput, { target: { value: 'newvalue' } });
+      
+      expect(screen.getByText('0x04')).toBeInTheDocument();
+      expect(screen.getByText('newvalue')).toBeInTheDocument();
+      expect(screen.queryByText('0x01')).not.toBeInTheDocument();
+    });
+
+    it('should open diff dialog for changed values', () => {
+      render(<StateViewer preState={preState} postState={postState} diffMode={true} />);
+      
+      // Find the view button for the changed entry
+      const viewButtons = screen.getAllByLabelText('View full value');
+      fireEvent.click(viewButtons[0]); // First entry should be the changed one
+      
+      // Dialog should show diff format
+      expect(screen.getByText('Value Diff')).toBeInTheDocument();
+      expect(screen.getByText('Before:')).toBeInTheDocument();
+      expect(screen.getByText('After:')).toBeInTheDocument();
+      expect(screen.getByText('0x123456')).toBeInTheDocument();
+      expect(screen.getByText('0x654321')).toBeInTheDocument();
+    });
+
+    it('should copy diff values correctly from dialog', async () => {
+      render(<StateViewer preState={preState} postState={postState} diffMode={true} />);
+      
+      const viewButtons = screen.getAllByLabelText('View full value');
+      fireEvent.click(viewButtons[0]);
+      
+      const copyButton = screen.getByText('Copy');
+      fireEvent.click(copyButton);
+      
+      await waitFor(() => {
+        expect(mockClipboard.writeText).toHaveBeenCalledWith('Before: 0x123456\nAfter: 0x654321');
+      });
+    });
+  });
 });

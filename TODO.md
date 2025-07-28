@@ -5,3 +5,5 @@ Figure out what to do with HashDictionary collections?
 Special handling of diff.
 
 Services display.
+
+Configure chainspec

@@ -4,6 +4,7 @@ import {
   validateJsonContent,
   extractGenesisState,
   extractStateFromStfVector,
+  extractBothStatesFromStfVector,
   calculateStateDiff,
   type StfTestVector
 } from './jsonValidation';
@@ -339,6 +340,62 @@ describe('extractStateFromStfVector', () => {
     expect(result).toEqual({
       "0x01": "0x789",
       "0x03": "0xabc"
+    });
+  });
+});
+
+describe('extractBothStatesFromStfVector', () => {
+  it('should extract both pre and post states correctly', () => {
+    const mockStfVector: StfTestVector = {
+      pre_state: {
+        state_root: 'root1',
+        keyvals: [
+          { key: '0x01', value: '0x123456' },
+          { key: '0x02', value: '0x789abc' },
+        ],
+      },
+      post_state: {
+        state_root: 'root2',
+        keyvals: [
+          { key: '0x01', value: '0x654321' },
+          { key: '0x03', value: '0xnewvalue' },
+        ],
+      },
+      block: {},
+    };
+
+    const result = extractBothStatesFromStfVector(mockStfVector);
+
+    expect(result).toEqual({
+      preState: {
+        '0x01': '0x123456',
+        '0x02': '0x789abc',
+      },
+      postState: {
+        '0x01': '0x654321',
+        '0x03': '0xnewvalue',
+      },
+    });
+  });
+
+  it('should handle empty keyvals arrays', () => {
+    const mockStfVector: StfTestVector = {
+      pre_state: {
+        state_root: 'root1',
+        keyvals: [],
+      },
+      post_state: {
+        state_root: 'root2',
+        keyvals: [],
+      },
+      block: {},
+    };
+
+    const result = extractBothStatesFromStfVector(mockStfVector);
+
+    expect(result).toEqual({
+      preState: {},
+      postState: {},
     });
   });
 });

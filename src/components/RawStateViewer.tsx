@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { Search, Copy, Eye, X } from 'lucide-react';
 import { Button } from './ui/Button';
+import { calculateStateDiff } from '@/utils';
 
 interface DiffEntry {
   type: 'added' | 'removed' | 'changed' | 'normal';
@@ -10,11 +11,16 @@ interface DiffEntry {
 }
 
 interface RawStateViewerProps {
+  preState?: Record<string, string>;
   state: Record<string, string>;
   title?: string;
 }
 
-const RawStateViewer = ({ state, title = "State Data" }: RawStateViewerProps) => {
+const RawStateViewer = ({
+  preState,
+  state,
+  title = "State Data",
+}: RawStateViewerProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [dialogState, setDialogState] = useState<{
@@ -25,7 +31,15 @@ const RawStateViewer = ({ state, title = "State Data" }: RawStateViewerProps) =>
   }>({ isOpen: false, key: '', value: '', diffEntry: null });
   const topRef = useRef<HTMLDivElement>(null);
 
-  const stateEntries = useMemo(() => Object.entries(state), [state]);
+  // Calculate the state to display
+  const displayState = useMemo(() => {
+    if (preState !== undefined) {
+      return calculateStateDiff(preState, state);
+    }
+    return state;
+  }, [preState, state]);
+
+  const stateEntries = useMemo(() => Object.entries(displayState), [displayState]);
 
   const filteredEntries = useMemo(() => {
     if (!searchTerm) return stateEntries;

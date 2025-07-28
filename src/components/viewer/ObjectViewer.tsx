@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { shortenString, toSmartString } from './utils';
 
 interface ObjectViewerProps {
   value: Record<string, unknown>;
@@ -10,11 +11,12 @@ const ObjectViewer = ({ value, renderValue }: ObjectViewerProps) => {
     <div className="space-y-1">
       {Object.keys(value).map((key) => {
         const item = value[key];
+        const itemStr = toSmartString(item);
+        const shortStr = shortenString(itemStr);
         return (
           <details key={key} className="border-l-2 border-gray-200 pl-2">
-            <summary className="cursor-pointer text-xs text-gray-600 hover:text-gray-800">
-              {key}: {item === null ? 'null' : typeof item === 'object' ? '{...}' : String(item).slice(0, 50)}
-              {typeof item !== 'object' && String(item).length > 50 && '...'}
+            <summary className="cursor-pointer font-mono text-xs text-gray-600 hover:text-gray-800">
+              {key}: {shortStr}
             </summary>
             {renderValue(item)}
           </details>

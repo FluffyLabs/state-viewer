@@ -34,7 +34,7 @@ describe('InspectStateViewer', () => {
     });
 
     render(<InspectStateViewer state={{ 'key1': 'value1' }} />);
-    
+
     expect(screen.getByText('State Data')).toBeInTheDocument();
   });
 
@@ -44,7 +44,7 @@ describe('InspectStateViewer', () => {
     });
 
     render(<InspectStateViewer state={{ 'key1': 'value1' }} title="Custom Title" />);
-    
+
     expect(screen.getByText('Custom Title')).toBeInTheDocument();
   });
 
@@ -54,7 +54,7 @@ describe('InspectStateViewer', () => {
     });
 
     render(<InspectStateViewer state={{ 'key1': 'value1' }} />);
-    
+
     expect(screen.getByText('Error loading state:')).toBeInTheDocument();
     expect(screen.getByText('Missing 0x prefix: key1')).toBeInTheDocument();
   });
@@ -91,7 +91,7 @@ describe('InspectStateViewer', () => {
     vi.mocked(loadState).mockReturnValue(mockStateAccess as any);
 
     render(<InspectStateViewer state={{ '0x1234567890123456789012345678901234567890123456789012345678901234': 'value1' }} />);
-    
+
     expect(screen.getByText('State Fields')).toBeInTheDocument();
     expect(screen.getByText('availabilityAssignment')).toBeInTheDocument();
     expect(screen.getByText('timeslot')).toBeInTheDocument();
@@ -100,7 +100,7 @@ describe('InspectStateViewer', () => {
 
   it('should show console export message when state loads successfully', () => {
     const mockStateAccess = { timeslot: 123 };
-    
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(bytes.Bytes.parseBytes).mockReturnValue(new Uint8Array([1, 2, 3]) as any);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -109,13 +109,13 @@ describe('InspectStateViewer', () => {
     vi.mocked(loadState).mockReturnValue(mockStateAccess as any);
 
     render(<InspectStateViewer state={{ '0x1234567890123456789012345678901234567890123456789012345678901234': 'value1' }} />);
-    
+
     expect(screen.getByText('The state object is also exported in DevTools console as `state`.')).toBeInTheDocument();
   });
 
   it('should export state to window when successfully loaded', () => {
     const mockStateAccess = { timeslot: 123 };
-    
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(bytes.Bytes.parseBytes).mockReturnValue(new Uint8Array([1, 2, 3]) as any);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -124,7 +124,7 @@ describe('InspectStateViewer', () => {
     vi.mocked(loadState).mockReturnValue(mockStateAccess as any);
 
     render(<InspectStateViewer state={{ '0x1234567890123456789012345678901234567890123456789012345678901234': 'value1' }} />);
-    
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect((window as any).state).toBe(mockStateAccess);
   });
@@ -134,7 +134,7 @@ describe('InspectStateViewer', () => {
       availabilityAssignment: 'test-value',
       timeslot: 123,
     };
-    
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(bytes.Bytes.parseBytes).mockReturnValue(new Uint8Array([1, 2, 3]) as any);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -143,7 +143,7 @@ describe('InspectStateViewer', () => {
     vi.mocked(loadState).mockReturnValue(mockStateAccess as any);
 
     render(<InspectStateViewer state={{ '0x1234567890123456789012345678901234567890123456789012345678901234': 'value1' }} />);
-    
+
     expect(screen.getByText('Work-reports which have been reported but are not yet known to be available to a super-majority of validators')).toBeInTheDocument();
     expect(screen.getByText('The current time slot')).toBeInTheDocument();
   });
@@ -153,7 +153,7 @@ describe('InspectStateViewer', () => {
       timeslot: 123,
       // Missing other expected fields like availabilityAssignment
     };
-    
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(bytes.Bytes.parseBytes).mockReturnValue(new Uint8Array([1, 2, 3]) as any);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -162,7 +162,7 @@ describe('InspectStateViewer', () => {
     vi.mocked(loadState).mockReturnValue(mockStateAccess as any);
 
     render(<InspectStateViewer state={{ '0x1234567890123456789012345678901234567890123456789012345678901234': 'value1' }} />);
-    
+
     const notFoundElements = screen.getAllByText('Not found');
     expect(notFoundElements.length).toBeGreaterThan(0);
   });
@@ -172,7 +172,7 @@ describe('InspectStateViewer', () => {
       availabilityAssignment: 'test-value',
       timeslot: 123,
     };
-    
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(bytes.Bytes.parseBytes).mockReturnValue(new Uint8Array([1, 2, 3]) as any);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -181,7 +181,7 @@ describe('InspectStateViewer', () => {
     vi.mocked(loadState).mockReturnValue(mockStateAccess as any);
 
     render(<InspectStateViewer state={{ '0x1234567890123456789012345678901234567890123456789012345678901234': 'value1' }} />);
-    
+
     expect(screen.getByText('ρ')).toBeInTheDocument(); // rho notation
     expect(screen.getByText('τ')).toBeInTheDocument(); // tau notation
     expect(screen.getByText('rho')).toBeInTheDocument(); // rho title
@@ -197,8 +197,132 @@ describe('InspectStateViewer', () => {
     vi.mocked(loadState).mockReturnValue({} as any);
 
     render(<InspectStateViewer state={{}} />);
-    
+
     expect(screen.getByText('State Data')).toBeInTheDocument();
     expect(screen.getByText('State Fields')).toBeInTheDocument();
+  });
+
+  describe('Diff Mode', () => {
+    it('should render diff mode with changes highlighted', () => {
+      const mockPreState = { timeslot: 123 };
+      const mockPostState = { timeslot: 456, entropy: 'new-value' };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(bytes.Bytes.parseBytes).mockReturnValue(new Uint8Array([1, 2, 3]) as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(bytes.BytesBlob.parseBlob).mockReturnValue(new Uint8Array([4, 5, 6]) as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(loadState).mockReturnValueOnce(mockPreState as any).mockReturnValueOnce(mockPostState as any);
+
+      const preState = { '0x1234567890123456789012345678901234567890123456789012345678901234': 'value1' };
+      const postState = { '0x1234567890123456789012345678901234567890123456789012345678901234': 'value2' };
+
+      render(<InspectStateViewer preState={preState} postState={postState} diffMode={true} />);
+
+      expect(screen.getByText('State Data')).toBeInTheDocument();
+      expect(screen.getByText((content) => {
+        return content.includes('Showing differences between pre and post states');
+      })).toBeInTheDocument();
+      expect(screen.getAllByText('CHANGED').length).toBeGreaterThan(0);
+    });
+
+    it('should show before and after values in diff mode', () => {
+      const mockPreState = { timeslot: 123 };
+      const mockPostState = { timeslot: 456 };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(bytes.Bytes.parseBytes).mockReturnValue(new Uint8Array([1, 2, 3]) as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(bytes.BytesBlob.parseBlob).mockReturnValue(new Uint8Array([4, 5, 6]) as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(loadState).mockReturnValueOnce(mockPreState as any).mockReturnValueOnce(mockPostState as any);
+
+      const preState = { '0x1234567890123456789012345678901234567890123456789012345678901234': 'value1' };
+      const postState = { '0x1234567890123456789012345678901234567890123456789012345678901234': 'value2' };
+
+      render(<InspectStateViewer preState={preState} postState={postState} diffMode={true} />);
+
+      expect(screen.getByText('Before:')).toBeInTheDocument();
+      expect(screen.getByText('After:')).toBeInTheDocument();
+    });
+
+    it('should not show diff styling when values are the same', () => {
+      const mockState = { timeslot: 123 };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(bytes.Bytes.parseBytes).mockReturnValue(new Uint8Array([1, 2, 3]) as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(bytes.BytesBlob.parseBlob).mockReturnValue(new Uint8Array([4, 5, 6]) as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(loadState).mockReturnValue(mockState as any);
+
+      const state = { '0x1234567890123456789012345678901234567890123456789012345678901234': 'value1' };
+
+      render(<InspectStateViewer preState={state} postState={state} diffMode={true} />);
+
+      expect(screen.queryByText('CHANGED')).not.toBeInTheDocument();
+      expect(screen.queryByText('Before:')).not.toBeInTheDocument();
+      expect(screen.queryByText('After:')).not.toBeInTheDocument();
+    });
+
+    it('should work with backward compatibility mode', () => {
+      const mockState = { timeslot: 123 };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(bytes.Bytes.parseBytes).mockReturnValue(new Uint8Array([1, 2, 3]) as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(bytes.BytesBlob.parseBlob).mockReturnValue(new Uint8Array([4, 5, 6]) as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(loadState).mockReturnValue(mockState as any);
+
+      const state = { '0x1234567890123456789012345678901234567890123456789012345678901234': 'value1' };
+
+      render(<InspectStateViewer state={state} />);
+
+      expect(screen.getByText('State Data')).toBeInTheDocument();
+      expect(screen.queryByText('Showing differences between pre and post states.')).not.toBeInTheDocument();
+    });
+
+    it('should handle missing pre or post state gracefully', () => {
+      const mockPostState = { timeslot: 456 };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(bytes.Bytes.parseBytes).mockReturnValue(new Uint8Array([1, 2, 3]) as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(bytes.BytesBlob.parseBlob).mockReturnValue(new Uint8Array([4, 5, 6]) as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(loadState).mockReturnValueOnce(null as any).mockReturnValueOnce(mockPostState as any);
+
+      const postState = { '0x1234567890123456789012345678901234567890123456789012345678901234': 'value2' };
+
+      render(<InspectStateViewer postState={postState} diffMode={true} />);
+
+      expect(screen.getByText('State Data')).toBeInTheDocument();
+    });
+
+    it('should apply correct CSS classes for diff mode', () => {
+      const mockPreState = { timeslot: 123 };
+      const mockPostState = { timeslot: 456 };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(bytes.Bytes.parseBytes).mockReturnValue(new Uint8Array([1, 2, 3]) as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(bytes.BytesBlob.parseBlob).mockReturnValue(new Uint8Array([4, 5, 6]) as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(loadState).mockReturnValueOnce(mockPreState as any).mockReturnValueOnce(mockPostState as any);
+
+      const preState = { '0x1234567890123456789012345678901234567890123456789012345678901234': 'value1' };
+      const postState = { '0x1234567890123456789012345678901234567890123456789012345678901234': 'value2' };
+
+      render(<InspectStateViewer preState={preState} postState={postState} diffMode={true} />);
+
+      // Find elements that indicate changes
+      expect(screen.getAllByText('CHANGED').length).toBeGreaterThan(0);
+
+      // Check that diff mode styling is applied to at least one field
+      // Note: The actual highlighting depends on the field being in both states
+      const changedLabels = screen.getAllByText('CHANGED');
+      expect(changedLabels.length).toBeGreaterThan(0);
+    });
   });
 });

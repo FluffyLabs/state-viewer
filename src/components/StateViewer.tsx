@@ -3,11 +3,16 @@ import RawStateViewer from './RawStateViewer';
 import InspectStateViewer from './InspectStateViewer';
 
 interface StateViewerProps {
+  preState?: Record<string, string>;
   state: Record<string, string>;
   title?: string;
 }
 
-const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
+const StateViewer = ({
+  preState,
+  state,
+  title = "State Data",
+}: StateViewerProps) => {
   return (
     <div>
       <Tabs defaultValue="raw" className="w-full">
@@ -17,11 +22,18 @@ const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
         </TabsList>
 
         <TabsContent value="raw" className="mt-0">
-          <RawStateViewer state={state} title={title} />
+          <RawStateViewer
+            preState={preState}
+            state={state}
+            title={title}
+          />
         </TabsContent>
 
         <TabsContent value="inspect" className="mt-0">
-          <InspectStateViewer state={state} />
+          <InspectStateViewer
+            preState={preState}
+            state={state}
+          />
         </TabsContent>
       </Tabs>
     </div>
