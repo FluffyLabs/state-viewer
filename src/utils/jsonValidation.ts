@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 export type JsonFileFormat = 'jip4-chainspec' | 'typeberry-config' | 'stf-test-vector' | 'stf-genesis' | 'unknown';
 
 export type StfStateType = 'pre_state' | 'post_state';
@@ -12,99 +14,111 @@ export interface JsonValidationResult {
   availableStates?: StfStateType[];
 }
 
-export interface StfTestVector {
-  pre_state: {
-    state_root: string;
-    keyvals: Array<{ key: string; value: string }>;
-  };
-  block: unknown;
-  post_state: {
-    state_root: string;
-    keyvals: Array<{ key: string; value: string }>;
-  };
+// Zod Schemas
+const KeyValueSchema = z.object({
+  key: z.string(),
+  value: z.string(),
+});
+
+const StateSchema = z.object({
+  state_root: z.string(),
+  keyvals: z.array(KeyValueSchema),
+});
+
+const Jip4ChainspecSchema = z.object({
+  id: z.string(),
+  bootnodes: z.array(z.string()).optional(),
+  genesis_header: z.string(),
+  genesis_state: z.record(z.string(), z.string()),
+});
+
+const TypeberryConfigSchema = z.object({
+  $schema: z.string(),
+  version: z.number(),
+  flavor: z.string(),
+  authorship: z.unknown().optional(),
+  chain_spec: Jip4ChainspecSchema,
+});
+
+const StfTestVectorSchema = z.object({
+  pre_state: StateSchema,
+  block: z.unknown(),
+  post_state: StateSchema,
+});
+
+const StfGenesisHeaderSchema = z.object({
+  parent: z.string(),
+  parent_state_root: z.string(),
+  extrinsic_hash: z.string(),
+  slot: z.number(),
+  epoch_mark: z.unknown().optional(),
+  tickets_mark: z.unknown().optional(),
+  offenders_mark: z.array(z.unknown()).optional(),
+  author_index: z.number(),
+  entropy_source: z.string(),
+  seal: z.string(),
+});
+
+const StfGenesisSchema = z.object({
+  header: StfGenesisHeaderSchema,
+  state: StateSchema,
+});
+
+// TypeScript interfaces (inferred from Zod schemas)
+export type StfTestVector = z.infer<typeof StfTestVectorSchema>;
+export type Jip4Chainspec = z.infer<typeof Jip4ChainspecSchema>;
+export type TypeberryConfig = z.infer<typeof TypeberryConfigSchema>;
+export type StfGenesis = z.infer<typeof StfGenesisSchema>;
+
+interface FormatDetectionResult {
+  format: JsonFileFormat;
+  description: string;
+  data?: unknown;
 }
 
-export interface Jip4Chainspec {
-  id: string;
-  bootnodes?: string[];
-  genesis_header: string;
-  genesis_state: Record<string, string>;
-}
-
-export interface TypeberryConfig {
-  $schema: string;
-  version: number;
-  flavor: string;
-  authorship?: unknown;
-  chain_spec: Jip4Chainspec;
-}
-
-export interface StfGenesis {
-  header: {
-    parent: string;
-    parent_state_root: string;
-    extrinsic_hash: string;
-    slot: number;
-    epoch_mark?: unknown;
-    tickets_mark?: unknown;
-    offenders_mark: unknown[];
-    author_index: number;
-    entropy_source: string;
-    seal: string;
-  };
-  state: {
-    state_root: string;
-    keyvals: Array<{ key: string; value: string }>;
-  };
-}
-
-const detectJsonFormat = (parsedJson: unknown): { format: JsonFileFormat; description: string } => {
+const detectJsonFormat = (parsedJson: unknown): FormatDetectionResult => {
   if (!parsedJson || typeof parsedJson !== 'object') {
     return { format: 'unknown', description: 'Invalid JSON structure' };
   }
 
-  const obj = parsedJson as Record<string, unknown>;
-
-  // Check for STF test vector
-  if ('pre_state' in obj && 'post_state' in obj && 'block' in obj) {
-    const preState = obj.pre_state as Record<string, unknown>;
-    const postState = obj.post_state as Record<string, unknown>;
-    
-    if (preState && typeof preState === 'object' && 
-        postState && typeof postState === 'object' &&
-        'state_root' in preState && 'keyvals' in preState &&
-        'state_root' in postState && 'keyvals' in postState) {
-      return { format: 'stf-test-vector', description: 'STF Test Vector - contains pre_state and post_state' };
-    }
+  // Try STF Test Vector first (most specific)
+  const stfTestVectorResult = StfTestVectorSchema.safeParse(parsedJson);
+  if (stfTestVectorResult.success) {
+    return {
+      format: 'stf-test-vector',
+      description: 'STF Test Vector - contains pre_state and post_state',
+      data: stfTestVectorResult.data,
+    };
   }
 
-  // Check for Typeberry config
-  if ('$schema' in obj && 'version' in obj && 'chain_spec' in obj) {
-    const chainSpec = obj.chain_spec as Record<string, unknown>;
-    if (chainSpec && typeof chainSpec === 'object' && 
-        'genesis_state' in chainSpec && 'id' in chainSpec) {
-      return { format: 'typeberry-config', description: 'Typeberry Config - contains JIP-4 chainspec in chain_spec field' };
-    }
+  // Try Typeberry Config
+  const typeberryResult = TypeberryConfigSchema.safeParse(parsedJson);
+  if (typeberryResult.success) {
+    return {
+      format: 'typeberry-config',
+      description: 'Typeberry Config - contains JIP-4 chainspec in chain_spec field',
+      data: typeberryResult.data,
+    };
   }
 
-  // Check for STF genesis
-  if ('header' in obj && 'state' in obj) {
-    const header = obj.header as Record<string, unknown>;
-    const state = obj.state as Record<string, unknown>;
-    
-    if (header && typeof header === 'object' && 
-        state && typeof state === 'object' &&
-        'parent' in header && 'state_root' in state && 'keyvals' in state) {
-      return { format: 'stf-genesis', description: 'STF Genesis - contains initial state with header' };
-    }
+  // Try STF Genesis
+  const stfGenesisResult = StfGenesisSchema.safeParse(parsedJson);
+  if (stfGenesisResult.success) {
+    return {
+      format: 'stf-genesis',
+      description: 'STF Genesis - contains initial state with header',
+      data: stfGenesisResult.data,
+    };
   }
 
-  // Check for JIP-4 chainspec
-  if ('genesis_state' in obj && 'id' in obj && 'genesis_header' in obj) {
-    const genesisState = obj.genesis_state;
-    if (genesisState && typeof genesisState === 'object') {
-      return { format: 'jip4-chainspec', description: 'JIP-4 Chainspec - contains genesis_state directly' };
-    }
+  // Try JIP-4 Chainspec
+  const jip4Result = Jip4ChainspecSchema.safeParse(parsedJson);
+  if (jip4Result.success) {
+    return {
+      format: 'jip4-chainspec',
+      description: 'JIP-4 Chainspec - contains genesis_state directly',
+      data: jip4Result.data,
+    };
   }
 
   return { format: 'unknown', description: 'Unknown format - does not match any supported schema' };
@@ -174,7 +188,7 @@ export const validateJsonFile = (file: File): Promise<JsonValidationResult> => {
         resolve({
           content: e.target?.result as string || '',
           isValid: false,
-          error: 'Invalid JSON format. Please check your file and try again.',
+          error: 'Invalid JSON format. Please check your content and try again.',
           format: 'unknown',
           formatDescription: 'Malformed JSON',
         });
@@ -216,26 +230,35 @@ export const extractGenesisState = (
     const parsedJson = JSON.parse(content);
     
     switch (format) {
-      case 'jip4-chainspec':
-        return (parsedJson as Jip4Chainspec).genesis_state;
+      case 'jip4-chainspec': {
+        const result = Jip4ChainspecSchema.safeParse(parsedJson);
+        return result.success ? result.data.genesis_state : null;
+      }
         
-      case 'typeberry-config':
-        return (parsedJson as TypeberryConfig).chain_spec.genesis_state;
+      case 'typeberry-config': {
+        const result = TypeberryConfigSchema.safeParse(parsedJson);
+        return result.success ? result.data.chain_spec.genesis_state : null;
+      }
         
-      case 'stf-test-vector':
+      case 'stf-test-vector': {
         if (!stateType) {
           throw new Error('State type must be specified for STF test vectors');
         }
-        return extractStateFromStfVector(parsedJson as StfTestVector, stateType);
+        const result = StfTestVectorSchema.safeParse(parsedJson);
+        return result.success ? extractStateFromStfVector(result.data, stateType) : null;
+      }
         
       case 'stf-genesis': {
-        const stfGenesis = parsedJson as StfGenesis;
+        const result = StfGenesisSchema.safeParse(parsedJson);
+        if (!result.success) return null;
+        
         const stateMap: Record<string, string> = {};
-        for (const item of stfGenesis.state.keyvals) {
+        for (const item of result.data.state.keyvals) {
           stateMap[item.key] = item.value;
         }
         return stateMap;
       }
+      
       default:
         return null;
     }

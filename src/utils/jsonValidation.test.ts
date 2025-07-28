@@ -365,6 +365,7 @@ describe('extractGenesisState', () => {
     const typeberryContent = JSON.stringify({
       $schema: "https://example.com/schema.json",
       version: 1,
+      flavor: "test",
       chain_spec: {
         id: "test-chain",
         genesis_header: "0x123...",
@@ -442,6 +443,7 @@ describe('extractGenesisState', () => {
         parent_state_root: "0x0000000000000000000000000000000000000000000000000000000000000000",
         extrinsic_hash: "0x0000000000000000000000000000000000000000000000000000000000000000",
         slot: 0,
+        offenders_mark: [],
         author_index: 65535,
         entropy_source: "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
         seal: "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
@@ -909,6 +911,227 @@ describe('validateJsonContent', () => {
       expect(result.isValid).toBe(false);
       expect(result.format).toBe('unknown');
       expect(result.formatDescription).toBe('Malformed JSON');
+    });
+  });
+
+  describe('Zod validation edge cases', () => {
+    describe('Type validation errors', () => {
+      it('should reject JIP-4 chainspec with invalid data types', () => {
+        const invalidJip4 = JSON.stringify({
+          id: 123, // should be string
+          genesis_header: "0x0000000000000000000000000000000000000000000000000000000000000000",
+          genesis_state: {
+            "0x01": "0x123"
+          }
+        });
+
+        const result = validateJsonContent(invalidJip4);
+
+        expect(result.isValid).toBe(false);
+        expect(result.format).toBe('unknown');
+        expect(result.error).toContain('Unsupported JSON format');
+      });
+
+      it('should reject Typeberry config with invalid version type', () => {
+        const invalidTypeberry = JSON.stringify({
+          $schema: "https://example.com/schema.json",
+          version: "1", // should be number
+          flavor: "test",
+          chain_spec: {
+            id: "test-chain",
+            genesis_header: "0x123",
+            genesis_state: {
+              "0x01": "0x789"
+            }
+          }
+        });
+
+        const result = validateJsonContent(invalidTypeberry);
+
+        expect(result.isValid).toBe(false);
+        expect(result.format).toBe('unknown');
+        expect(result.error).toContain('Unsupported JSON format');
+      });
+
+      it('should reject STF test vector with invalid keyvals structure', () => {
+        const invalidStf = JSON.stringify({
+          pre_state: {
+            state_root: "0x12345",
+            keyvals: "invalid" // should be array
+          },
+          block: { slot: 1 },
+          post_state: {
+            state_root: "0x67890",
+            keyvals: []
+          }
+        });
+
+        const result = validateJsonContent(invalidStf);
+
+        expect(result.isValid).toBe(false);
+        expect(result.format).toBe('unknown');
+        expect(result.error).toContain('Unsupported JSON format');
+      });
+
+      it('should reject STF genesis with invalid slot type', () => {
+        const invalidStfGenesis = JSON.stringify({
+          header: {
+            parent: "0x0000000000000000000000000000000000000000000000000000000000000000",
+            parent_state_root: "0x0000000000000000000000000000000000000000000000000000000000000000",
+            extrinsic_hash: "0x0000000000000000000000000000000000000000000000000000000000000000",
+            slot: "0", // should be number
+            offenders_mark: [],
+            author_index: 65535,
+            entropy_source: "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+            seal: "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          },
+          state: {
+            state_root: "0x3e2f03c8e9f44101d4945260f81a0c5a400c18fe7a0fbdb4413e8b9163239836",
+            keyvals: []
+          }
+        });
+
+        const result = validateJsonContent(invalidStfGenesis);
+
+        expect(result.isValid).toBe(false);
+        expect(result.format).toBe('unknown');
+        expect(result.error).toContain('Unsupported JSON format');
+      });
+    });
+
+    describe('Missing required fields', () => {
+      it('should reject JIP-4 chainspec missing required fields', () => {
+        const incompleteJip4 = JSON.stringify({
+          id: "test-chain",
+          // missing genesis_header
+          genesis_state: {
+            "0x01": "0x123"
+          }
+        });
+
+        const result = validateJsonContent(incompleteJip4);
+
+        expect(result.isValid).toBe(false);
+        expect(result.format).toBe('unknown');
+        expect(result.error).toContain('Unsupported JSON format');
+      });
+
+      it('should reject Typeberry config missing chain_spec', () => {
+        const incompleteTypeberry = JSON.stringify({
+          $schema: "https://example.com/schema.json",
+          version: 1,
+          flavor: "test"
+          // missing chain_spec
+        });
+
+        const result = validateJsonContent(incompleteTypeberry);
+
+        expect(result.isValid).toBe(false);
+        expect(result.format).toBe('unknown');
+        expect(result.error).toContain('Unsupported JSON format');
+      });
+
+      it('should reject STF test vector missing post_state', () => {
+        const incompleteStf = JSON.stringify({
+          pre_state: {
+            state_root: "0x12345",
+            keyvals: []
+          },
+          block: { slot: 1 }
+          // missing post_state
+        });
+
+        const result = validateJsonContent(incompleteStf);
+
+        expect(result.isValid).toBe(false);
+        expect(result.format).toBe('unknown');
+        expect(result.error).toContain('Unsupported JSON format');
+      });
+    });
+
+    describe('Invalid nested structures', () => {
+      it('should reject STF test vector with malformed keyvals', () => {
+        const malformedStf = JSON.stringify({
+          pre_state: {
+            state_root: "0x12345",
+            keyvals: [
+              { key: "0x01" } // missing value
+            ]
+          },
+          block: { slot: 1 },
+          post_state: {
+            state_root: "0x67890",
+            keyvals: []
+          }
+        });
+
+        const result = validateJsonContent(malformedStf);
+
+        expect(result.isValid).toBe(false);
+        expect(result.format).toBe('unknown');
+        expect(result.error).toContain('Unsupported JSON format');
+      });
+
+      it('should reject Typeberry config with invalid nested chain_spec', () => {
+        const invalidNested = JSON.stringify({
+          $schema: "https://example.com/schema.json",
+          version: 1,
+          flavor: "test",
+          chain_spec: "invalid" // should be object
+        });
+
+        const result = validateJsonContent(invalidNested);
+
+        expect(result.isValid).toBe(false);
+        expect(result.format).toBe('unknown');
+        expect(result.error).toContain('Unsupported JSON format');
+      });
+    });
+
+    describe('Optional fields handling', () => {
+      it('should accept STF genesis without optional epoch_mark and tickets_mark', () => {
+        const stfGenesisWithoutOptional = JSON.stringify({
+          header: {
+            parent: "0x0000000000000000000000000000000000000000000000000000000000000000",
+            parent_state_root: "0x0000000000000000000000000000000000000000000000000000000000000000",
+            extrinsic_hash: "0x0000000000000000000000000000000000000000000000000000000000000000",
+            slot: 0,
+            author_index: 65535,
+            entropy_source: "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+            seal: "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+            // offenders_mark is also optional
+          },
+          state: {
+            state_root: "0x3e2f03c8e9f44101d4945260f81a0c5a400c18fe7a0fbdb4413e8b9163239836",
+            keyvals: [
+              { key: "0x01", value: "0x123456" }
+            ]
+          }
+        });
+
+        const result = validateJsonContent(stfGenesisWithoutOptional);
+
+        expect(result.isValid).toBe(true);
+        expect(result.format).toBe('stf-genesis');
+        expect(result.formatDescription).toBe('STF Genesis - contains initial state with header');
+      });
+
+      it('should accept JIP-4 chainspec without optional bootnodes', () => {
+        const jip4WithoutBootnodes = JSON.stringify({
+          id: "test-chain",
+          genesis_header: "0x0000000000000000000000000000000000000000000000000000000000000000",
+          genesis_state: {
+            "0x01": "0x123"
+          }
+          // bootnodes is optional
+        });
+
+        const result = validateJsonContent(jip4WithoutBootnodes);
+
+        expect(result.isValid).toBe(true);
+        expect(result.format).toBe('jip4-chainspec');
+        expect(result.formatDescription).toBe('JIP-4 Chainspec - contains genesis_state directly');
+      });
     });
   });
 });
