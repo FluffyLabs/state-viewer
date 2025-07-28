@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Mock the typeberry state-merkleization module
@@ -14,6 +14,23 @@ vi.mock('@typeberry/state-merkleization', () => ({
     BytesBlob: {
       parseBlob: vi.fn()
     }
+  },
+  serialize: {
+    availabilityAssignment: { key: { toString: () => '0x01' } },
+    designatedValidators: { key: { toString: () => '0x02' } },
+    currentValidators: { key: { toString: () => '0x03' } },
+    previousValidators: { key: { toString: () => '0x04' } },
+    disputesRecords: { key: { toString: () => '0x05' } },
+    timeslot: { key: { toString: () => '0x06' } },
+    entropy: { key: { toString: () => '0x07' } },
+    authPools: { key: { toString: () => '0x08' } },
+    authQueues: { key: { toString: () => '0x09' } },
+    recentBlocks: { key: { toString: () => '0x0a' } },
+    statistics: { key: { toString: () => '0x0b' } },
+    accumulationQueue: { key: { toString: () => '0x0c' } },
+    recentlyAccumulated: { key: { toString: () => '0x0d' } },
+    safrole: { key: { toString: () => '0x0e' } },
+    privilegedServices: { key: { toString: () => '0x0f' } }
   }
 }));
 
@@ -323,6 +340,44 @@ describe('InspectStateViewer', () => {
       // Note: The actual highlighting depends on the field being in both states
       const changedLabels = screen.getAllByText('CHANGED');
       expect(changedLabels.length).toBeGreaterThan(0);
+    });
+
+    it('should toggle between display modes', () => {
+      const mockState = { timeslot: 123 };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(bytes.Bytes.parseBytes).mockReturnValue(new Uint8Array([1, 2, 3]) as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(bytes.BytesBlob.parseBlob).mockReturnValue(new Uint8Array([4, 5, 6]) as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(loadState).mockReturnValue(mockState as any);
+
+      const state = { '0x1234567890123456789012345678901234567890123456789012345678901234': 'value1' };
+
+      render(<InspectStateViewer state={state} />);
+
+      // Check that display mode buttons are present
+      expect(screen.getByText('Decoded')).toBeInTheDocument();
+      expect(screen.getByText('Raw')).toBeInTheDocument();
+      expect(screen.getByText('String')).toBeInTheDocument();
+
+      // Decoded should be active by default
+      const decodedButton = screen.getByText('Decoded');
+      expect(decodedButton).toHaveClass('bg-blue-500', 'text-white');
+
+      // Click Raw button
+      const rawButton = screen.getByText('Raw');
+      fireEvent.click(rawButton);
+      
+      expect(rawButton).toHaveClass('bg-blue-500', 'text-white');
+      expect(decodedButton).toHaveClass('bg-gray-100', 'text-gray-700');
+
+      // Click String button
+      const stringButton = screen.getByText('String');
+      fireEvent.click(stringButton);
+      
+      expect(stringButton).toHaveClass('bg-blue-500', 'text-white');
+      expect(rawButton).toHaveClass('bg-gray-100', 'text-gray-700');
     });
   });
 });

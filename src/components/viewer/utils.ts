@@ -5,7 +5,7 @@ export function shortenString(s: string) {
   return s.length > CUT_LENGTH ? `${s.slice(0, CUT_LENGTH)}...` : s;
 }
 
-export function toSmartString(item: unknown): string {
+export function toSmartString(item: unknown, fullObject: boolean = false): string {
   if (item === null) {
     return 'null';
   }
@@ -13,11 +13,11 @@ export function toSmartString(item: unknown): string {
     return 'undefined';
   }
   if (Array.isArray(item)) {
-    return `[${item.map(toSmartString).join(', ')}]`;
+    return `[${item.map(item => toSmartString(item, fullObject)).join(', ')}]`;
   }
 
   if (typeof item === 'object' && 'toJSON' in item && typeof item.toJSON === 'function') {
-    return toSmartString(item.toJSON());
+    return toSmartString(item.toJSON(), fullObject);
   }
 
   if (item instanceof Map) {
@@ -28,7 +28,10 @@ export function toSmartString(item: unknown): string {
     if (Object.keys(item).length === 0) {
       return '{}';
     }
-
+    if (fullObject) {
+      const itemRecord = item as Record<string, unknown>;
+      return `{\n${Object.keys(item).map(key => `${key}: ${toSmartString(itemRecord[key])}`).join(',\n')} }`;
+    }
     return '{...}';
   }
 
