@@ -26,7 +26,7 @@ const StateViewer = ({
         className="pb-2"
       />
 
-      <Tabs defaultValue="raw" className="w-full">
+      <Tabs defaultValue="inspect" className="w-full">
         <TabsList className="grid w-full grid-cols-2 pb-2">
           <TabsTrigger value="raw">Encoded</TabsTrigger>
           <TabsTrigger value="inspect">Decoded</TabsTrigger>

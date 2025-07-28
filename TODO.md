@@ -1,9 +1,7 @@
 Light mode / dark mode
 Configure chainspec
 
-Decoded by default.
-Remove scrolling featrue in raw mode.
-sort state fields by raw key
+Accessing state field might fail. We should handle this gracefully and just display raw value + error.
 
 Services display.
   - input a list of services (can we figure that out automatically?)

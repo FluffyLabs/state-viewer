@@ -138,7 +138,13 @@ export const filterStateFieldsWithRawKeysAndValues = (
   searchTerm: string,
   stateData?: Record<string, string>
 ): typeof STATE_FIELDS => {
-  if (!searchTerm.trim()) return STATE_FIELDS;
+  if (!searchTerm.trim()) {
+    return [...STATE_FIELDS].sort((a, b) => {
+      const aKey = a.serialize?.key?.toString() || '';
+      const bKey = b.serialize?.key?.toString() || '';
+      return aKey.localeCompare(bKey);
+    });
+  }
   
   const lowerSearchTerm = searchTerm.toLowerCase();
   const rawKeyToFieldMap = createRawKeyToFieldMap();
@@ -175,6 +181,10 @@ export const filterStateFieldsWithRawKeysAndValues = (
     }
     
     return false;
+  }).sort((a, b) => {
+    const aKey = a.serialize?.key?.toString() || '';
+    const bKey = b.serialize?.key?.toString() || '';
+    return aKey.localeCompare(bKey);
   });
 };
 
