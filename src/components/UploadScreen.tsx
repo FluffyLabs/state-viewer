@@ -1,15 +1,20 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, AlertCircle, Edit, FolderOpen } from 'lucide-react';
 import JsonEditorDialog from './JsonEditorDialog';
+import StateViewer from './StateViewer';
 import { Button } from './Button';
-import { validateJsonFile } from '../utils';
+import { validateJsonFile, extractGenesisState, type JsonFileFormat, type StfStateType } from '../utils';
 
 interface UploadState {
   file: File | null;
   content: string;
   error: string | null;
   isValidJson: boolean;
+  format: JsonFileFormat;
+  formatDescription: string;
+  availableStates?: StfStateType[];
+  selectedState?: StfStateType;
 }
 
 const UploadScreen = () => {
@@ -18,9 +23,41 @@ const UploadScreen = () => {
     content: '',
     error: null,
     isValidJson: false,
+    format: 'unknown',
+    formatDescription: '',
   });
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // Extract state data based on format and selected state
+  const extractedState = useMemo(() => {
+    if (!uploadState.isValidJson || !uploadState.content) {
+      return null;
+    }
+
+    try {
+      const state = extractGenesisState(
+        uploadState.content, 
+        uploadState.format, 
+        uploadState.selectedState
+      );
+      return state;
+    } catch (error) {
+      console.error('Failed to extract state:', error);
+      return null;
+    }
+  }, [uploadState.content, uploadState.format, uploadState.selectedState, uploadState.isValidJson]);
+
+  const stateTitle = useMemo(() => {
+    if (uploadState.format === 'stf-test-vector' && uploadState.selectedState) {
+      return uploadState.selectedState === 'pre_state' ? 'Pre-State Data' : 'Post-State Data';
+    } else if (uploadState.format === 'jip4-chainspec') {
+      return 'JIP-4 Genesis State';
+    } else if (uploadState.format === 'typeberry-config') {
+      return 'Typeberry Genesis State';
+    }
+    return 'State Data';
+  }, [uploadState.format, uploadState.selectedState]);
 
 
 
@@ -30,6 +67,8 @@ const UploadScreen = () => {
       content: '',
       error: null,
       isValidJson: false,
+      format: 'unknown',
+      formatDescription: '',
     });
   }, []);
 
@@ -45,6 +84,10 @@ const UploadScreen = () => {
       content: validation.content,
       error: validation.error,
       isValidJson: validation.isValid,
+      format: validation.format,
+      formatDescription: validation.formatDescription,
+      availableStates: validation.availableStates,
+      selectedState: validation.availableStates?.[0], // Default to first available state
     });
   }, [clearUpload]);
 
@@ -62,12 +105,44 @@ const UploadScreen = () => {
   }, []);
 
   const handleSaveManualEdit = useCallback((content: string) => {
+    // Re-validate the manually edited content
+    const validateManualContent = async () => {
+      try {
+        const parsedJson = JSON.parse(content);
+        // Simple validation - could use the validateJsonFile logic here
+        setUploadState(prev => ({
+          ...prev,
+          content,
+          error: null,
+          isValidJson: true,
+          file: null, // Clear file since this is manual input
+          format: 'unknown', // Reset format detection for manual input
+          formatDescription: 'Manually edited JSON',
+          availableStates: undefined,
+          selectedState: undefined,
+        }));
+      } catch {
+        setUploadState(prev => ({
+          ...prev,
+          content,
+          error: 'Invalid JSON format',
+          isValidJson: false,
+          file: null,
+          format: 'unknown',
+          formatDescription: 'Invalid JSON',
+          availableStates: undefined,
+          selectedState: undefined,
+        }));
+      }
+    };
+    
+    validateManualContent();
+  }, []);
+
+  const handleStateSelection = useCallback((stateType: StfStateType) => {
     setUploadState(prev => ({
       ...prev,
-      content,
-      error: null,
-      isValidJson: true,
-      file: null, // Clear file since this is manual input
+      selectedState: stateType,
     }));
   }, []);
 
@@ -167,20 +242,66 @@ const UploadScreen = () => {
           </div>
         )}
 
-        {/* Success Message */}
+        {/* Success Message with Format Detection */}
         {uploadState.isValidJson && !uploadState.error && (
-          <div className="mt-4 p-4 bg-primary/10 border border-primary/20 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <FileText className="h-5 w-5 text-primary" />
-                <p className="text-success">
-                  JSON file loaded successfully!
-                </p>
+          <div className="mt-4 space-y-4">
+            <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <FileText className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="text-success font-medium">
+                      JSON file loaded successfully!
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Detected format: {uploadState.formatDescription}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
+
+            {/* State Selection for STF Test Vectors */}
+            {uploadState.availableStates && uploadState.availableStates.length > 0 && (
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h4 className="font-medium text-blue-900 mb-3">
+                  Select State to View
+                </h4>
+                <p className="text-sm text-blue-700 mb-3">
+                  STF test vectors contain multiple states. Choose which one to display:
+                </p>
+                <div className="flex gap-2">
+                  {uploadState.availableStates.map((stateType) => (
+                    <Button
+                      key={stateType}
+                      onClick={() => handleStateSelection(stateType)}
+                      variant={uploadState.selectedState === stateType ? "primary" : "secondary"}
+                      size="sm"
+                    >
+                      {stateType === 'pre_state' ? 'Pre-State' : 'Post-State'}
+                    </Button>
+                  ))}
+                </div>
+                {uploadState.selectedState && (
+                  <p className="text-sm text-blue-600 mt-2">
+                    Currently viewing: {uploadState.selectedState === 'pre_state' ? 'Pre-State' : 'Post-State'}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
+
+      {/* State Viewer */}
+      {extractedState && Object.keys(extractedState).length > 0 && (
+        <div className="mb-6">
+          <StateViewer 
+            state={extractedState} 
+            title={stateTitle}
+          />
+        </div>
+      )}
 
       {/* JSON Editor Dialog */}
       <JsonEditorDialog
