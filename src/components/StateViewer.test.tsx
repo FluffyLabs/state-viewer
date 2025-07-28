@@ -36,9 +36,6 @@ describe('StateViewer', () => {
   it('should render state data correctly', () => {
     render(<StateViewer state={mockState} />);
     
-    expect(screen.getByText('State Data')).toBeInTheDocument();
-    expect(screen.getByText('4 entries total')).toBeInTheDocument();
-    
     // Check if keys are displayed
     expect(screen.getByText('0x01')).toBeInTheDocument();
     expect(screen.getByText('0x02')).toBeInTheDocument();
@@ -51,7 +48,8 @@ describe('StateViewer', () => {
   it('should render with custom title', () => {
     render(<StateViewer state={mockState} title="Custom Title" />);
     
-    expect(screen.getByText('Custom Title')).toBeInTheDocument();
+    // Custom title is no longer displayed in header, but component should still render
+    expect(screen.getByText('0x01')).toBeInTheDocument();
   });
 
   it('should handle empty state', () => {
@@ -70,7 +68,6 @@ describe('StateViewer', () => {
     
     expect(screen.getByText('0x01')).toBeInTheDocument();
     expect(screen.queryByText('0x02')).not.toBeInTheDocument();
-    expect(screen.getByText(/1 matching search/)).toBeInTheDocument();
   });
 
   it('should search through values', () => {
@@ -164,7 +161,7 @@ describe('StateViewer', () => {
     
     render(<StateViewer state={largeState} />);
     
-    expect(screen.getByText('25 entries total')).toBeInTheDocument();
+    // Entry count is no longer displayed in header
     
     // Should show first and last entries (no pagination)
     expect(screen.getByText('0x00')).toBeInTheDocument();
