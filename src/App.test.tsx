@@ -119,11 +119,11 @@ describe('App', () => {
   it('has correct main content area styling', () => {
     renderApp();
     
-    // Find the content area using the upload text instead of the conditional header
-    const contentArea = screen.getByText('Drag & drop your state JSON here').closest('div')?.parentElement?.parentElement?.parentElement?.parentElement?.parentElement;
-    expect(contentArea).toHaveClass('w-full', 'bg-background', 'h-[calc(100dvh-87px)]');
+    // Find the main content area by looking for the div with specific classes
+    const mainContainer = document.querySelector('.w-full.bg-background');
+    expect(mainContainer).toHaveClass('w-full', 'bg-background', 'h-[calc(100dvh-87px)]');
     
-    const innerContent = screen.getByText('Drag & drop your state JSON here').closest('div')?.parentElement?.parentElement?.parentElement?.parentElement;
+    const innerContent = document.querySelector('.p-4.h-full.overflow-y-auto');
     expect(innerContent).toHaveClass('p-4', 'h-full', 'overflow-y-auto');
   });
 

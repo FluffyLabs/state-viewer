@@ -263,7 +263,7 @@ describe('StateViewer', () => {
     expect(screen.getByText('Value Diff')).toBeInTheDocument();
     expect(screen.getByText('Before:')).toBeInTheDocument();
     expect(screen.getByText('After:')).toBeInTheDocument();
-    expect(screen.getByText('Inline Diff:')).toBeInTheDocument();
+    expect(screen.getByText('Diff:')).toBeInTheDocument();
   });
 
   it('should close dialog when close button is clicked', () => {

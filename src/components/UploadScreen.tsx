@@ -96,7 +96,7 @@ const UploadScreen = () => {
       format: validation.format,
       formatDescription: validation.formatDescription,
       availableStates: validation.availableStates,
-      selectedState: validation.availableStates?.[0], // Default to first available state
+      selectedState: validation.availableStates?.includes('diff') ? 'diff' : validation.availableStates?.[0], // Default to diff for test vectors
     });
   }, [clearUpload]);
 
@@ -137,7 +137,7 @@ const UploadScreen = () => {
         format: validation.format,
         formatDescription: validation.formatDescription,
         availableStates: validation.availableStates,
-        selectedState: undefined,
+        selectedState: validation.availableStates?.includes('diff') ? 'diff' : validation.availableStates?.[0],
       }));
     };
 

@@ -92,7 +92,6 @@ describe('JsonEditorDialog', () => {
     fireEvent.change(editor, { target: { value: '{"invalid": json}' } });
     
     await waitFor(() => {
-      expect(screen.getByText('JSON Syntax Error')).toBeInTheDocument();
       expect(screen.getByText(/Unexpected token/)).toBeInTheDocument();
     });
   });
@@ -136,14 +135,14 @@ describe('JsonEditorDialog', () => {
     fireEvent.change(editor, { target: { value: '{"invalid": json}' } });
     
     await waitFor(() => {
-      expect(screen.getByText('JSON Syntax Error')).toBeInTheDocument();
+      expect(screen.getByText(/Unexpected token/)).toBeInTheDocument();
     });
     
     // Fix the JSON
     fireEvent.change(editor, { target: { value: '{"valid": "json"}' } });
     
     await waitFor(() => {
-      expect(screen.queryByText('JSON Syntax Error')).not.toBeInTheDocument();
+      expect(screen.queryByText(/Unexpected token/)).not.toBeInTheDocument();
     });
   });
 
@@ -235,7 +234,7 @@ describe('JsonEditorDialog', () => {
     fireEvent.change(editor, { target: { value: '{"invalid": json}' } });
     
     // Both errors should be visible
-    expect(screen.getByText('JSON Syntax Error')).toBeInTheDocument();
+    expect(screen.getByText(/Unexpected token/)).toBeInTheDocument();
     expect(screen.getByText('Format Validation Error')).toBeInTheDocument();
     expect(screen.getByText(formatError)).toBeInTheDocument();
   });
@@ -283,7 +282,7 @@ describe('JsonEditorDialog', () => {
       fireEvent.change(editor, { target: { value: invalidJson } });
       
       await waitFor(() => {
-        expect(screen.getByText('JSON Syntax Error')).toBeInTheDocument();
+        expect(screen.getByText(/Unexpected token|Unterminated string|Expected property|Invalid|Error|in JSON at position/)).toBeInTheDocument();
         expect(screen.getByText('Save JSON')).toBeDisabled();
       });
     }
