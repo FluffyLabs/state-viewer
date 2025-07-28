@@ -30,7 +30,7 @@ export function toSmartString(item: unknown, fullObject: boolean = false): strin
     }
     if (fullObject) {
       const itemRecord = item as Record<string, unknown>;
-      return `{\n${Object.keys(item).map(key => `  ${key}: ${toSmartString(itemRecord[key], fullObject)}`).join(',\n')} }`;
+      return `{\n${Object.keys(item).map(key => `  ${key}: ${toSmartString(itemRecord[key], fullObject)}`).join(',\n')}\n}`;
     }
     return '{...}';
   }

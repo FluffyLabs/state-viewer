@@ -2,37 +2,20 @@ import { useMemo, useState } from "react";
 import { loadState, config, bytes, serialize as stateSerialize } from "@typeberry/state-merkleization";
 import { CompositeViewer } from './viewer';
 
+import { filterStateFieldsWithRawKeysAndValues, highlightSearchMatchesWithContext } from '@/utils/searchUtils';
+
+
 
 interface InspectStateViewerProps {
   preState?: Record<string, string>;
   state: Record<string, string>;
   title?: string;
+  searchTerm?: string;
 }
 
 
 
 const spec = config.tinyChainSpec;
-
-const stateFields = [
-    { key: 'availabilityAssignment', notation: 'ρ', title: 'rho', description: 'Work-reports which have been reported but are not yet known to be available to a super-majority of validators', serialize: stateSerialize.availabilityAssignment},
-    { key: 'designatedValidatorData', notation: 'ι', title: 'iota', description: 'The validator keys and metadata to be drawn from next', serialize: stateSerialize.designatedValidators },
-    { key: 'nextValidatorData', notation: 'γₖ', title: 'gamma_k', description: 'The keys for the validators of the next epoch', serialize: stateSerialize.safrole },
-    { key: 'currentValidatorData', notation: 'κ', title: 'kappa', description: 'Current validators, who are the set of economic actors uniquely privileged to help build and maintain the Jam chain', serialize: stateSerialize.currentValidators },
-    { key: 'previousValidatorData', notation: 'λ', title: 'lambda', description: 'Previous validators data archived from past epochs', serialize: stateSerialize.previousValidators },
-    { key: 'disputesRecords', notation: 'ψ', title: 'psi', description: 'Judgements', serialize: stateSerialize.disputesRecords },
-    { key: 'timeslot', notation: 'τ', title: 'tau', description: 'The current time slot', serialize: stateSerialize.timeslot },
-    { key: 'entropy', notation: 'η', title: 'eta', description: 'An on-chain entropy pool', serialize: stateSerialize.entropy },
-    { key: 'authPools', notation: 'α', title: 'alpha', description: 'Authorizers available for each core (authorizer pool)', serialize: stateSerialize.authPools },
-    { key: 'authQueues', notation: 'φ', title: 'phi', description: 'A queue of authorizers for each core used to fill up the pool', serialize: stateSerialize.authQueues },
-    { key: 'recentBlocks', notation: 'β', title: 'beta', description: 'State of the blocks from recent history', serialize: stateSerialize.recentBlocks },
-    { key: 'statistics', notation: 'π', title: 'pi', description: 'Previous and current statistics of each validator, cores statistics and services statistics', serialize: stateSerialize.statistics },
-    { key: 'accumulationQueue', notation: 'θ', title: 'theta', description: 'Ready but not-yet-accumulated work-reports', serialize: stateSerialize.accumulationQueue },
-    { key: 'recentlyAccumulated', notation: 'ξ', title: 'xi', description: 'History of what has been accumulated', serialize: stateSerialize.recentlyAccumulated },
-    { key: 'ticketsAccumulator', notation: 'γₐ', title: 'gamma_a', description: 'The ticket accumulator - a series of highest-scoring ticket identifiers for the next epoch', serialize: stateSerialize.safrole },
-    { key: 'sealingKeySeries', notation: 'γₛ', title: 'gamma_s', description: 'Current epoch\'s slot-sealer series', serialize: stateSerialize.safrole },
-    { key: 'epochRoot', notation: 'γᵤ', title: 'gamma_z', description: 'The epoch\'s root, a Bandersnatch ring root composed with the one Bandersnatch key of each of the next epoch\'s validators', serialize: stateSerialize.safrole },
-    { key: 'privilegedServices', notation: 'χ', title: 'chi', description: 'Up to three services recognized as privileged', serialize: stateSerialize.privilegedServices },
-  ];
 
 const useLoadState = (
   state: Record<string, string> | undefined,
@@ -62,8 +45,10 @@ const InspectStateViewer = ({
   preState,
   state,
   title = "State Data",
+  searchTerm: externalSearchTerm,
 }: InspectStateViewerProps) => {
   const [error, setError] = useState<string | null>(null);
+  const searchTerm = externalSearchTerm || '';
   const isDiffMode = preState !== undefined;
 
   const preStateAccess = useLoadState(preState, setError, 'preState');
@@ -79,6 +64,12 @@ const InspectStateViewer = ({
     if (!stateData || !rawKey) return undefined;
     return stateData[rawKey] || stateData[rawKey.substring(0, rawKey.length - 2)];
   };
+
+  // Filter state fields based on search term with enhanced raw key and value support
+  const filteredStateFields = useMemo(() => {
+    const combinedStateData = { ...preState, ...state };
+    return filterStateFieldsWithRawKeysAndValues(searchTerm, combinedStateData);
+  }, [searchTerm, preState, state]);
 
   return (
     <div className="text-left p-4">
@@ -98,9 +89,10 @@ const InspectStateViewer = ({
 
       {(preStateAccess || stateAccess) && (
         <div className="space-y-4">
+
           <h4 className="text-md font-medium mb-3">State Fields</h4>
           <div className="flex flex-col gap-3 overflow-hidden">
-            {stateFields.map(({ key, notation, title, description, serialize }) => {
+            {filteredStateFields.map(({ key, notation, title, description, serialize }) => {
               const preValue = preStateAccess?.[key as keyof typeof preStateAccess];
               const postValue = stateAccess?.[key as keyof typeof stateAccess];
               const rawKey = serialize?.key?.toString();
@@ -131,15 +123,15 @@ const InspectStateViewer = ({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-mono text-sm font-medium text-gray-900">
-                        {key}
+                        {highlightSearchMatchesWithContext(key, searchTerm, false)}
                         {hasChanged && <span className="ml-2 text-xs bg-yellow-200 text-yellow-800 px-1 rounded">CHANGED</span>}
                       </div>
                       {rawKey && (
                         <div className="text-xs text-gray-500 mt-1 font-mono">
-                          Key: {rawKey}
+                          Key: {highlightSearchMatchesWithContext(rawKey, searchTerm, true)}
                         </div>
                       )}
-                      <div className="text-sm text-gray-600 mt-1">{description}</div>
+                      <div className="text-sm text-gray-600 mt-1">{highlightSearchMatchesWithContext(description, searchTerm, false)}</div>
                       <div className="mt-2">
                         {!hasValue ? (
                           <div className="text-xs text-gray-400">Not found</div>
@@ -185,6 +177,11 @@ const InspectStateViewer = ({
                 </div>
               );
             })}
+            {filteredStateFields.length === 0 && searchTerm && (
+              <div className="text-center py-8 text-muted-foreground">
+                No state fields match your search term "{searchTerm}"
+              </div>
+            )}
           </div>
         </div>
       )}

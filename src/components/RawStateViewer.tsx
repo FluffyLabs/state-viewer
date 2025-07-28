@@ -1,7 +1,10 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Search, Copy, Eye, X } from 'lucide-react';
+import { Copy, Eye, X, Info } from 'lucide-react';
 import { Button } from './ui/Button';
+import { Popover } from './ui/Popover';
 import { calculateStateDiff } from '@/utils';
+import { filterEntriesWithFieldNames, highlightSearchMatchesWithContext } from '@/utils/searchUtils';
+import { createRawKeyToFieldMap } from '@/constants/stateFields';
 
 interface DiffEntry {
   type: 'added' | 'removed' | 'changed' | 'normal';
@@ -14,14 +17,16 @@ interface RawStateViewerProps {
   preState?: Record<string, string>;
   state: Record<string, string>;
   title?: string;
+  searchTerm?: string;
 }
 
 const RawStateViewer = ({
   preState,
   state,
   title = "State Data",
+  searchTerm: externalSearchTerm,
 }: RawStateViewerProps) => {
-  const [searchTerm, setSearchTerm] = useState('');
+
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [dialogState, setDialogState] = useState<{
     isOpen: boolean;
@@ -42,13 +47,16 @@ const RawStateViewer = ({
   const stateEntries = useMemo(() => Object.entries(displayState), [displayState]);
 
   const filteredEntries = useMemo(() => {
-    if (!searchTerm) return stateEntries;
-    const lowerSearchTerm = searchTerm.toLowerCase();
-    return stateEntries.filter(([key, value]) =>
-      key.toLowerCase().includes(lowerSearchTerm) ||
-      value.toLowerCase().includes(lowerSearchTerm)
-    );
-  }, [stateEntries, searchTerm]);
+    return filterEntriesWithFieldNames(stateEntries, externalSearchTerm || '');
+  }, [stateEntries, externalSearchTerm]);
+
+  // Create mapping for known state field keys
+  const rawKeyToFieldMap = useMemo(() => createRawKeyToFieldMap(), []);
+
+  // Function to get field info for a raw key
+  const getFieldInfo = (rawKey: string) => {
+    return rawKeyToFieldMap.get(rawKey) || rawKeyToFieldMap.get(rawKey.substring(0, rawKey.length - 2));
+  };
 
   // Scroll to top when title changes (switching between pre-state/post-state/diff)
   useEffect(() => {
@@ -117,26 +125,7 @@ const RawStateViewer = ({
     }
   };
 
-  // Highlight search matches in text
-  const highlightSearchMatches = (text: string, searchTerm: string) => {
-    if (!searchTerm.trim()) return text;
 
-    const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-    const parts = text.split(regex);
-
-    return parts.map((part, index) => {
-      const isMatch = regex.test(part);
-      regex.lastIndex = 0; // Reset regex for next test
-
-      return isMatch ? (
-        <mark key={index} className="bg-yellow-200 dark:bg-yellow-900/60 text-yellow-900 dark:text-yellow-100 px-0.5 rounded">
-          {part}
-        </mark>
-      ) : (
-        part
-      );
-    });
-  };
 
   // Create inline diff visualization with grouped consecutive changes
   const createInlineDiff = (oldValue: string, newValue: string) => {
@@ -207,20 +196,7 @@ const RawStateViewer = ({
   }
 
   return (
-    <div ref={topRef} className="bg-background rounded-lg border">
-      {/* Search */}
-      <div className="px-6 py-4 border-b bg-muted/20">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search keys or values..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
-          />
-        </div>
-      </div>
+    <div ref={topRef} className="bg-background">
       {/* State Entries */}
       <div className="divide-y divide-border text-left">
         {filteredEntries.length > 0 ? (
@@ -233,12 +209,32 @@ const RawStateViewer = ({
                 <div className="space-y-2">
                   {/* Key Row */}
                   <div className="flex items-center gap-4">
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide w-16 flex-shrink-0 hidden md:block">
-                      Key
+                    <label className="text-xs font-medium text-muted-foreground w-16 flex-shrink-0 hidden md:block">
+                      <span className="uppercase tracking-wide">Key</span>
+                      {getFieldInfo(key) && (
+                        <Popover
+                        trigger={
+                          <div className="flex-shrink-0">
+                            <Info className="h-4 w-4 text-blue-500 hover:text-blue-600 cursor-help" />
+                          </div>
+                        }
+                        content={
+                          <div className="space-y-1">
+                            <div className="font-semibold">{getFieldInfo(key)?.key}</div>
+                            <div className="text-xs opacity-75">
+                              {getFieldInfo(key)?.notation} ({getFieldInfo(key)?.title})
+                            </div>
+                            <div className="text-xs">{getFieldInfo(key)?.description}</div>
+                          </div>
+                        }
+                        position="right"
+                        triggerOn="hover"
+                        />
+                      )}
                     </label>
                     <div className="flex items-center space-x-2 flex-1 min-w-0">
                       <code className="text-sm font-mono text-foreground break-all bg-muted px-2 py-1 rounded flex-1">
-                        {highlightSearchMatches(key, searchTerm)}
+                        {highlightSearchMatchesWithContext(key, externalSearchTerm || '', true)}
                       </code>
                       <Button
                         onClick={() => handleCopy(key, `key-${key}`)}
@@ -287,7 +283,7 @@ const RawStateViewer = ({
                                   diffEntry.newValue.length > 50 ? formatHexValue(diffEntry.newValue) : diffEntry.newValue
                                 )
                               ) : (
-                                highlightSearchMatches(formatHexValue(diffEntry.newValue || diffEntry.oldValue || value), searchTerm)
+                                highlightSearchMatchesWithContext(formatHexValue(diffEntry.newValue || diffEntry.oldValue || value), externalSearchTerm || '', false)
                               )}
                             </span>
                           </code>
@@ -317,7 +313,7 @@ const RawStateViewer = ({
                               : 'bg-muted border-border text-foreground'
                           }`}>
                             <span title={diffEntry.newValue || diffEntry.oldValue || value}>
-                              {highlightSearchMatches(formatHexValue(diffEntry.newValue || diffEntry.oldValue || value), searchTerm)}
+                              {highlightSearchMatchesWithContext(formatHexValue(diffEntry.newValue || diffEntry.oldValue || value), externalSearchTerm || '', false)}
                             </span>
                           </code>
                           <Button

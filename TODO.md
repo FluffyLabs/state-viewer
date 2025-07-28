@@ -1,12 +1,9 @@
 Light mode / dark mode
-Arrays/objects - allow switching to "toString" display.
 Configure chainspec
 
-Better diff:
-  - map state fields into state keys
-  - compare values of serialized state instead of current `isDeepEqual`
-  - diff inside arrays
-
+Remove internal searches.
+Display tooltip with state field name in raw view.
+sort state fields by raw key
 
 Services display.
   - input a list of services (can we figure that out automatically?)
