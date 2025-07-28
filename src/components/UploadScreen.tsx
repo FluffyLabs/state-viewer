@@ -163,7 +163,7 @@ const UploadScreen = () => {
     if (uploadState.selectedState === 'post_state') {
       return { state: extractedState.state, preState: undefined };
     }
-    return null;
+    return extractedState;
   }, [uploadState.selectedState, extractedState]);
 
   return (

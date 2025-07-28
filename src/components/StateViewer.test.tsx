@@ -322,7 +322,7 @@ describe('StateViewer', () => {
     };
 
     it('should render diff mode correctly', () => {
-      render(<StateViewer preState={preState} postState={postState} diffMode={true} title="Diff View" />);
+      render(<StateViewer preState={preState} state={postState} title="Diff View" />);
       
       // Should show diff badges
       expect(screen.getByText('CHANGED')).toBeInTheDocument();
@@ -339,7 +339,7 @@ describe('StateViewer', () => {
     });
 
     it('should work with both Raw and Decoded tabs in diff mode', () => {
-      render(<StateViewer preState={preState} postState={postState} diffMode={true} />);
+      render(<StateViewer preState={preState} state={postState} />);
       
       // Should be on Raw tab by default
       expect(screen.getByText('CHANGED')).toBeInTheDocument();
@@ -363,12 +363,12 @@ describe('StateViewer', () => {
     });
 
     it('should handle diff mode without changes', () => {
-      const sameState = {
+      const unchangedState = {
         '0x01': '0x123456',
         '0x02': '0x789abc',
       };
       
-      render(<StateViewer preState={sameState} postState={sameState} diffMode={true} />);
+      render(<StateViewer preState={unchangedState} state={unchangedState} />);
       
       // When states are identical, diff produces empty result, so should show no data
       expect(screen.getByText('No state data to display')).toBeInTheDocument();
@@ -378,7 +378,7 @@ describe('StateViewer', () => {
     });
 
     it('should handle missing pre or post state gracefully', () => {
-      render(<StateViewer postState={postState} diffMode={true} />);
+      render(<StateViewer state={postState} />);
       
       // Should still render the post state
       expect(screen.getByText('0x01')).toBeInTheDocument();
@@ -386,7 +386,7 @@ describe('StateViewer', () => {
     });
 
     it('should search through diff entries', () => {
-      render(<StateViewer preState={preState} postState={postState} diffMode={true} />);
+      render(<StateViewer preState={preState} state={postState} />);
       
       const searchInput = screen.getByPlaceholderText('Search keys or values...');
       
@@ -399,7 +399,7 @@ describe('StateViewer', () => {
     });
 
     it('should open diff dialog for changed values', () => {
-      render(<StateViewer preState={preState} postState={postState} diffMode={true} />);
+      render(<StateViewer preState={preState} state={postState} />);
       
       // Find the view button for the changed entry
       const viewButtons = screen.getAllByLabelText('View full value');
@@ -414,7 +414,7 @@ describe('StateViewer', () => {
     });
 
     it('should copy diff values correctly from dialog', async () => {
-      render(<StateViewer preState={preState} postState={postState} diffMode={true} />);
+      render(<StateViewer preState={preState} state={postState} />);
       
       const viewButtons = screen.getAllByLabelText('View full value');
       fireEvent.click(viewButtons[0]);

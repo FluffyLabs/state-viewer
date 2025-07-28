@@ -217,7 +217,7 @@ describe('InspectStateViewer', () => {
       const preState = { '0x1234567890123456789012345678901234567890123456789012345678901234': 'value1' };
       const postState = { '0x1234567890123456789012345678901234567890123456789012345678901234': 'value2' };
 
-      render(<InspectStateViewer preState={preState} postState={postState} diffMode={true} />);
+      render(<InspectStateViewer preState={preState} state={postState} />);
 
       expect(screen.getByText('State Data')).toBeInTheDocument();
       expect(screen.getByText((content) => {
@@ -240,7 +240,7 @@ describe('InspectStateViewer', () => {
       const preState = { '0x1234567890123456789012345678901234567890123456789012345678901234': 'value1' };
       const postState = { '0x1234567890123456789012345678901234567890123456789012345678901234': 'value2' };
 
-      render(<InspectStateViewer preState={preState} postState={postState} diffMode={true} />);
+      render(<InspectStateViewer preState={preState} state={postState} />);
 
       expect(screen.getByText('Before:')).toBeInTheDocument();
       expect(screen.getByText('After:')).toBeInTheDocument();
@@ -258,7 +258,7 @@ describe('InspectStateViewer', () => {
 
       const state = { '0x1234567890123456789012345678901234567890123456789012345678901234': 'value1' };
 
-      render(<InspectStateViewer preState={state} postState={state} diffMode={true} />);
+      render(<InspectStateViewer preState={state} state={state} />);
 
       expect(screen.queryByText('CHANGED')).not.toBeInTheDocument();
       expect(screen.queryByText('Before:')).not.toBeInTheDocument();
@@ -295,7 +295,7 @@ describe('InspectStateViewer', () => {
 
       const postState = { '0x1234567890123456789012345678901234567890123456789012345678901234': 'value2' };
 
-      render(<InspectStateViewer postState={postState} diffMode={true} />);
+      render(<InspectStateViewer state={postState} />);
 
       expect(screen.getByText('State Data')).toBeInTheDocument();
     });
@@ -314,7 +314,7 @@ describe('InspectStateViewer', () => {
       const preState = { '0x1234567890123456789012345678901234567890123456789012345678901234': 'value1' };
       const postState = { '0x1234567890123456789012345678901234567890123456789012345678901234': 'value2' };
 
-      render(<InspectStateViewer preState={preState} postState={postState} diffMode={true} />);
+      render(<InspectStateViewer preState={preState} state={postState} />);
 
       // Find elements that indicate changes
       expect(screen.getAllByText('CHANGED').length).toBeGreaterThan(0);
