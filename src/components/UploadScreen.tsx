@@ -50,7 +50,13 @@ const UploadScreen = () => {
 
   const stateTitle = useMemo(() => {
     if (uploadState.format === 'stf-test-vector' && uploadState.selectedState) {
-      return uploadState.selectedState === 'pre_state' ? 'Pre-State Data' : 'Post-State Data';
+      if (uploadState.selectedState === 'pre_state') {
+        return 'Pre-State Data';
+      } else if (uploadState.selectedState === 'post_state') {
+        return 'Post-State Data';
+      } else if (uploadState.selectedState === 'diff') {
+        return 'State Diff (Pre → Post)';
+      }
     } else if (uploadState.format === 'jip4-chainspec') {
       return 'JIP-4 Genesis State';
     } else if (uploadState.format === 'typeberry-config') {
@@ -205,7 +211,7 @@ const UploadScreen = () => {
                   size="lg"
                 >
                   <FolderOpen className="h-4 w-4" />
-                  <span>{(!uploadState.file && !uploadState.content) ? 'Browse' : 'Change'}</span>
+                  <span>{(!uploadState.file && !uploadState.content) ? 'Upload' : 'Change'}</span>
                 </Button>
 
               <Button
@@ -258,7 +264,8 @@ const UploadScreen = () => {
                           variant={uploadState.selectedState === stateType ? "primary" : "secondary"}
                           size="sm"
                         >
-                          {stateType === 'pre_state' ? 'Pre-State' : 'Post-State'}
+                          {stateType === 'pre_state' ? 'Pre-State' :
+                           stateType === 'post_state' ? 'Post-State' : 'Diff'}
                         </Button>
                       ))}
                     </div>

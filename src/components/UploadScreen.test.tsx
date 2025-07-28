@@ -49,7 +49,7 @@ describe('UploadScreen', () => {
     expect(screen.getByText('JAM State Viewer')).toBeInTheDocument();
     expect(screen.getByText('Drag & drop your state JSON here')).toBeInTheDocument();
     expect(screen.getByText('JSON')).toBeInTheDocument();
-    expect(screen.getByText('Browse')).toBeInTheDocument();
+    expect(screen.getByText('Upload')).toBeInTheDocument();
     expect(screen.getByTestId('upload-icon')).toBeInTheDocument();
   });
 
@@ -170,13 +170,13 @@ describe('UploadScreen', () => {
     expect(screen.getByText(/supports stf test vectors.*and jip-4 chain spec/i)).toBeInTheDocument();
 
     // Check Browse button
-    expect(screen.getByText('Browse')).toBeInTheDocument();
+    expect(screen.getByText('Upload')).toBeInTheDocument();
   });
 
   it('has Browse button that triggers file selection', async () => {
     render(<UploadScreen />);
 
-    const browseButton = screen.getByText('Browse');
+    const browseButton = screen.getByText('Upload');
     expect(browseButton).toBeInTheDocument();
   });
 

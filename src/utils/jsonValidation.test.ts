@@ -4,6 +4,7 @@ import {
   validateJsonContent,
   extractGenesisState,
   extractStateFromStfVector,
+  calculateStateDiff,
   type StfTestVector
 } from './jsonValidation';
 
@@ -158,7 +159,7 @@ describe('validateJsonFile', () => {
         error: null,
         format: 'stf-test-vector',
         formatDescription: 'STF Test Vector - contains pre_state and post_state',
-        availableStates: ['pre_state', 'post_state'],
+        availableStates: ['pre_state', 'post_state', 'diff'],
       });
 
       restore();
@@ -633,7 +634,7 @@ describe('Integration tests with fixture files', () => {
     expect(result.isValid).toBe(true);
     expect(result.format).toBe('stf-test-vector');
     expect(result.formatDescription).toBe('STF Test Vector - contains pre_state and post_state');
-    expect(result.availableStates).toEqual(['pre_state', 'post_state']);
+    expect(result.availableStates).toEqual(['pre_state', 'post_state', 'diff']);
 
     // Test extracting both pre and post states
     const preState = extractGenesisState(stfContent, 'stf-test-vector', 'pre_state');
@@ -844,7 +845,7 @@ describe('validateJsonContent', () => {
         error: null,
         format: 'stf-test-vector',
         formatDescription: 'STF Test Vector - contains pre_state and post_state',
-        availableStates: ['pre_state', 'post_state'],
+        availableStates: ['pre_state', 'post_state', 'diff'],
       });
     });
   });
@@ -911,6 +912,174 @@ describe('validateJsonContent', () => {
       expect(result.isValid).toBe(false);
       expect(result.format).toBe('unknown');
       expect(result.formatDescription).toBe('Malformed JSON');
+    });
+  });
+
+  describe('calculateStateDiff', () => {
+    it('should detect added keys', () => {
+      const preState = {
+        "0x01": "0x123"
+      };
+      const postState = {
+        "0x01": "0x123",
+        "0x02": "0x456"
+      };
+
+      const diff = calculateStateDiff(preState, postState);
+
+      expect(diff).toEqual({
+        "0x02": "[ADDED] 0x456"
+      });
+    });
+
+    it('should detect removed keys', () => {
+      const preState = {
+        "0x01": "0x123",
+        "0x02": "0x456"
+      };
+      const postState = {
+        "0x01": "0x123"
+      };
+
+      const diff = calculateStateDiff(preState, postState);
+
+      expect(diff).toEqual({
+        "0x02": "[REMOVED] 0x456"
+      });
+    });
+
+    it('should detect changed values', () => {
+      const preState = {
+        "0x01": "0x123",
+        "0x02": "0x456"
+      };
+      const postState = {
+        "0x01": "0x123",
+        "0x02": "0x789"
+      };
+
+      const diff = calculateStateDiff(preState, postState);
+
+      expect(diff).toEqual({
+        "0x02": "[CHANGED] 0x456 → 0x789"
+      });
+    });
+
+    it('should handle mixed scenarios', () => {
+      const preState = {
+        "0x01": "0x123",
+        "0x02": "0x456",
+        "0x03": "0x789"
+      };
+      const postState = {
+        "0x01": "0x123",
+        "0x02": "0xabc",
+        "0x04": "0xdef"
+      };
+
+      const diff = calculateStateDiff(preState, postState);
+
+      expect(diff).toEqual({
+        "0x02": "[CHANGED] 0x456 → 0xabc",
+        "0x03": "[REMOVED] 0x789",
+        "0x04": "[ADDED] 0xdef"
+      });
+    });
+
+    it('should handle empty states', () => {
+      const preState = {};
+      const postState = {
+        "0x01": "0x123"
+      };
+
+      const diff = calculateStateDiff(preState, postState);
+
+      expect(diff).toEqual({
+        "0x01": "[ADDED] 0x123"
+      });
+    });
+
+    it('should return empty diff for identical states', () => {
+      const preState = {
+        "0x01": "0x123",
+        "0x02": "0x456"
+      };
+      const postState = {
+        "0x01": "0x123",
+        "0x02": "0x456"
+      };
+
+      const diff = calculateStateDiff(preState, postState);
+
+      expect(diff).toEqual({});
+    });
+  });
+
+  describe('extractGenesisState with diff', () => {
+    it('should extract diff for STF test vector', () => {
+      const stfContent = JSON.stringify({
+        pre_state: {
+          state_root: "0x12345",
+          keyvals: [
+            { key: "0x01", value: "0x123" },
+            { key: "0x02", value: "0x456" }
+          ]
+        },
+        block: { slot: 1 },
+        post_state: {
+          state_root: "0x67890",
+          keyvals: [
+            { key: "0x01", value: "0x123" },
+            { key: "0x02", value: "0x789" },
+            { key: "0x03", value: "0xabc" }
+          ]
+        }
+      });
+
+      const result = extractGenesisState(stfContent, 'stf-test-vector', 'diff');
+
+      expect(result).toEqual({
+        "0x02": "[CHANGED] 0x456 → 0x789",
+        "0x03": "[ADDED] 0xabc"
+      });
+    });
+
+    it('should throw error for diff without state type', () => {
+      const stfContent = JSON.stringify({
+        pre_state: { state_root: "0x123", keyvals: [] },
+        block: {},
+        post_state: { state_root: "0x456", keyvals: [] }
+      });
+
+      expect(() => {
+        extractGenesisState(stfContent, 'stf-test-vector');
+      }).toThrow('State type must be specified for STF test vectors');
+    });
+  });
+
+  describe('validateJsonContent with diff state', () => {
+    it('should include diff in available states for STF test vector', () => {
+      const stfJson = JSON.stringify({
+        pre_state: {
+          state_root: "0x12345",
+          keyvals: [
+            { key: "0x01", value: "0x123" }
+          ]
+        },
+        block: { slot: 1 },
+        post_state: {
+          state_root: "0x67890",
+          keyvals: [
+            { key: "0x01", value: "0x456" }
+          ]
+        }
+      });
+
+      const result = validateJsonContent(stfJson);
+
+      expect(result.isValid).toBe(true);
+      expect(result.format).toBe('stf-test-vector');
+      expect(result.availableStates).toEqual(['pre_state', 'post_state', 'diff']);
     });
   });
 

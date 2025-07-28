@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export type JsonFileFormat = 'jip4-chainspec' | 'typeberry-config' | 'stf-test-vector' | 'stf-genesis' | 'unknown';
 
-export type StfStateType = 'pre_state' | 'post_state';
+export type StfStateType = 'pre_state' | 'post_state' | 'diff';
 
 export interface JsonValidationResult {
   content: string;
@@ -70,11 +70,41 @@ export type Jip4Chainspec = z.infer<typeof Jip4ChainspecSchema>;
 export type TypeberryConfig = z.infer<typeof TypeberryConfigSchema>;
 export type StfGenesis = z.infer<typeof StfGenesisSchema>;
 
+export interface DiffEntry {
+  key: string;
+  type: 'added' | 'removed' | 'changed';
+  oldValue?: string;
+  newValue?: string;
+}
+
 interface FormatDetectionResult {
   format: JsonFileFormat;
   description: string;
   data?: unknown;
 }
+
+export const calculateStateDiff = (preState: Record<string, string>, postState: Record<string, string>): Record<string, string> => {
+  const diffResult: Record<string, string> = {};
+  const allKeys = new Set([...Object.keys(preState), ...Object.keys(postState)]);
+  
+  for (const key of allKeys) {
+    const preValue = preState[key];
+    const postValue = postState[key];
+    
+    if (preValue === undefined && postValue !== undefined) {
+      // Added
+      diffResult[key] = `[ADDED] ${postValue}`;
+    } else if (preValue !== undefined && postValue === undefined) {
+      // Removed
+      diffResult[key] = `[REMOVED] ${preValue}`;
+    } else if (preValue !== postValue) {
+      // Changed
+      diffResult[key] = `[CHANGED] ${preValue} → ${postValue}`;
+    }
+  }
+  
+  return diffResult;
+};
 
 const detectJsonFormat = (parsedJson: unknown): FormatDetectionResult => {
   if (!parsedJson || typeof parsedJson !== 'object') {
@@ -132,7 +162,7 @@ export const validateJsonContent = (content: string): JsonValidationResult => {
     
     let availableStates: StfStateType[] | undefined;
     if (format === 'stf-test-vector') {
-      availableStates = ['pre_state', 'post_state'];
+      availableStates = ['pre_state', 'post_state', 'diff'];
     }
 
     if (format === 'unknown') {
@@ -245,7 +275,15 @@ export const extractGenesisState = (
           throw new Error('State type must be specified for STF test vectors');
         }
         const result = StfTestVectorSchema.safeParse(parsedJson);
-        return result.success ? extractStateFromStfVector(result.data, stateType) : null;
+        if (!result.success) return null;
+        
+        if (stateType === 'diff') {
+          const preState = extractStateFromStfVector(result.data, 'pre_state');
+          const postState = extractStateFromStfVector(result.data, 'post_state');
+          return calculateStateDiff(preState, postState);
+        }
+        
+        return extractStateFromStfVector(result.data, stateType);
       }
         
       case 'stf-genesis': {
