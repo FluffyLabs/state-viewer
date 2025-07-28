@@ -19,21 +19,20 @@ const StateViewer = ({
 
   return (
     <div>
-      <div className="bg-background rounded-t-lg border border-b-0">
-        <SearchInput
-          value={searchTerm}
-          onChange={setSearchTerm}
-          placeholder="Search across all state data..."
-          className=""
-        />
-      </div>
-      <Tabs defaultValue="raw" className="w-full border border-t-0 rounded-b-lg">
-        <TabsList className="grid w-full grid-cols-2">
+      <SearchInput
+        value={searchTerm}
+        onChange={setSearchTerm}
+        placeholder="Search state fields, or raw keys and values..."
+        className="pb-2"
+      />
+
+      <Tabs defaultValue="raw" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 pb-2">
           <TabsTrigger value="raw">Encoded</TabsTrigger>
           <TabsTrigger value="inspect">Decoded</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="raw" className="mt-0">
+        <TabsContent value="raw" className="mt-0 border rounded-lg">
           <RawStateViewer
             preState={preState}
             state={state}

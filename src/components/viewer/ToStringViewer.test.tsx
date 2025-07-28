@@ -33,14 +33,14 @@ describe('ToStringViewer', () => {
     const obj = { key: 'value' };
     render(<ToStringViewer value={obj} />);
     
-    expect(screen.getByText('[object Object]')).toBeInTheDocument();
+    expect(screen.getByText(/{\s*key:\s*value\s*}/)).toBeInTheDocument();
   });
 
   it('should render array values as strings', () => {
     const arr = [1, 2, 3];
     render(<ToStringViewer value={arr} />);
     
-    expect(screen.getByText('1,2,3')).toBeInTheDocument();
+    expect(screen.getByText('[1, 2, 3]')).toBeInTheDocument();
   });
 
   it('should render undefined as string', () => {

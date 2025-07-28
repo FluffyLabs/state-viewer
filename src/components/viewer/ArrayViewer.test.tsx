@@ -100,7 +100,7 @@ describe('ArrayViewer', () => {
     expect(screen.getByText(/\[1\] true/)).toBeInTheDocument();
     expect(screen.getByText(/\[2\] null/)).toBeInTheDocument();
     expect(screen.getByText(/\[3\] \{...\}/)).toBeInTheDocument();
-    expect(screen.getByText(/\[4\] \{...\}/)).toBeInTheDocument(); // Arrays are objects
+    expect(screen.getByText(/\[4\] \[1, 2\]/)).toBeInTheDocument();
   });
 
   it('should render details elements as collapsible', () => {

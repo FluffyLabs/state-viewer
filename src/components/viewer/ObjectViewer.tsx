@@ -8,7 +8,7 @@ interface ObjectViewerProps {
 
 const ObjectViewer = ({ value, renderValue }: ObjectViewerProps) => {
   return (
-    <div className="space-y-1">
+    <div className="space-y-1" data-testid="object-viewer">
       {Object.keys(value).map((key) => {
         const item = value[key];
         const itemStr = toSmartString(item);

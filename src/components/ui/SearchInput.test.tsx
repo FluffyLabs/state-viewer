@@ -62,10 +62,11 @@ describe('SearchInput', () => {
   it('should apply default CSS classes', () => {
     const mockOnChange = vi.fn();
     
-    render(<SearchInput value="" onChange={mockOnChange} />);
+    const { container } = render(<SearchInput value="" onChange={mockOnChange} />);
     
-    const container = document.querySelector('.px-6.py-4.border-b.bg-muted\\/20');
-    expect(container).toBeInTheDocument();
+    const searchContainer = container.firstChild;
+    expect(searchContainer).toBeInTheDocument();
+    expect(searchContainer).toHaveClass('py-4', 'bg-muted/20');
   });
 
   it('should apply custom className', () => {

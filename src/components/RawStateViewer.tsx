@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { Copy, Eye, X, Info } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Popover } from './ui/Popover';
@@ -23,7 +23,6 @@ interface RawStateViewerProps {
 const RawStateViewer = ({
   preState,
   state,
-  title = "State Data",
   searchTerm: externalSearchTerm,
 }: RawStateViewerProps) => {
 
@@ -34,7 +33,6 @@ const RawStateViewer = ({
     value: string;
     diffEntry: DiffEntry | null;
   }>({ isOpen: false, key: '', value: '', diffEntry: null });
-  const topRef = useRef<HTMLDivElement>(null);
 
   // Calculate the state to display
   const displayState = useMemo(() => {
@@ -57,13 +55,6 @@ const RawStateViewer = ({
   const getFieldInfo = (rawKey: string) => {
     return rawKeyToFieldMap.get(rawKey) || rawKeyToFieldMap.get(rawKey.substring(0, rawKey.length - 2));
   };
-
-  // Scroll to top when title changes (switching between pre-state/post-state/diff)
-  useEffect(() => {
-    if (topRef.current) {
-      topRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [title]);
 
   const handleCopy = async (text: string, key: string) => {
     try {
@@ -189,14 +180,14 @@ const RawStateViewer = ({
 
   if (stateEntries.length === 0) {
     return (
-      <div ref={topRef} className="bg-background rounded-lg border p-6 text-center">
+      <div className="rounded-lg border p-6 text-center">
         <p className="text-muted-foreground">No state data to display</p>
       </div>
     );
   }
 
   return (
-    <div ref={topRef} className="bg-background">
+    <div>
       {/* State Entries */}
       <div className="divide-y divide-border text-left">
         {filteredEntries.length > 0 ? (
@@ -209,8 +200,8 @@ const RawStateViewer = ({
                 <div className="space-y-2">
                   {/* Key Row */}
                   <div className="flex items-center gap-4">
-                    <label className="text-xs font-medium text-muted-foreground w-16 flex-shrink-0 hidden md:block">
-                      <span className="uppercase tracking-wide">Key</span>
+                    <label className="items-center text-xs font-medium text-muted-foreground w-16 flex-shrink-0 hidden md:flex">
+                      <span className="uppercase tracking-wide mr-2">Key</span>
                       {getFieldInfo(key) && (
                         <Popover
                         trigger={

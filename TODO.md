@@ -1,8 +1,8 @@
 Light mode / dark mode
 Configure chainspec
 
-Remove internal searches.
-Display tooltip with state field name in raw view.
+Decoded by default.
+Remove scrolling featrue in raw mode.
 sort state fields by raw key
 
 Services display.

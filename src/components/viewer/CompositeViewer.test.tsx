@@ -187,7 +187,6 @@ describe('CompositeViewer', () => {
     it('should show mode toggle when showModeToggle is true', () => {
       render(<CompositeViewer value="test" showModeToggle={true} />);
       
-      expect(screen.getByText('Display:')).toBeInTheDocument();
       expect(screen.getByText('Decoded')).toBeInTheDocument();
       expect(screen.getByText('Raw')).toBeInTheDocument();
       expect(screen.getByText('String')).toBeInTheDocument();
@@ -206,17 +205,20 @@ describe('CompositeViewer', () => {
       render(<CompositeViewer value="test" showModeToggle={true} />);
       
       const decodedButton = screen.getByText('Decoded');
-      expect(decodedButton).toHaveClass('bg-blue-500', 'text-white');
+      expect(decodedButton).toHaveClass('underline');
+      expect(decodedButton).toBeDisabled();
     });
 
     it('should switch to raw mode when raw button is clicked', () => {
-      render(<CompositeViewer value="test" rawValue="0x1234" showModeToggle={true} />);
+      render(<CompositeViewer value="decoded" rawValue="0xabcdef" showModeToggle={true} />);
       
       const rawButton = screen.getByText('Raw');
       fireEvent.click(rawButton);
       
-      expect(rawButton).toHaveClass('bg-blue-500', 'text-white');
-      expect(screen.getByText('0x1234')).toBeInTheDocument();
+      expect(rawButton).toHaveClass('underline');
+      expect(rawButton).toBeDisabled();
+      expect(screen.getByText('0xabcdef')).toBeInTheDocument();
+      expect(screen.queryByText('decoded')).not.toBeInTheDocument();
     });
 
     it('should switch to string mode when string button is clicked', () => {
@@ -225,7 +227,8 @@ describe('CompositeViewer', () => {
       const stringButton = screen.getByText('String');
       fireEvent.click(stringButton);
       
-      expect(stringButton).toHaveClass('bg-blue-500', 'text-white');
+      expect(stringButton).toHaveClass('underline');
+      expect(stringButton).toBeDisabled();
       expect(screen.getByTestId('tostring-viewer')).toBeInTheDocument();
     });
 

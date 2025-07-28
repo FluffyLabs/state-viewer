@@ -8,7 +8,7 @@ interface ArrayViewerProps {
 
 const ArrayViewer = ({ array, renderValue }: ArrayViewerProps) => {
   return (
-    <div className="space-y-1">
+    <div className="space-y-1" data-testid="array-viewer">
       <div className="text-xs text-gray-500 mb-2">Array ({array.length} items)</div>
       {array.map((item, index) => {
         const itemStr = toSmartString(item);

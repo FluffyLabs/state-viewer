@@ -99,7 +99,7 @@ describe('ObjectViewer', () => {
     expect(screen.getByText(/nullKey: null/)).toBeInTheDocument();
     expect(screen.getByText(/undefinedKey: undefined/)).toBeInTheDocument();
     expect(screen.getByText(/objectKey: \{...\}/)).toBeInTheDocument();
-    expect(screen.getByText(/arrayKey: \{...\}/)).toBeInTheDocument(); // Arrays are objects
+    expect(screen.getByText(/arrayKey: \[1, 2, 3\]/)).toBeInTheDocument();
   });
 
   it('should render details elements as collapsible', () => {

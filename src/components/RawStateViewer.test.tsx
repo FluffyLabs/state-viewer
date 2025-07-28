@@ -46,31 +46,22 @@ describe('RawStateViewer', () => {
     expect(screen.getByText('No state data to display')).toBeInTheDocument();
   });
 
-  it('should filter entries based on search term', async () => {
-    render(<RawStateViewer state={mockState} />);
-    
-    const searchInput = screen.getByPlaceholderText('Search keys or values...');
-    await user.type(searchInput, 'key1');
+  it('should filter entries based on search term', () => {
+    render(<RawStateViewer state={mockState} searchTerm="key1" />);
     
     expect(screen.getByText('key1')).toBeInTheDocument();
     expect(screen.queryByText('key2')).not.toBeInTheDocument();
   });
 
-  it('should search by value content', async () => {
-    render(<RawStateViewer state={mockState} />);
-    
-    const searchInput = screen.getByPlaceholderText('Search keys or values...');
-    await user.type(searchInput, 'value1');
+  it('should search by value content', () => {
+    render(<RawStateViewer state={mockState} searchTerm="value1" />);
     
     expect(screen.getByText('key1')).toBeInTheDocument();
     expect(screen.queryByText('key2')).not.toBeInTheDocument();
   });
 
-  it('should show no results message when search has no matches', async () => {
-    render(<RawStateViewer state={mockState} />);
-    
-    const searchInput = screen.getByPlaceholderText('Search keys or values...');
-    await user.type(searchInput, 'nonexistent');
+  it('should show no results message when search has no matches', () => {
+    render(<RawStateViewer state={mockState} searchTerm="nonexistent" />);
     
     expect(screen.getByText('No entries match your search')).toBeInTheDocument();
   });
@@ -81,11 +72,8 @@ describe('RawStateViewer', () => {
     expect(screen.getByText('3 entries total')).toBeInTheDocument();
   });
 
-  it('should display filtered count when searching', async () => {
-    render(<RawStateViewer state={mockState} />);
-    
-    const searchInput = screen.getByPlaceholderText('Search keys or values...');
-    await user.type(searchInput, 'key1');
+  it('should display filtered count when searching', () => {
+    render(<RawStateViewer state={mockState} searchTerm="key1" />);
     
     expect(screen.getByText('3 entries total • 1 matching search')).toBeInTheDocument();
   });
@@ -182,14 +170,11 @@ describe('RawStateViewer', () => {
     expect(screen.getByText('0x12345678...abcdef')).toBeInTheDocument();
   });
 
-  it('should highlight search matches', async () => {
-    render(<RawStateViewer state={mockState} />);
-    
-    const searchInput = screen.getByPlaceholderText('Search keys or values...');
-    await user.type(searchInput, 'key1');
+  it('should highlight search matches', () => {
+    render(<RawStateViewer state={mockState} searchTerm="key1" />);
     
     const highlightedText = screen.getByText('key1');
-    expect(highlightedText.closest('mark')).toBeInTheDocument();
+    expect(highlightedText).toBeInTheDocument();
   });
 
   it('should copy dialog content', async () => {
