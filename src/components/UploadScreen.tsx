@@ -37,8 +37,8 @@ const UploadScreen = () => {
 
     try {
       const state = extractGenesisState(
-        uploadState.content, 
-        uploadState.format, 
+        uploadState.content,
+        uploadState.format,
         uploadState.selectedState
       );
       return state;
@@ -110,7 +110,7 @@ const UploadScreen = () => {
     // Re-validate the manually edited content
     const validateManualContent = async () => {
       const validation = validateJsonContent(content);
-      
+
       setUploadState(prev => ({
         ...prev,
         content: validation.content,
@@ -123,7 +123,7 @@ const UploadScreen = () => {
         selectedState: undefined,
       }));
     };
-    
+
     validateManualContent();
   }, []);
 
@@ -232,9 +232,9 @@ const UploadScreen = () => {
 
         {/* Success Message with Format Detection */}
         {uploadState.isValidJson && !uploadState.error && (
-          <div className="mt-4 space-y-4">
+          <div className="mt-4 space-y-4 text-left">
             <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between">
                 <div className="flex items-center space-x-2">
                   <FileText className="h-5 w-5 text-primary" />
                   <div>
@@ -246,37 +246,26 @@ const UploadScreen = () => {
                     </p>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* State Selection for STF Test Vectors */}
-            {uploadState.availableStates && uploadState.availableStates.length > 0 && (
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h4 className="font-medium text-blue-900 mb-3">
-                  Select State to View
-                </h4>
-                <p className="text-sm text-blue-700 mb-3">
-                  STF test vectors contain multiple states. Choose which one to display:
-                </p>
-                <div className="flex gap-2">
-                  {uploadState.availableStates.map((stateType) => (
-                    <Button
-                      key={stateType}
-                      onClick={() => handleStateSelection(stateType)}
-                      variant={uploadState.selectedState === stateType ? "primary" : "secondary"}
-                      size="sm"
-                    >
-                      {stateType === 'pre_state' ? 'Pre-State' : 'Post-State'}
-                    </Button>
-                  ))}
-                </div>
-                {uploadState.selectedState && (
-                  <p className="text-sm text-blue-600 mt-2">
-                    Currently viewing: {uploadState.selectedState === 'pre_state' ? 'Pre-State' : 'Post-State'}
-                  </p>
+                {/* State Selection for STF Test Vectors */}
+                {uploadState.availableStates && uploadState.availableStates.length > 0 && (
+                  <div className="ml-4">
+                    <div className="flex gap-2">
+                      {uploadState.availableStates.map((stateType) => (
+                        <Button
+                          key={stateType}
+                          onClick={() => handleStateSelection(stateType)}
+                          variant={uploadState.selectedState === stateType ? "primary" : "secondary"}
+                          size="sm"
+                        >
+                          {stateType === 'pre_state' ? 'Pre-State' : 'Post-State'}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
-            )}
+            </div>
           </div>
         )}
       </div>
@@ -284,8 +273,8 @@ const UploadScreen = () => {
       {/* State Viewer */}
       {extractedState && Object.keys(extractedState).length > 0 && (
         <div className="mb-6">
-          <StateViewer 
-            state={extractedState} 
+          <StateViewer
+            state={extractedState}
             title={stateTitle}
           />
         </div>
