@@ -164,6 +164,47 @@ describe('validateJsonFile', () => {
     });
   });
 
+  describe('STF Genesis detection', () => {
+    it('should detect STF genesis format correctly', async () => {
+      const stfGenesisJson = JSON.stringify({
+        header: {
+          parent: "0x0000000000000000000000000000000000000000000000000000000000000000",
+          parent_state_root: "0x0000000000000000000000000000000000000000000000000000000000000000",
+          extrinsic_hash: "0x0000000000000000000000000000000000000000000000000000000000000000",
+          slot: 0,
+          epoch_mark: null,
+          tickets_mark: null,
+          offenders_mark: [],
+          author_index: 65535,
+          entropy_source: "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          seal: "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+        },
+        state: {
+          state_root: "0x3e2f03c8e9f44101d4945260f81a0c5a400c18fe7a0fbdb4413e8b9163239836",
+          keyvals: [
+            { key: "0x004700b0000000000b0cce53c35439dfe73087b1439c846b5ff0b18ec0052e", value: "0x0100000000" }
+          ]
+        }
+      });
+
+      const file = createMockFile('genesis.json', 'application/json');
+      const restore = mockFileReader(stfGenesisJson);
+
+      const result = await validateJsonFile(file);
+
+      expect(result).toEqual({
+        content: stfGenesisJson,
+        isValid: true,
+        error: null,
+        format: 'stf-genesis',
+        formatDescription: 'STF Genesis - contains initial state with header',
+        availableStates: undefined,
+      });
+
+      restore();
+    });
+  });
+
   describe('Unknown format detection', () => {
     it('should detect unknown format and return error', async () => {
       const unknownJson = JSON.stringify({
@@ -179,7 +220,7 @@ describe('validateJsonFile', () => {
       expect(result).toEqual({
         content: unknownJson,
         isValid: false,
-        error: 'Unsupported JSON format. Unknown format - does not match any supported schema. Please upload a JIP-4 chainspec, Typeberry config, or STF test vector file.',
+        error: 'Unsupported JSON format. Unknown format - does not match any supported schema. Please upload a JIP-4 chainspec, Typeberry config, STF test vector, or STF genesis file.',
         format: 'unknown',
         formatDescription: 'Unknown format - does not match any supported schema',
         availableStates: undefined,
@@ -386,10 +427,38 @@ describe('extractGenesisState', () => {
     });
 
     const result = extractGenesisState(stfContent, 'stf-test-vector', 'post_state');
-
+    
     expect(result).toEqual({
       "0x01": "0x789",
       "0x03": "0xdef"
+    });
+  });
+
+  it('should extract state from STF genesis', () => {
+    const stfGenesisContent = JSON.stringify({
+      header: {
+        parent: "0x0000000000000000000000000000000000000000000000000000000000000000",
+        parent_state_root: "0x0000000000000000000000000000000000000000000000000000000000000000",
+        extrinsic_hash: "0x0000000000000000000000000000000000000000000000000000000000000000",
+        slot: 0,
+        author_index: 65535,
+        entropy_source: "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        seal: "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+      },
+      state: {
+        state_root: "0x3e2f03c8e9f44101d4945260f81a0c5a400c18fe7a0fbdb4413e8b9163239836",
+        keyvals: [
+          { key: "0x004700b0000000000b0cce53c35439dfe73087b1439c846b5ff0b18ec0052e", value: "0x0100000000" },
+          { key: "0x01", value: "0x123456" }
+        ]
+      }
+    });
+
+    const result = extractGenesisState(stfGenesisContent, 'stf-genesis');
+    
+    expect(result).toEqual({
+      "0x004700b0000000000b0cce53c35439dfe73087b1439c846b5ff0b18ec0052e": "0x0100000000",
+      "0x01": "0x123456"
     });
   });
 
@@ -627,6 +696,49 @@ describe('Integration tests with fixture files', () => {
       '0x001122': '0xffffff',
       '0x005566': '0xdeadbeef'
     });
+
+    restore();
+  });
+
+  it('should detect STF genesis from genesis.json fixture', async () => {
+    const stfGenesisContent = `{
+    "header": {
+        "parent": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "parent_state_root": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "extrinsic_hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "slot": 0,
+        "epoch_mark": null,
+        "tickets_mark": null,
+        "offenders_mark": [],
+        "author_index": 65535,
+        "entropy_source": "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "seal": "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "state": {
+        "state_root": "0x3e2f03c8e9f44101d4945260f81a0c5a400c18fe7a0fbdb4413e8b9163239836",
+        "keyvals": [
+            {
+                "key": "0x004700b0000000000b0cce53c35439dfe73087b1439c846b5ff0b18ec0052e",
+                "value": "0x0100000000"
+            }
+        ]
+    }
+}`;
+
+    const file = new File([stfGenesisContent], 'genesis.json', { type: 'application/json' });
+    const restore = mockFileReaderWithContent(stfGenesisContent);
+
+    const result = await validateJsonFile(file);
+
+    expect(result.isValid).toBe(true);
+    expect(result.format).toBe('stf-genesis');
+    expect(result.formatDescription).toBe('STF Genesis - contains initial state with header');
+    expect(result.availableStates).toBeUndefined();
+
+    // Test extracting genesis state
+    const genesisState = extractGenesisState(stfGenesisContent, 'stf-genesis');
+    expect(genesisState).toBeDefined();
+    expect(genesisState!['0x004700b0000000000b0cce53c35439dfe73087b1439c846b5ff0b18ec0052e']).toBe('0x0100000000');
 
     restore();
   });

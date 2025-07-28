@@ -199,7 +199,7 @@ describe('UploadScreen', () => {
       
       // Component should still render normally even if state extraction fails
       expect(screen.getByText('Drag & drop your state JSON here')).toBeInTheDocument();
-      expect(screen.getByText('Supports STF test vectors (w3f/davxy) and JIP-4 Chain Spec.')).toBeInTheDocument();
+      expect(screen.getByText('Supports STF test vectors, STF genesis, and JIP-4 Chain Spec.')).toBeInTheDocument();
     });
   });
 });

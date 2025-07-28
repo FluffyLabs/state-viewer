@@ -55,6 +55,8 @@ const UploadScreen = () => {
       return 'JIP-4 Genesis State';
     } else if (uploadState.format === 'typeberry-config') {
       return 'Typeberry Genesis State';
+    } else if (uploadState.format === 'stf-genesis') {
+      return 'STF Genesis State';
     }
     return 'State Data';
   }, [uploadState.format, uploadState.selectedState]);
@@ -202,7 +204,7 @@ const UploadScreen = () => {
                     Drag & drop your state JSON here
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Supports STF test vectors (w3f/davxy) and JIP-4 Chain Spec.
+                    Supports STF test vectors, STF genesis, and JIP-4 Chain Spec.
                   </p>
                 </div>
             )}

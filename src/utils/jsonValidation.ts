@@ -1,4 +1,4 @@
-export type JsonFileFormat = 'jip4-chainspec' | 'typeberry-config' | 'stf-test-vector' | 'unknown';
+export type JsonFileFormat = 'jip4-chainspec' | 'typeberry-config' | 'stf-test-vector' | 'stf-genesis' | 'unknown';
 
 export type StfStateType = 'pre_state' | 'post_state';
 
@@ -39,6 +39,25 @@ export interface TypeberryConfig {
   chain_spec: Jip4Chainspec;
 }
 
+export interface StfGenesis {
+  header: {
+    parent: string;
+    parent_state_root: string;
+    extrinsic_hash: string;
+    slot: number;
+    epoch_mark?: unknown;
+    tickets_mark?: unknown;
+    offenders_mark: unknown[];
+    author_index: number;
+    entropy_source: string;
+    seal: string;
+  };
+  state: {
+    state_root: string;
+    keyvals: Array<{ key: string; value: string }>;
+  };
+}
+
 const detectJsonFormat = (parsedJson: unknown): { format: JsonFileFormat; description: string } => {
   if (!parsedJson || typeof parsedJson !== 'object') {
     return { format: 'unknown', description: 'Invalid JSON structure' };
@@ -65,6 +84,18 @@ const detectJsonFormat = (parsedJson: unknown): { format: JsonFileFormat; descri
     if (chainSpec && typeof chainSpec === 'object' && 
         'genesis_state' in chainSpec && 'id' in chainSpec) {
       return { format: 'typeberry-config', description: 'Typeberry Config - contains JIP-4 chainspec in chain_spec field' };
+    }
+  }
+
+  // Check for STF genesis
+  if ('header' in obj && 'state' in obj) {
+    const header = obj.header as Record<string, unknown>;
+    const state = obj.state as Record<string, unknown>;
+    
+    if (header && typeof header === 'object' && 
+        state && typeof state === 'object' &&
+        'parent' in header && 'state_root' in state && 'keyvals' in state) {
+      return { format: 'stf-genesis', description: 'STF Genesis - contains initial state with header' };
     }
   }
 
@@ -109,7 +140,7 @@ export const validateJsonFile = (file: File): Promise<JsonValidationResult> => {
           resolve({
             content,
             isValid: false,
-            error: `Unsupported JSON format. ${description}. Please upload a JIP-4 chainspec, Typeberry config, or STF test vector file.`,
+            error: `Unsupported JSON format. ${description}. Please upload a JIP-4 chainspec, Typeberry config, STF test vector, or STF genesis file.`,
             format,
             formatDescription: description,
           });
@@ -180,6 +211,14 @@ export const extractGenesisState = (
           throw new Error('State type must be specified for STF test vectors');
         }
         return extractStateFromStfVector(parsedJson as StfTestVector, stateType);
+        
+      case 'stf-genesis':
+        const stfGenesis = parsedJson as StfGenesis;
+        const stateMap: Record<string, string> = {};
+        for (const item of stfGenesis.state.keyvals) {
+          stateMap[item.key] = item.value;
+        }
+        return stateMap;
         
       default:
         return null;

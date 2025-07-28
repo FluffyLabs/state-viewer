@@ -4,5 +4,6 @@ export {
   extractStateFromStfVector,
   type JsonValidationResult,
   type JsonFileFormat,
-  type StfStateType 
+  type StfStateType,
+  type StfGenesis
 } from './jsonValidation';
