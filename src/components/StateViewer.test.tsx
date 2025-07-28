@@ -58,7 +58,7 @@ describe('StateViewer', () => {
     expect(screen.getByText('0x01')).toBeInTheDocument();
   });
 
-  it.skip('should handle empty state on raw tab', () => {
+  it('should handle empty state on raw tab', () => {
     render(<StateViewer state={{}} />);
     
     // Component should render without throwing errors

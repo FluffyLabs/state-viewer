@@ -353,5 +353,31 @@ describe('InspectStateViewer', () => {
       expect(screen.getByText('Raw')).toBeInTheDocument();
       expect(screen.getByText('String')).toBeInTheDocument();
     });
+
+    it('should handle state field access errors gracefully', () => {
+      const mockState = { timeslot: 123 };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(bytes.Bytes.parseBytes).mockReturnValue(new Uint8Array([1, 2, 3]) as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(bytes.BytesBlob.parseBlob).mockReturnValue(new Uint8Array([4, 5, 6]) as any);
+      
+      // Mock loadState to return an object that throws when accessing properties
+      const mockStateAccess = new Proxy({}, {
+        get: () => {
+          throw new Error('Required state entry for testField is missing!');
+        }
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(loadState).mockReturnValue(mockStateAccess as any);
+
+      const state = { '0x1234567890123456789012345678901234567890123456789012345678901234': 'value1' };
+
+      // Component should render without crashing even when state field access fails
+      expect(() => render(<InspectStateViewer state={state} />)).not.toThrow();
+      
+      // Basic component elements should still be present
+      expect(screen.getByText('State Fields')).toBeInTheDocument();
+    });
   });
 });

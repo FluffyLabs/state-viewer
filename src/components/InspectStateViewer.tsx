@@ -93,8 +93,18 @@ const InspectStateViewer = ({
           <h4 className="text-md font-medium mb-3">State Fields</h4>
           <div className="flex flex-col gap-3 overflow-hidden">
             {filteredStateFields.map(({ key, notation, title, description, serialize }) => {
-              const preValue = preStateAccess?.[key as keyof typeof preStateAccess];
-              const postValue = stateAccess?.[key as keyof typeof stateAccess];
+              // Safely access state values with error handling
+              let preValue: unknown = undefined;
+              let postValue: unknown = undefined;
+              let fieldError: string | null = null;
+              
+              try {
+                preValue = preStateAccess?.[key as keyof typeof preStateAccess];
+                postValue = stateAccess?.[key as keyof typeof stateAccess];
+              } catch (err) {
+                fieldError = err instanceof Error ? err.message : 'Failed to access state field';
+              }
+              
               const rawKey = serialize?.key?.toString();
               const preRawValue = rawKey ? getRawValue(rawKey, preState) : undefined;
               const postRawValue = rawKey ? getRawValue(rawKey, state) : undefined;
@@ -133,7 +143,22 @@ const InspectStateViewer = ({
                       )}
                       <div className="text-sm text-gray-600 mt-1">{highlightSearchMatchesWithContext(description, searchTerm, false)}</div>
                       <div className="mt-2">
-                        {!hasValue ? (
+                        {fieldError ? (
+                          <div className="space-y-2">
+                            <div className="bg-red-50 border border-red-200 p-2 rounded text-xs">
+                              <div className="text-red-700 font-medium mb-1">Error accessing field:</div>
+                              <div className="text-red-600 text-xs mb-2">{fieldError}</div>
+                              {(preRawValue || postRawValue) && (
+                                <div>
+                                  <div className="text-gray-700 font-medium mb-1">Raw value:</div>
+                                  <code className="text-xs bg-gray-100 p-1 rounded block">
+                                    {postRawValue || preRawValue}
+                                  </code>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ) : !hasValue ? (
                           <div className="text-xs text-gray-400">Not found</div>
                         ) : isDiffMode && hasChanged ? (
                           <div className="space-y-2">
