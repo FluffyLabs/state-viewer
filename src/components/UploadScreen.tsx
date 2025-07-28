@@ -241,7 +241,7 @@ const UploadScreen = () => {
 
         {/* Error Message */}
         {uploadState.error && (
-          <div className="text-left mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+          <div className="text-left mt-4 px-6 py-4 bg-destructive/10 border border-destructive/20 rounded-lg">
             <div className="flex items-center space-x-2">
               <AlertCircle className="h-5 w-5 text-destructive" />
               <p className="text-destructive">{uploadState.error}</p>
@@ -252,7 +252,7 @@ const UploadScreen = () => {
         {/* Success Message with Format Detection */}
         {uploadState.isValidJson && !uploadState.error && (
           <div className="mt-4 space-y-4 text-left">
-            <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
+            <div className="px-6 py-4 bg-primary/10 border border-primary/20 rounded-lg">
               <div className="flex items-start justify-between">
                 <div className="flex items-center space-x-2">
                   <FileText className="h-5 w-5 text-primary" />
@@ -269,7 +269,7 @@ const UploadScreen = () => {
                 {/* State Selection for STF Test Vectors */}
                 {uploadState.availableStates && uploadState.availableStates.length > 0 && (
                   <div className="ml-4">
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       {uploadState.availableStates.map((stateType) => (
                         <Button
                           key={stateType}

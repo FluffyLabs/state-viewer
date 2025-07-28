@@ -194,17 +194,6 @@ const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
 
   return (
     <div ref={topRef} className="bg-background rounded-lg border">
-      {/* Header */}
-      <div className="px-6 py-4 border-b bg-muted/30">
-        <h2 className="text-xl font-semibold text-foreground">{title}</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          {stateEntries.length} entries total
-          {filteredEntries.length !== stateEntries.length &&
-            ` • ${filteredEntries.length} matching search`
-          }
-        </p>
-      </div>
-
       {/* Search */}
       <div className="px-6 py-4 border-b bg-muted/20">
         <div className="relative">
@@ -218,7 +207,6 @@ const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
           />
         </div>
       </div>
-
       {/* State Entries */}
       <div className="divide-y divide-border text-left">
         {filteredEntries.length > 0 ? (
@@ -231,7 +219,7 @@ const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
                 <div className="space-y-2">
                   {/* Key Row */}
                   <div className="flex items-center gap-4">
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide w-16 flex-shrink-0">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide w-16 flex-shrink-0 hidden md:block">
                       Key
                     </label>
                     <div className="flex items-center space-x-2 flex-1 min-w-0">
@@ -255,7 +243,7 @@ const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
 
                   {/* Value Row */}
                   <div className="flex items-start gap-4">
-                    <div className="w-16 flex-shrink-0 flex items-center gap-2">
+                    <div className="w-16 flex-shrink-0 items-center gap-2 hidden md:flex">
                       <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                       {diffEntry.type !== 'normal' ? (
                         <span className={`px-0.5 py-0.5 rounded text-xs font-semibold ${
@@ -345,19 +333,27 @@ const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
             <p className="text-muted-foreground">No entries match your search</p>
           </div>
         )}
+        <div className="px-6 py-4 bg-muted/30">
+          <p className="text-sm text-muted-foreground mt-1">
+            {stateEntries.length} entries total
+            {filteredEntries.length !== stateEntries.length &&
+              ` • ${filteredEntries.length} matching search`
+            }
+          </p>
+        </div>
       </div>
 
       {/* Value Dialog */}
       {dialogState.isOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="text-left bg-background rounded-lg border max-w-4xl w-full max-h-[80vh] flex flex-col">
+          <div className="text-left bg-background rounded-lg border max-w-4xl w-full max-h-[80vh] flex flex-col overflow-ellipsis">
             {/* Dialog Header */}
-            <div className="flex items-center justify-between p-6 border-b border-border">
+            <div className="items-center justify-between p-6 border-b border-border hidden md:flex">
               <div>
-                <h3 className="text-lg font-semibold text-foreground">
+                <p className="text-md font-semibold text-foreground">
                   {dialogState.diffEntry?.type === 'changed' ? 'Value Diff' : 'Full Value'}
-                </h3>
-                <p className="text-sm text-muted-foreground mt-1">
+                </p>
+                <p className="text-sm text-muted-foreground mt-1 whitespace-nowrap">
                   Key: {dialogState.key} • Size: {Math.floor(dialogState.value.replace('0x', '').length / 2)} bytes
                 </p>
               </div>
