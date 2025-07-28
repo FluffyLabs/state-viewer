@@ -1,5 +1,6 @@
 export { 
   validateJsonFile, 
+  validateJsonContent,
   extractGenesisState, 
   extractStateFromStfVector,
   type JsonValidationResult,

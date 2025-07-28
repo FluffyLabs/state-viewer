@@ -110,6 +110,46 @@ const detectJsonFormat = (parsedJson: unknown): { format: JsonFileFormat; descri
   return { format: 'unknown', description: 'Unknown format - does not match any supported schema' };
 };
 
+export const validateJsonContent = (content: string): JsonValidationResult => {
+  try {
+    const parsedJson = JSON.parse(content);
+    
+    const { format, description } = detectJsonFormat(parsedJson);
+    
+    let availableStates: StfStateType[] | undefined;
+    if (format === 'stf-test-vector') {
+      availableStates = ['pre_state', 'post_state'];
+    }
+
+    if (format === 'unknown') {
+      return {
+        content,
+        isValid: false,
+        error: `Unsupported JSON format. ${description}. Please upload a JIP-4 chainspec, Typeberry config, STF test vector, or STF genesis file.`,
+        format,
+        formatDescription: description,
+      };
+    } else {
+      return {
+        content,
+        isValid: true,
+        error: null,
+        format,
+        formatDescription: description,
+        availableStates,
+      };
+    }
+  } catch {
+    return {
+      content,
+      isValid: false,
+      error: 'Invalid JSON format. Please check your content and try again.',
+      format: 'unknown',
+      formatDescription: 'Malformed JSON',
+    };
+  }
+};
+
 export const validateJsonFile = (file: File): Promise<JsonValidationResult> => {
   return new Promise((resolve) => {
     if (!file.type.includes('json') && !file.name.endsWith('.json')) {
@@ -127,33 +167,9 @@ export const validateJsonFile = (file: File): Promise<JsonValidationResult> => {
     reader.onload = (e) => {
       try {
         const content = e.target?.result as string;
-        const parsedJson = JSON.parse(content);
         
-        const { format, description } = detectJsonFormat(parsedJson);
-        
-        let availableStates: StfStateType[] | undefined;
-        if (format === 'stf-test-vector') {
-          availableStates = ['pre_state', 'post_state'];
-        }
-
-        if (format === 'unknown') {
-          resolve({
-            content,
-            isValid: false,
-            error: `Unsupported JSON format. ${description}. Please upload a JIP-4 chainspec, Typeberry config, STF test vector, or STF genesis file.`,
-            format,
-            formatDescription: description,
-          });
-        } else {
-          resolve({
-            content,
-            isValid: true,
-            error: null,
-            format,
-            formatDescription: description,
-            availableStates,
-          });
-        }
+        const result = validateJsonContent(content);
+        resolve(result);
       } catch {
         resolve({
           content: e.target?.result as string || '',
@@ -212,14 +228,14 @@ export const extractGenesisState = (
         }
         return extractStateFromStfVector(parsedJson as StfTestVector, stateType);
         
-      case 'stf-genesis':
+      case 'stf-genesis': {
         const stfGenesis = parsedJson as StfGenesis;
         const stateMap: Record<string, string> = {};
         for (const item of stfGenesis.state.keyvals) {
           stateMap[item.key] = item.value;
         }
         return stateMap;
-        
+      }
       default:
         return null;
     }

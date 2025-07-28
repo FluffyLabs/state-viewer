@@ -4,7 +4,7 @@ import { Upload, FileText, AlertCircle, Edit, FolderOpen } from 'lucide-react';
 import JsonEditorDialog from './JsonEditorDialog';
 import StateViewer from './StateViewer';
 import { Button } from './Button';
-import { validateJsonFile, extractGenesisState, type JsonFileFormat, type StfStateType } from '../utils';
+import { validateJsonFile, validateJsonContent, extractGenesisState, type JsonFileFormat, type StfStateType } from '../utils';
 
 interface UploadState {
   file: File | null;
@@ -109,33 +109,19 @@ const UploadScreen = () => {
   const handleSaveManualEdit = useCallback((content: string) => {
     // Re-validate the manually edited content
     const validateManualContent = async () => {
-      try {
-        const parsedJson = JSON.parse(content);
-        // Simple validation - could use the validateJsonFile logic here
-        setUploadState(prev => ({
-          ...prev,
-          content,
-          error: null,
-          isValidJson: true,
-          file: null, // Clear file since this is manual input
-          format: 'unknown', // Reset format detection for manual input
-          formatDescription: 'Manually edited JSON',
-          availableStates: undefined,
-          selectedState: undefined,
-        }));
-      } catch {
-        setUploadState(prev => ({
-          ...prev,
-          content,
-          error: 'Invalid JSON format',
-          isValidJson: false,
-          file: null,
-          format: 'unknown',
-          formatDescription: 'Invalid JSON',
-          availableStates: undefined,
-          selectedState: undefined,
-        }));
-      }
+      const validation = validateJsonContent(content);
+      
+      setUploadState(prev => ({
+        ...prev,
+        content: validation.content,
+        error: validation.error,
+        isValidJson: validation.isValid,
+        file: null, // Clear file since this is manual input
+        format: validation.format,
+        formatDescription: validation.formatDescription,
+        availableStates: validation.availableStates,
+        selectedState: undefined,
+      }));
     };
     
     validateManualContent();

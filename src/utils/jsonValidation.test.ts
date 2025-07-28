@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   validateJsonFile,
+  validateJsonContent,
   extractGenesisState,
   extractStateFromStfVector,
   type StfTestVector
@@ -270,7 +271,7 @@ describe('validateJsonFile', () => {
       expect(result).toEqual({
         content: malformedJson,
         isValid: false,
-        error: 'Invalid JSON format. Please check your file and try again.',
+        error: 'Invalid JSON format. Please check your content and try again.',
         format: 'unknown',
         formatDescription: 'Malformed JSON',
       });
@@ -741,5 +742,173 @@ describe('Integration tests with fixture files', () => {
     expect(genesisState!['0x004700b0000000000b0cce53c35439dfe73087b1439c846b5ff0b18ec0052e']).toBe('0x0100000000');
 
     restore();
+  });
+});
+
+describe('validateJsonContent', () => {
+  const jip4Json = JSON.stringify({
+    id: "dev-tiny",
+    genesis_header: "0x0000000000000000000000000000000000000000000000000000000000000000",
+    genesis_state: {
+      "0x004700b0000000000b0cce53c35439dfe73087b1439c846b5ff0b18ec0052e": "0x0100000000"
+    }
+  });
+
+  const typeberryJson = JSON.stringify({
+    $schema: "https://api.typeberry.xyz/schema/v0.1.3/config.json",
+    version: 1,
+    flavor: "dev",
+    chain_spec: {
+      id: "dev-tiny",
+      genesis_header: "0x0000000000000000000000000000000000000000000000000000000000000000",
+      genesis_state: {
+        "0x004700b0000000000b0cce53c35439dfe73087b1439c846b5ff0b18ec0052e": "0x0100000000"
+      }
+    }
+  });
+
+  const stfJson = JSON.stringify({
+    pre_state: {
+      state_root: "0x12345",
+      keyvals: [
+        { key: "0x004700b0000000000b0cce53c35439dfe73087b1439c846b5ff0b18ec0052e", value: "0x0100000000" }
+      ]
+    },
+    block: { slot: 1 },
+    post_state: {
+      state_root: "0x67890",
+      keyvals: [
+        { key: "0x004700b0000000000b0cce53c35439dfe73087b1439c846b5ff0b18ec0052e", value: "0x0200000000" }
+      ]
+    }
+  });
+
+  const stfGenesisJson = JSON.stringify({
+    header: {
+      parent: "0x0000000000000000000000000000000000000000000000000000000000000000",
+      parent_state_root: "0x0000000000000000000000000000000000000000000000000000000000000000",
+      extrinsic_hash: "0x0000000000000000000000000000000000000000000000000000000000000000",
+      slot: 0,
+      author_index: 0,
+      entropy_source: "0x0000000000000000000000000000000000000000000000000000000000000000",
+      seal: "0x0000000000000000000000000000000000000000000000000000000000000000",
+      offenders_mark: []
+    },
+    state: {
+      state_root: "0x12345",
+      keyvals: [
+        { key: "0x004700b0000000000b0cce53c35439dfe73087b1439c846b5ff0b18ec0052e", value: "0x0100000000" }
+      ]
+    }
+  });
+
+  describe('JIP-4 Chainspec detection', () => {
+    it('should detect JIP-4 chainspec format correctly', () => {
+      const result = validateJsonContent(jip4Json);
+
+      expect(result).toEqual({
+        content: jip4Json,
+        isValid: true,
+        error: null,
+        format: 'jip4-chainspec',
+        formatDescription: 'JIP-4 Chainspec - contains genesis_state directly',
+        availableStates: undefined,
+      });
+    });
+  });
+
+  describe('Typeberry Config detection', () => {
+    it('should detect Typeberry config format correctly', () => {
+      const result = validateJsonContent(typeberryJson);
+
+      expect(result).toEqual({
+        content: typeberryJson,
+        isValid: true,
+        error: null,
+        format: 'typeberry-config',
+        formatDescription: 'Typeberry Config - contains JIP-4 chainspec in chain_spec field',
+        availableStates: undefined,
+      });
+    });
+  });
+
+  describe('STF Test Vector detection', () => {
+    it('should detect STF test vector format correctly', () => {
+      const result = validateJsonContent(stfJson);
+
+      expect(result).toEqual({
+        content: stfJson,
+        isValid: true,
+        error: null,
+        format: 'stf-test-vector',
+        formatDescription: 'STF Test Vector - contains pre_state and post_state',
+        availableStates: ['pre_state', 'post_state'],
+      });
+    });
+  });
+
+  describe('STF Genesis detection', () => {
+    it('should detect STF genesis format correctly', () => {
+      const result = validateJsonContent(stfGenesisJson);
+
+      expect(result).toEqual({
+        content: stfGenesisJson,
+        isValid: true,
+        error: null,
+        format: 'stf-genesis',
+        formatDescription: 'STF Genesis - contains initial state with header',
+        availableStates: undefined,
+      });
+    });
+  });
+
+  describe('Unknown format detection', () => {
+    it('should detect unknown format and return error', () => {
+      const unknownJson = JSON.stringify({
+        some_field: "value",
+        another_field: 123
+      });
+
+      const result = validateJsonContent(unknownJson);
+
+      expect(result.isValid).toBe(false);
+      expect(result.format).toBe('unknown');
+      expect(result.formatDescription).toBe('Unknown format - does not match any supported schema');
+      expect(result.error).toContain('Unsupported JSON format');
+    });
+
+    it('should handle invalid JSON structure', () => {
+      const invalidStructure = JSON.stringify("just a string");
+
+      const result = validateJsonContent(invalidStructure);
+
+      expect(result.isValid).toBe(false);
+      expect(result.format).toBe('unknown');
+      expect(result.formatDescription).toBe('Invalid JSON structure');
+    });
+  });
+
+  describe('Malformed JSON handling', () => {
+    it('should handle malformed JSON', () => {
+      const malformedJson = '{"incomplete": json}';
+
+      const result = validateJsonContent(malformedJson);
+
+      expect(result).toEqual({
+        content: malformedJson,
+        isValid: false,
+        error: 'Invalid JSON format. Please check your content and try again.',
+        format: 'unknown',
+        formatDescription: 'Malformed JSON',
+      });
+    });
+
+    it('should handle empty content', () => {
+      const result = validateJsonContent('');
+
+      expect(result.isValid).toBe(false);
+      expect(result.format).toBe('unknown');
+      expect(result.formatDescription).toBe('Malformed JSON');
+    });
   });
 });
