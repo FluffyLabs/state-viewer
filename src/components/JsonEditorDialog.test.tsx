@@ -4,7 +4,7 @@ import JsonEditorDialog from './JsonEditorDialog';
 
 // Mock CodeMirror component
 vi.mock('@uiw/react-codemirror', () => ({
-  default: ({ value, onChange, ...props }: any) => (
+  default: ({ value, onChange, ...props }: { value?: string; onChange?: (val: string) => void; [key: string]: unknown }) => (
     <textarea
       data-testid="code-mirror"
       value={value}

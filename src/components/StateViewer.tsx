@@ -106,14 +106,14 @@ const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
   // Highlight search matches in text
   const highlightSearchMatches = (text: string, searchTerm: string) => {
     if (!searchTerm.trim()) return text;
-    
+
     const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
     const parts = text.split(regex);
-    
+
     return parts.map((part, index) => {
       const isMatch = regex.test(part);
       regex.lastIndex = 0; // Reset regex for next test
-      
+
       return isMatch ? (
         <mark key={index} className="bg-yellow-200 dark:bg-yellow-900/60 text-yellow-900 dark:text-yellow-100 px-0.5 rounded">
           {part}
@@ -128,12 +128,12 @@ const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
   const createInlineDiff = (oldValue: string, newValue: string) => {
     const maxLength = Math.max(oldValue.length, newValue.length);
     const parts: Array<{ text: string; type: 'same' | 'removed' | 'added' }> = [];
-    
+
     let i = 0;
     while (i < maxLength) {
       const oldChar = oldValue[i] || '';
       const newChar = newValue[i] || '';
-      
+
       if (oldChar === newChar && oldChar !== '') {
         // Characters are the same - collect all consecutive same characters
         let sameText = oldChar;
@@ -147,19 +147,19 @@ const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
         // Characters are different - collect consecutive changes
         let removedText = '';
         let addedText = '';
-        
+
         // Collect consecutive different characters
         while (i < maxLength && (oldValue[i] || '') !== (newValue[i] || '')) {
           if (oldValue[i]) removedText += oldValue[i];
           if (newValue[i]) addedText += newValue[i];
           i++;
         }
-        
+
         // Ensure even number of characters in blocks
         const makeEvenLength = (text: string) => {
           return text.length % 2 === 0 ? text : text + ' ';
         };
-        
+
         if (removedText) {
           parts.push({ text: makeEvenLength(removedText), type: 'removed' });
         }
@@ -168,14 +168,14 @@ const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
         }
       }
     }
-    
+
     return parts.map((part, index) => {
-      const className = part.type === 'removed' 
-        ? 'bg-red-200 dark:bg-red-900/60 text-red-900 dark:text-red-100' 
+      const className = part.type === 'removed'
+        ? 'bg-red-200 dark:bg-red-900/60 text-red-900 dark:text-red-100'
         : part.type === 'added'
         ? 'bg-green-200 dark:bg-green-900/60 text-green-900 dark:text-green-100'
         : '';
-      
+
       return (
         <span key={index} className={className}>
           {part.text}
@@ -308,7 +308,7 @@ const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
                         // Show single value for normal, added, or removed entries
                         <div className="flex items-center space-x-2">
                           <code className={`text-sm font-mono break-all px-2 py-1 rounded border flex-1 ${
-                            diffEntry.type === 'added' 
+                            diffEntry.type === 'added'
                               ? 'bg-green-100 border-green-300 text-green-900 dark:bg-green-900/20 dark:border-green-700 dark:text-green-100'
                               : diffEntry.type === 'removed'
                               ? 'bg-red-100 border-red-300 text-red-900 dark:bg-red-900/20 dark:border-red-700 dark:text-red-100'
@@ -350,7 +350,7 @@ const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
       {/* Value Dialog */}
       {dialogState.isOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-background rounded-lg border max-w-4xl w-full max-h-[80vh] flex flex-col">
+          <div className="text-left bg-background rounded-lg border max-w-4xl w-full max-h-[80vh] flex flex-col">
             {/* Dialog Header */}
             <div className="flex items-center justify-between p-6 border-b border-border">
               <div>
@@ -375,6 +375,14 @@ const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
               {dialogState.diffEntry?.type === 'changed' ? (
                 <div className="space-y-4">
                   <div>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Diff:</h4>
+                    <code className="block text-sm font-mono break-all bg-muted p-3 rounded border border-border text-foreground">
+                      {dialogState.diffEntry.oldValue && dialogState.diffEntry.newValue &&
+                        createInlineDiff(dialogState.diffEntry.oldValue, dialogState.diffEntry.newValue)
+                      }
+                    </code>
+                  </div>
+                  <div>
                     <h4 className="text-sm font-medium text-red-600 dark:text-red-400 mb-2">Before:</h4>
                     <code className="block text-sm font-mono break-all bg-red-50 dark:bg-red-900/20 p-3 rounded border border-red-200 dark:border-red-700 text-red-900 dark:text-red-100">
                       {dialogState.diffEntry.oldValue}
@@ -386,14 +394,6 @@ const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
                       {dialogState.diffEntry.newValue}
                     </code>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Inline Diff:</h4>
-                    <code className="block text-sm font-mono break-all bg-muted p-3 rounded border border-border text-foreground">
-                      {dialogState.diffEntry.oldValue && dialogState.diffEntry.newValue && 
-                        createInlineDiff(dialogState.diffEntry.oldValue, dialogState.diffEntry.newValue)
-                      }
-                    </code>
-                  </div>
                 </div>
               ) : (
                 <div>
@@ -402,7 +402,7 @@ const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
                      dialogState.diffEntry?.type === 'removed' ? 'Removed Value:' : 'Value:'}
                   </h4>
                   <code className={`block text-sm font-mono break-all p-3 rounded border ${
-                    dialogState.diffEntry?.type === 'added' 
+                    dialogState.diffEntry?.type === 'added'
                       ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700 text-green-900 dark:text-green-100'
                       : dialogState.diffEntry?.type === 'removed'
                       ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700 text-red-900 dark:text-red-100'
@@ -418,23 +418,23 @@ const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
             <div className="p-6 border-t border-border">
               <div className="flex justify-end space-x-3">
                 <Button
-                  onClick={() => setDialogState(prev => ({ ...prev, isOpen: false }))}
-                  variant="secondary"
-                >
-                  Close
-                </Button>
-                <Button
                   onClick={() => {
-                    const textToCopy = dialogState.diffEntry?.type === 'changed' 
+                    const textToCopy = dialogState.diffEntry?.type === 'changed'
                       ? `Before: ${dialogState.diffEntry.oldValue}\nAfter: ${dialogState.diffEntry.newValue}`
                       : dialogState.value;
                     handleCopy(textToCopy, 'dialog');
                   }}
-                  variant="primary"
+                  variant="secondary"
                   className="flex items-center gap-2"
                 >
                   <Copy className="h-4 w-4" />
                   {copiedKey === 'dialog' ? 'Copied!' : 'Copy'}
+                </Button>
+                <Button
+                  onClick={() => setDialogState(prev => ({ ...prev, isOpen: false }))}
+                  variant="primary"
+                >
+                  Close
                 </Button>
               </div>
             </div>

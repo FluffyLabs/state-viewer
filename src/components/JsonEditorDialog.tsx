@@ -35,7 +35,7 @@ const JsonEditorDialog = ({
     };
 
     checkDarkMode();
-    
+
     // Watch for changes in dark mode
     const observer = new MutationObserver(checkDarkMode);
     observer.observe(document.documentElement, {
@@ -83,7 +83,7 @@ const JsonEditorDialog = ({
     if (!isJsonValid) {
       return; // Don't save invalid JSON
     }
-    
+
     onSave(editorContent);
   };
 
@@ -158,22 +158,19 @@ const JsonEditorDialog = ({
         </div>
 
         {/* Dialog Footer */}
-        <div className="p-6 border-t border-border">
+        <div className="p-6 border-t border-border flex flex-row justify-end">
           {/* JSON Error Message */}
           {jsonError && (
-            <div className="flex items-start gap-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg mb-4">
-              <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+            <div className="flex items-start p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg -mt-3">
+              <AlertCircle className="h-4 w-4 mr-2 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
               <div>
-                <h4 className="text-sm font-medium text-red-900 dark:text-red-100">
-                  JSON Syntax Error
-                </h4>
-                <p className="text-sm text-red-700 dark:text-red-200 mt-1">
+                <p className="text-sm text-red-700 dark:text-red-200">
                   {jsonError}
                 </p>
               </div>
             </div>
           )}
-          
+          <div className="flex-1"></div>
           <div className="flex justify-end space-x-3">
             <Button
               onClick={handleCancel}

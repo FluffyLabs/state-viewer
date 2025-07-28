@@ -153,6 +153,7 @@ const UploadScreen = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
+      {uploadState.content === '' && (
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">
           JAM State Viewer
@@ -161,6 +162,7 @@ const UploadScreen = () => {
           Upload a serialized state dump to inspect it.
         </p>
       </div>
+      )}
 
       {/* Upload Area */}
       <div className="mb-6">
@@ -231,7 +233,7 @@ const UploadScreen = () => {
                 size="lg"
               >
                 <Edit className="h-4 w-4" />
-                <span>{(!uploadState.file && !uploadState.content) ? 'JSON' : 'View'}</span>
+                <span>{(!uploadState.file && !uploadState.content) ? 'JSON' : 'Edit'}</span>
               </Button>
             </div>
           </div>
@@ -239,7 +241,7 @@ const UploadScreen = () => {
 
         {/* Error Message */}
         {uploadState.error && (
-          <div className="mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+          <div className="text-left mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
             <div className="flex items-center space-x-2">
               <AlertCircle className="h-5 w-5 text-destructive" />
               <p className="text-destructive">{uploadState.error}</p>
