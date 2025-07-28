@@ -202,4 +202,26 @@ describe('UploadScreen', () => {
       expect(screen.getByText('Supports STF test vectors, STF genesis, and JIP-4 Chain Spec.')).toBeInTheDocument();
     });
   });
+
+  it('shows format error when valid JSON does not match known formats', async () => {
+    render(<UploadScreen />);
+
+    // Open JSON editor
+    const editorButton = screen.getByText('JSON');
+    await user.click(editorButton);
+
+    // Enter valid JSON that doesn't match known formats
+    const textarea = screen.getByTestId('codemirror');
+    await user.clear(textarea);
+    fireEvent.change(textarea, { target: { value: '{"unknown": "format", "data": "value"}' } });
+
+    // Save the JSON
+    const saveButton = screen.getByText('Save JSON');
+    await user.click(saveButton);
+
+    // Dialog should close and error should appear in main interface
+    expect(screen.queryByText('JSON Editor')).not.toBeInTheDocument();
+    expect(screen.getByText(/Unsupported JSON format/)).toBeInTheDocument();
+    expect(screen.getByText(/does not match any supported schema/)).toBeInTheDocument();
+  });
 });

@@ -28,6 +28,7 @@ const UploadScreen = () => {
   });
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [formatError, setFormatError] = useState<string | null>(null);
 
   // Extract state data based on format and selected state
   const extractedState = useMemo(() => {
@@ -116,6 +117,16 @@ const UploadScreen = () => {
     // Re-validate the manually edited content
     const validateManualContent = async () => {
       const validation = validateJsonContent(content);
+
+      // Set format error if JSON is valid but format is unknown
+      if (validation.isValid && validation.format === 'unknown') {
+        setFormatError('The JSON is valid but does not match any of the known formats (JIP-4 Chain Spec, STF Test Vector, STF Genesis).');
+        // Keep dialog open to show the error
+      } else {
+        setFormatError(null);
+        // Close dialog only if there's no format error
+        setIsDialogOpen(false);
+      }
 
       setUploadState(prev => ({
         ...prev,
@@ -290,9 +301,13 @@ const UploadScreen = () => {
       {/* JSON Editor Dialog */}
       <JsonEditorDialog
         isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
+        onClose={() => {
+          setIsDialogOpen(false);
+          setFormatError(null);
+        }}
         onSave={handleSaveManualEdit}
         initialContent={uploadState.content || '{\n  \n}'}
+        formatError={formatError}
       />
     </div>
   );

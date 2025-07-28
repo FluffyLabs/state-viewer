@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
 import { oneDark } from '@codemirror/theme-one-dark';
-import { X } from 'lucide-react';
+import { X, AlertCircle } from 'lucide-react';
 import { Button } from './Button';
 
 interface JsonEditorDialogProps {
@@ -10,6 +10,7 @@ interface JsonEditorDialogProps {
   onClose: () => void;
   onSave: (content: string) => void;
   initialContent?: string;
+  formatError?: string | null;
 }
 
 const JsonEditorDialog = ({
@@ -17,9 +18,12 @@ const JsonEditorDialog = ({
   onClose,
   onSave,
   initialContent = '{\n  \n}',
+  formatError = null,
 }: JsonEditorDialogProps) => {
   const [editorContent, setEditorContent] = useState(initialContent);
   const [isDark, setIsDark] = useState(false);
+  const [jsonError, setJsonError] = useState<string | null>(null);
+  const [isJsonValid, setIsJsonValid] = useState(true);
 
   // Detect dark mode from the DOM or system preference
   useEffect(() => {
@@ -52,23 +56,41 @@ const JsonEditorDialog = ({
   useEffect(() => {
     if (isOpen) {
       setEditorContent(initialContent);
+      validateJson(initialContent);
     }
   }, [isOpen, initialContent]);
 
-  const handleSave = () => {
+  // Validate JSON content
+  const validateJson = (content: string) => {
     try {
-      JSON.parse(editorContent); // Validate JSON
-      onSave(editorContent);
-      onClose();
-    } catch {
-      // Just close dialog, don't update state if JSON is invalid
-      // The editor will show syntax errors
-      onClose();
+      JSON.parse(content);
+      setJsonError(null);
+      setIsJsonValid(true);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Invalid JSON';
+      setJsonError(errorMessage);
+      setIsJsonValid(false);
     }
+  };
+
+  // Handle content changes in editor
+  const handleContentChange = (value: string) => {
+    setEditorContent(value);
+    validateJson(value);
+  };
+
+  const handleSave = () => {
+    if (!isJsonValid) {
+      return; // Don't save invalid JSON
+    }
+    
+    onSave(editorContent);
   };
 
   const handleCancel = () => {
     setEditorContent(initialContent); // Reset content
+    setJsonError(null);
+    setIsJsonValid(true);
     onClose();
   };
 
@@ -93,12 +115,44 @@ const JsonEditorDialog = ({
           </button>
         </div>
 
+        {/* Error Messages */}
+        {(jsonError || formatError) && (
+          <div className="px-6 py-4 border-b border-border">
+            {jsonError && (
+              <div className="flex items-start gap-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg mb-3">
+                <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="text-sm font-medium text-red-900 dark:text-red-100">
+                    JSON Syntax Error
+                  </h4>
+                  <p className="text-sm text-red-700 dark:text-red-200 mt-1">
+                    {jsonError}
+                  </p>
+                </div>
+              </div>
+            )}
+            {formatError && (
+              <div className="flex items-start gap-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="text-sm font-medium text-yellow-900 dark:text-yellow-100">
+                    Format Validation Error
+                  </h4>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-200 mt-1">
+                    {formatError}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Editor */}
         <div className="flex-1 p-6 overflow-hidden min-h-0">
           <div className="h-full border border-border rounded-lg overflow-hidden">
             <CodeMirror
               value={editorContent}
-              onChange={(value) => setEditorContent(value)}
+              onChange={handleContentChange}
               extensions={[json()]}
               theme={isDark ? oneDark : undefined}
               height="500px"
@@ -129,6 +183,8 @@ const JsonEditorDialog = ({
           <Button
             onClick={handleSave}
             variant="primary"
+            disabled={!isJsonValid}
+            className={!isJsonValid ? 'opacity-50 cursor-not-allowed' : ''}
           >
             Save JSON
           </Button>
