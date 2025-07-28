@@ -17,7 +17,7 @@ const StateViewer = ({
     <div>
       <Tabs defaultValue="raw" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="raw">Raw</TabsTrigger>
+          <TabsTrigger value="raw">Encoded</TabsTrigger>
           <TabsTrigger value="inspect">Decoded</TabsTrigger>
         </TabsList>
 

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Mock the typeberry state-merkleization module
@@ -342,7 +342,7 @@ describe('InspectStateViewer', () => {
       expect(changedLabels.length).toBeGreaterThan(0);
     });
 
-    it('should toggle between display modes', () => {
+    it('should pass display mode toggle to CompositeViewer components', () => {
       const mockState = { timeslot: 123 };
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -356,28 +356,14 @@ describe('InspectStateViewer', () => {
 
       render(<InspectStateViewer state={state} />);
 
-      // Check that display mode buttons are present
+      // Check that display mode buttons are present (from CompositeViewer)
       expect(screen.getByText('Decoded')).toBeInTheDocument();
       expect(screen.getByText('Raw')).toBeInTheDocument();
       expect(screen.getByText('String')).toBeInTheDocument();
 
-      // Decoded should be active by default
-      const decodedButton = screen.getByText('Decoded');
-      expect(decodedButton).toHaveClass('bg-blue-500', 'text-white');
-
-      // Click Raw button
-      const rawButton = screen.getByText('Raw');
-      fireEvent.click(rawButton);
-      
-      expect(rawButton).toHaveClass('bg-blue-500', 'text-white');
-      expect(decodedButton).toHaveClass('bg-gray-100', 'text-gray-700');
-
-      // Click String button
-      const stringButton = screen.getByText('String');
-      fireEvent.click(stringButton);
-      
-      expect(stringButton).toHaveClass('bg-blue-500', 'text-white');
-      expect(rawButton).toHaveClass('bg-gray-100', 'text-gray-700');
+      // Should show Display: label for each CompositeViewer with toggle
+      const displayLabels = screen.getAllByText('Display:');
+      expect(displayLabels.length).toBeGreaterThan(0);
     });
   });
 });

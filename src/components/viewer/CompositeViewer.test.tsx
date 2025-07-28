@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import CompositeViewer from './CompositeViewer';
 
@@ -43,14 +43,14 @@ describe('CompositeViewer', () => {
     expect(screen.getByText('Array with 0 items')).toBeInTheDocument();
   });
 
-  it('should render ToStringViewer for objects with toJSON method', () => {
+  it('should render ObjectViewer for objects with toJSON method that returns an object', () => {
     const objWithToJSON = {
       value: 'test',
       toJSON: () => ({ serialized: true })
     };
     render(<CompositeViewer value={objWithToJSON} />);
     
-    expect(screen.getByTestId('tostring-viewer')).toBeInTheDocument();
+    expect(screen.getByTestId('object-viewer')).toBeInTheDocument();
   });
 
   it('should render ObjectViewer for plain objects', () => {
@@ -177,9 +177,76 @@ describe('CompositeViewer', () => {
   });
 
   it('should handle symbols', () => {
-    const symbolValue = Symbol('test');
-    render(<CompositeViewer value={symbolValue} />);
+    const sym = Symbol('test');
+    render(<CompositeViewer value={sym} />);
     
     expect(screen.getByTestId('tostring-viewer')).toBeInTheDocument();
+  });
+
+  describe('Display Mode Toggle', () => {
+    it('should show mode toggle when showModeToggle is true', () => {
+      render(<CompositeViewer value="test" showModeToggle={true} />);
+      
+      expect(screen.getByText('Display:')).toBeInTheDocument();
+      expect(screen.getByText('Decoded')).toBeInTheDocument();
+      expect(screen.getByText('Raw')).toBeInTheDocument();
+      expect(screen.getByText('String')).toBeInTheDocument();
+    });
+
+    it('should not show mode toggle when showModeToggle is false', () => {
+      render(<CompositeViewer value="test" showModeToggle={false} />);
+      
+      expect(screen.queryByText('Display:')).not.toBeInTheDocument();
+      expect(screen.queryByText('Decoded')).not.toBeInTheDocument();
+      expect(screen.queryByText('Raw')).not.toBeInTheDocument();
+      expect(screen.queryByText('String')).not.toBeInTheDocument();
+    });
+
+    it('should default to decoded mode', () => {
+      render(<CompositeViewer value="test" showModeToggle={true} />);
+      
+      const decodedButton = screen.getByText('Decoded');
+      expect(decodedButton).toHaveClass('bg-blue-500', 'text-white');
+    });
+
+    it('should switch to raw mode when raw button is clicked', () => {
+      render(<CompositeViewer value="test" rawValue="0x1234" showModeToggle={true} />);
+      
+      const rawButton = screen.getByText('Raw');
+      fireEvent.click(rawButton);
+      
+      expect(rawButton).toHaveClass('bg-blue-500', 'text-white');
+      expect(screen.getByText('0x1234')).toBeInTheDocument();
+    });
+
+    it('should switch to string mode when string button is clicked', () => {
+      render(<CompositeViewer value={{ test: 'value' }} showModeToggle={true} />);
+      
+      const stringButton = screen.getByText('String');
+      fireEvent.click(stringButton);
+      
+      expect(stringButton).toHaveClass('bg-blue-500', 'text-white');
+      expect(screen.getByTestId('tostring-viewer')).toBeInTheDocument();
+    });
+
+    it('should display raw value when in raw mode', () => {
+      render(<CompositeViewer value="decoded" rawValue="0xabcdef" showModeToggle={true} />);
+      
+      const rawButton = screen.getByText('Raw');
+      fireEvent.click(rawButton);
+      
+      expect(screen.getByText('0xabcdef')).toBeInTheDocument();
+      expect(screen.queryByText('decoded')).not.toBeInTheDocument();
+    });
+
+    it('should fall back to decoded mode when raw value is undefined', () => {
+      render(<CompositeViewer value="test" showModeToggle={true} />);
+      
+      const rawButton = screen.getByText('Raw');
+      fireEvent.click(rawButton);
+      
+      // Should still show decoded content since no raw value provided
+      expect(screen.getByTestId('tostring-viewer')).toBeInTheDocument();
+    });
   });
 });
