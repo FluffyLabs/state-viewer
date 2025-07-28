@@ -82,7 +82,8 @@ describe('StateViewer', () => {
     fireEvent.change(searchInput, { target: { value: 'dead' } });
     
     expect(screen.getByText('0x03')).toBeInTheDocument();
-    expect(screen.getByText('0xdeadbeef')).toBeInTheDocument();
+    // The text is now highlighted, so we need to look for the highlighted part
+    expect(screen.getByText('dead')).toBeInTheDocument();
     expect(screen.queryByText('0x01')).not.toBeInTheDocument();
   });
 
@@ -117,13 +118,22 @@ describe('StateViewer', () => {
     expect(screen.getByText('Copied!')).toBeInTheDocument();
   });
 
-  it('should copy value to clipboard', async () => {
+  it('should open dialog when view button is clicked and copy value from dialog', async () => {
     render(<StateViewer state={mockState} />);
     
-    const copyButtons = screen.getAllByLabelText('Copy value');
-    const firstValueCopyButton = copyButtons[0]; // First value copy button
+    const viewButtons = screen.getAllByLabelText('View full value');
+    const firstValueViewButton = viewButtons[0]; // First value view button
     
-    fireEvent.click(firstValueCopyButton);
+    fireEvent.click(firstValueViewButton);
+    
+    // Dialog should open
+    expect(screen.getByText('Full Value')).toBeInTheDocument();
+    // Look for the value in the dialog specifically
+    expect(screen.getByText('Key: 0x01 • Size: 3 bytes')).toBeInTheDocument();
+    
+    // Copy from dialog
+    const copyButton = screen.getByText('Copy');
+    fireEvent.click(copyButton);
     
     await waitFor(() => {
       expect(mockClipboard.writeText).toHaveBeenCalledWith('0x123456');
@@ -182,7 +192,8 @@ describe('StateViewer', () => {
     // Search should be case insensitive
     fireEvent.change(searchInput, { target: { value: 'efgh' } });
     
-    expect(screen.getByText('0xEFGH')).toBeInTheDocument();
+    // The text is now highlighted, so look for the highlighted part
+    expect(screen.getByText('EFGH')).toBeInTheDocument();
     expect(screen.queryByText('0xabcd')).not.toBeInTheDocument();
   });
 
@@ -212,6 +223,64 @@ describe('StateViewer', () => {
     
     // Check that the diff values are displayed (the inline diff creates spans but the text should still be searchable)
     expect(screen.getByTitle('0x123456 → 0x789abc')).toBeInTheDocument();
+  });
+
+  it('should highlight search matches in keys and values', () => {
+    render(<StateViewer state={mockState} />);
+    
+    const searchInput = screen.getByPlaceholderText('Search keys or values...');
+    
+    // Search for "01" which should match in key
+    fireEvent.change(searchInput, { target: { value: '01' } });
+    
+    // Should highlight the match
+    const highlightedText = screen.getByText('01');
+    expect(highlightedText.tagName.toLowerCase()).toBe('mark');
+  });
+
+  it('should show value dialog with size information', () => {
+    render(<StateViewer state={mockState} />);
+    
+    const viewButtons = screen.getAllByLabelText('View full value');
+    fireEvent.click(viewButtons[0]);
+    
+    // Dialog should show size in bytes (6 characters / 2 = 3 bytes for "0x123456")
+    expect(screen.getByText(/Size: 3 bytes/)).toBeInTheDocument();
+    expect(screen.getByText('Full Value')).toBeInTheDocument();
+  });
+
+  it('should show diff dialog for changed values', () => {
+    const stateWithDiff = {
+      '0x01': '[CHANGED] 0x123456 → 0x789abc',
+    };
+    
+    render(<StateViewer state={stateWithDiff} />);
+    
+    const viewButtons = screen.getAllByLabelText('View full value');
+    fireEvent.click(viewButtons[0]);
+    
+    // Dialog should show diff format
+    expect(screen.getByText('Value Diff')).toBeInTheDocument();
+    expect(screen.getByText('Before:')).toBeInTheDocument();
+    expect(screen.getByText('After:')).toBeInTheDocument();
+    expect(screen.getByText('Inline Diff:')).toBeInTheDocument();
+  });
+
+  it('should close dialog when close button is clicked', () => {
+    render(<StateViewer state={mockState} />);
+    
+    const viewButtons = screen.getAllByLabelText('View full value');
+    fireEvent.click(viewButtons[0]);
+    
+    // Dialog should be open
+    expect(screen.getByText('Full Value')).toBeInTheDocument();
+    
+    // Close dialog
+    const closeButton = screen.getByLabelText('Close dialog');
+    fireEvent.click(closeButton);
+    
+    // Dialog should be closed
+    expect(screen.queryByText('Full Value')).not.toBeInTheDocument();
   });
 
   it('should group consecutive changes into even-length blocks', () => {

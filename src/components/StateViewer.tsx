@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Search, Copy } from 'lucide-react';
+import { Search, Copy, Eye, X } from 'lucide-react';
 import { Button } from './Button';
 
 interface DiffEntry {
@@ -17,6 +17,12 @@ interface StateViewerProps {
 const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [dialogState, setDialogState] = useState<{
+    isOpen: boolean;
+    key: string;
+    value: string;
+    diffEntry: DiffEntry | null;
+  }>({ isOpen: false, key: '', value: '', diffEntry: null });
   const topRef = useRef<HTMLDivElement>(null);
 
   const stateEntries = useMemo(() => Object.entries(state), [state]);
@@ -95,6 +101,27 @@ const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
       default:
         return 'Value';
     }
+  };
+
+  // Highlight search matches in text
+  const highlightSearchMatches = (text: string, searchTerm: string) => {
+    if (!searchTerm.trim()) return text;
+    
+    const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    const parts = text.split(regex);
+    
+    return parts.map((part, index) => {
+      const isMatch = regex.test(part);
+      regex.lastIndex = 0; // Reset regex for next test
+      
+      return isMatch ? (
+        <mark key={index} className="bg-yellow-200 dark:bg-yellow-900/60 text-yellow-900 dark:text-yellow-100 px-0.5 rounded">
+          {part}
+        </mark>
+      ) : (
+        part
+      );
+    });
   };
 
   // Create inline diff visualization with grouped consecutive changes
@@ -208,8 +235,8 @@ const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
                       Key
                     </label>
                     <div className="flex items-center space-x-2 flex-1 min-w-0">
-                      <code className="text-sm font-mono text-foreground break-all bg-muted px-2 py-1 rounded border flex-1">
-                        {key}
+                      <code className="text-sm font-mono text-foreground break-all bg-muted px-2 py-1 rounded flex-1">
+                        {highlightSearchMatches(key, searchTerm)}
                       </code>
                       <Button
                         onClick={() => handleCopy(key, `key-${key}`)}
@@ -258,48 +285,52 @@ const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
                                   diffEntry.newValue.length > 50 ? formatHexValue(diffEntry.newValue) : diffEntry.newValue
                                 )
                               ) : (
-                                formatHexValue(diffEntry.newValue || diffEntry.oldValue || value)
+                                highlightSearchMatches(formatHexValue(diffEntry.newValue || diffEntry.oldValue || value), searchTerm)
                               )}
                             </span>
                           </code>
                           <Button
-                            onClick={() => handleCopy(diffEntry.newValue || '', `value-${key}`)}
+                            onClick={() => setDialogState({
+                              isOpen: true,
+                              key,
+                              value: diffEntry.newValue || diffEntry.oldValue || value,
+                              diffEntry
+                            })}
                             variant="ghost"
                             size="sm"
                             className="flex-shrink-0"
-                            aria-label="Copy new value"
+                            aria-label="View full value"
                           >
-                            <Copy className="h-4 w-4" />
-                            {copiedKey === `value-${key}` && (
-                              <span className="ml-1 text-xs">Copied!</span>
-                            )}
+                            <Eye className="h-4 w-4" />
                           </Button>
                         </div>
                       ) : (
                         // Show single value for normal, added, or removed entries
                         <div className="flex items-center space-x-2">
                           <code className={`text-sm font-mono break-all px-2 py-1 rounded border flex-1 ${
-                            diffEntry.type === 'added'
+                            diffEntry.type === 'added' 
                               ? 'bg-green-100 border-green-300 text-green-900 dark:bg-green-900/20 dark:border-green-700 dark:text-green-100'
                               : diffEntry.type === 'removed'
                               ? 'bg-red-100 border-red-300 text-red-900 dark:bg-red-900/20 dark:border-red-700 dark:text-red-100'
                               : 'bg-muted border-border text-foreground'
                           }`}>
                             <span title={diffEntry.newValue || diffEntry.oldValue || value}>
-                              {formatHexValue(diffEntry.newValue || diffEntry.oldValue || value)}
+                              {highlightSearchMatches(formatHexValue(diffEntry.newValue || diffEntry.oldValue || value), searchTerm)}
                             </span>
                           </code>
                           <Button
-                            onClick={() => handleCopy(diffEntry.newValue || diffEntry.oldValue || value, `value-${key}`)}
+                            onClick={() => setDialogState({
+                              isOpen: true,
+                              key,
+                              value: diffEntry.newValue || diffEntry.oldValue || value,
+                              diffEntry
+                            })}
                             variant="ghost"
                             size="sm"
                             className="flex-shrink-0"
-                            aria-label="Copy value"
+                            aria-label="View full value"
                           >
-                            <Copy className="h-4 w-4" />
-                            {copiedKey === `value-${key}` && (
-                              <span className="ml-1 text-xs">Copied!</span>
-                            )}
+                            <Eye className="h-4 w-4" />
                           </Button>
                         </div>
                       )}
@@ -315,6 +346,101 @@ const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
           </div>
         )}
       </div>
+
+      {/* Value Dialog */}
+      {dialogState.isOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-background rounded-lg border max-w-4xl w-full max-h-[80vh] flex flex-col">
+            {/* Dialog Header */}
+            <div className="flex items-center justify-between p-6 border-b border-border">
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">
+                  {dialogState.diffEntry?.type === 'changed' ? 'Value Diff' : 'Full Value'}
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Key: {dialogState.key} • Size: {Math.floor(dialogState.value.replace('0x', '').length / 2)} bytes
+                </p>
+              </div>
+              <button
+                onClick={() => setDialogState(prev => ({ ...prev, isOpen: false }))}
+                className="text-muted-foreground hover:text-foreground rounded-lg p-1 hover:bg-muted/10 transition-colors"
+                aria-label="Close dialog"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Dialog Content */}
+            <div className="p-6 overflow-auto flex-1">
+              {dialogState.diffEntry?.type === 'changed' ? (
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-red-600 dark:text-red-400 mb-2">Before:</h4>
+                    <code className="block text-sm font-mono break-all bg-red-50 dark:bg-red-900/20 p-3 rounded border border-red-200 dark:border-red-700 text-red-900 dark:text-red-100">
+                      {dialogState.diffEntry.oldValue}
+                    </code>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-green-600 dark:text-green-400 mb-2">After:</h4>
+                    <code className="block text-sm font-mono break-all bg-green-50 dark:bg-green-900/20 p-3 rounded border border-green-200 dark:border-green-700 text-green-900 dark:text-green-100">
+                      {dialogState.diffEntry.newValue}
+                    </code>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Inline Diff:</h4>
+                    <code className="block text-sm font-mono break-all bg-muted p-3 rounded border border-border text-foreground">
+                      {dialogState.diffEntry.oldValue && dialogState.diffEntry.newValue && 
+                        createInlineDiff(dialogState.diffEntry.oldValue, dialogState.diffEntry.newValue)
+                      }
+                    </code>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                    {dialogState.diffEntry?.type === 'added' ? 'Added Value:' :
+                     dialogState.diffEntry?.type === 'removed' ? 'Removed Value:' : 'Value:'}
+                  </h4>
+                  <code className={`block text-sm font-mono break-all p-3 rounded border ${
+                    dialogState.diffEntry?.type === 'added' 
+                      ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700 text-green-900 dark:text-green-100'
+                      : dialogState.diffEntry?.type === 'removed'
+                      ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700 text-red-900 dark:text-red-100'
+                      : 'bg-muted border-border text-foreground'
+                  }`}>
+                    {dialogState.value}
+                  </code>
+                </div>
+              )}
+            </div>
+
+            {/* Dialog Footer */}
+            <div className="p-6 border-t border-border">
+              <div className="flex justify-end space-x-3">
+                <Button
+                  onClick={() => setDialogState(prev => ({ ...prev, isOpen: false }))}
+                  variant="secondary"
+                >
+                  Close
+                </Button>
+                <Button
+                  onClick={() => {
+                    const textToCopy = dialogState.diffEntry?.type === 'changed' 
+                      ? `Before: ${dialogState.diffEntry.oldValue}\nAfter: ${dialogState.diffEntry.newValue}`
+                      : dialogState.value;
+                    handleCopy(textToCopy, 'dialog');
+                  }}
+                  variant="primary"
+                  className="flex items-center gap-2"
+                >
+                  <Copy className="h-4 w-4" />
+                  {copiedKey === 'dialog' ? 'Copied!' : 'Copy'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
