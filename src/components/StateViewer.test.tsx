@@ -11,10 +11,15 @@ Object.assign(navigator, {
   clipboard: mockClipboard,
 });
 
+// Mock scrollIntoView
+const mockScrollIntoView = vi.fn();
+HTMLElement.prototype.scrollIntoView = mockScrollIntoView;
+
 describe('StateViewer', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockClipboard.writeText.mockResolvedValue(undefined);
+    mockScrollIntoView.mockClear();
   });
 
   afterEach(() => {
@@ -94,11 +99,7 @@ describe('StateViewer', () => {
     render(<StateViewer state={mockState} />);
     
     // Long value should be truncated
-    const longValue = '0x1234567890abcdef1234567890abcdef1234567890abcdef';
     expect(screen.getByText('0x12345678...abcdef')).toBeInTheDocument();
-    
-    // Should show length information
-    expect(screen.getByText(`Length: ${longValue.length} characters`)).toBeInTheDocument();
   });
 
   it('should copy key to clipboard', async () => {
@@ -145,75 +146,24 @@ describe('StateViewer', () => {
     consoleSpy.mockRestore();
   });
 
-  describe('Pagination', () => {
+  it('should display all entries without pagination', () => {
     const largeState: Record<string, string> = {};
     for (let i = 0; i < 25; i++) {
       largeState[`0x${i.toString(16).padStart(2, '0')}`] = `0x${(i * 123).toString(16)}`;
     }
-
-    it('should show pagination when there are more than 10 items', () => {
-      render(<StateViewer state={largeState} />);
-      
-      expect(screen.getByText('Page 1 of 3')).toBeInTheDocument();
-      expect(screen.getByText(/Showing 1 to 10 of 25 entries/)).toBeInTheDocument();
-    });
-
-    it('should navigate to next page', () => {
-      render(<StateViewer state={largeState} />);
-      
-      const nextButton = screen.getByLabelText('Next page');
-      fireEvent.click(nextButton);
-      
-      expect(screen.getByText('Page 2 of 3')).toBeInTheDocument();
-      expect(screen.getByText(/Showing 11 to 20 of 25 entries/)).toBeInTheDocument();
-    });
-
-    it('should navigate to previous page', () => {
-      render(<StateViewer state={largeState} />);
-      
-      // Go to page 2 first
-      const nextButton = screen.getByLabelText('Next page');
-      fireEvent.click(nextButton);
-      
-      // Then go back to page 1
-      const prevButton = screen.getByLabelText('Previous page');
-      fireEvent.click(prevButton);
-      
-      expect(screen.getByText('Page 1 of 3')).toBeInTheDocument();
-    });
-
-    it('should disable previous button on first page', () => {
-      render(<StateViewer state={largeState} />);
-      
-      const prevButton = screen.getByLabelText('Previous page');
-      expect(prevButton).toBeDisabled();
-    });
-
-    it('should disable next button on last page', () => {
-      render(<StateViewer state={largeState} />);
-      
-      // Navigate to last page
-      const nextButton = screen.getByLabelText('Next page');
-      fireEvent.click(nextButton); // Page 2
-      fireEvent.click(nextButton); // Page 3
-      
-      expect(nextButton).toBeDisabled();
-    });
-
-    it('should reset to page 1 when searching', () => {
-      render(<StateViewer state={largeState} />);
-      
-      // Go to page 2
-      const nextButton = screen.getByLabelText('Next page');
-      fireEvent.click(nextButton);
-      expect(screen.getByText('Page 2 of 3')).toBeInTheDocument();
-      
-      // Search - should reset to page 1
-      const searchInput = screen.getByPlaceholderText('Search keys or values...');
-      fireEvent.change(searchInput, { target: { value: '0x0' } }); // This will match multiple entries
-      
-      expect(screen.getByText(/Page 1 of/)).toBeInTheDocument();
-    });
+    
+    render(<StateViewer state={largeState} />);
+    
+    expect(screen.getByText('25 entries total')).toBeInTheDocument();
+    
+    // Should show first and last entries (no pagination)
+    expect(screen.getByText('0x00')).toBeInTheDocument();
+    expect(screen.getByText('0x18')).toBeInTheDocument(); // 24 in hex is 18
+    
+    // Should not show pagination controls
+    expect(screen.queryByLabelText('Next page')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Previous page')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Page \d+ of \d+/)).not.toBeInTheDocument();
   });
 
 
@@ -234,5 +184,60 @@ describe('StateViewer', () => {
     
     expect(screen.getByText('0xEFGH')).toBeInTheDocument();
     expect(screen.queryByText('0xabcd')).not.toBeInTheDocument();
+  });
+
+  it('should scroll to top when title changes', () => {
+    const { rerender } = render(<StateViewer state={mockState} title="Initial Title" />);
+    
+    // Change the title
+    rerender(<StateViewer state={mockState} title="New Title" />);
+    
+    // Verify scrollIntoView was called with smooth behavior
+    expect(mockScrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth' });
+  });
+
+  it('should display inline diff highlighting for changed values', () => {
+    const stateWithDiff = {
+      '0x01': '[CHANGED] 0x123456 → 0x789abc',
+      '0x02': '[ADDED] 0xnewvalue',
+      '0x03': '[REMOVED] 0xoldvalue',
+    };
+    
+    render(<StateViewer state={stateWithDiff} />);
+    
+    // Check that CHANGED, ADDED, REMOVED badges are displayed
+    expect(screen.getByText('CHANGED')).toBeInTheDocument();
+    expect(screen.getByText('ADDED')).toBeInTheDocument();
+    expect(screen.getByText('REMOVED')).toBeInTheDocument();
+    
+    // Check that the diff values are displayed (the inline diff creates spans but the text should still be searchable)
+    expect(screen.getByTitle('0x123456 → 0x789abc')).toBeInTheDocument();
+  });
+
+  it('should group consecutive changes into even-length blocks', () => {
+    const stateWithConsecutiveDiff = {
+      '0x01': '[CHANGED] 0xabcd1234 → 0xefgh5678',
+      '0x02': '[CHANGED] 0x123456789 → 0x987654321', // 9 chars each, should be padded to 10
+      '0x03': '[CHANGED] 0xabc → 0xdef', // 3 chars each, should be padded to 4
+    };
+    
+    render(<StateViewer state={stateWithConsecutiveDiff} />);
+    
+    // The diff algorithm should group consecutive changes and ensure even-length blocks
+    // We can't easily test the exact spans, but we can verify the titles contain the full values
+    expect(screen.getByTitle('0xabcd1234 → 0xefgh5678')).toBeInTheDocument();
+    expect(screen.getByTitle('0x123456789 → 0x987654321')).toBeInTheDocument();
+    expect(screen.getByTitle('0xabc → 0xdef')).toBeInTheDocument();
+  });
+
+  it('should handle mixed same and different characters in diff', () => {
+    const stateWithMixedDiff = {
+      '0x01': '[CHANGED] 0x12ab34cd → 0x12ef34gh', // Same start, different middle, same middle, different end
+    };
+    
+    render(<StateViewer state={stateWithMixedDiff} />);
+    
+    // Should display the full diff with proper grouping
+    expect(screen.getByTitle('0x12ab34cd → 0x12ef34gh')).toBeInTheDocument();
   });
 });

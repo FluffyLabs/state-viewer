@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { Search, Copy, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { Search, Copy } from 'lucide-react';
 import { Button } from './Button';
 
 interface DiffEntry {
@@ -16,24 +16,26 @@ interface StateViewerProps {
 
 const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const itemsPerPage = 10;
+  const topRef = useRef<HTMLDivElement>(null);
 
   const stateEntries = useMemo(() => Object.entries(state), [state]);
-  
+
   const filteredEntries = useMemo(() => {
     if (!searchTerm) return stateEntries;
     const lowerSearchTerm = searchTerm.toLowerCase();
-    return stateEntries.filter(([key, value]) => 
-      key.toLowerCase().includes(lowerSearchTerm) || 
+    return stateEntries.filter(([key, value]) =>
+      key.toLowerCase().includes(lowerSearchTerm) ||
       value.toLowerCase().includes(lowerSearchTerm)
     );
   }, [stateEntries, searchTerm]);
 
-  const totalPages = Math.ceil(filteredEntries.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentEntries = filteredEntries.slice(startIndex, startIndex + itemsPerPage);
+  // Scroll to top when title changes (switching between pre-state/post-state/diff)
+  useEffect(() => {
+    if (topRef.current) {
+      topRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [title]);
 
   const handleCopy = async (text: string, key: string) => {
     try {
@@ -70,7 +72,7 @@ const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
         };
       }
     }
-    
+
     return {
       type: 'normal',
       rawValue: value
@@ -80,19 +82,6 @@ const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
   const formatHexValue = (hex: string) => {
     if (hex.length <= 20) return hex;
     return `${hex.slice(0, 10)}...${hex.slice(-6)}`;
-  };
-
-  const getDiffStyling = (diffType: DiffEntry['type']) => {
-    switch (diffType) {
-      case 'added':
-        return 'bg-green-50 border-green-200 text-green-800';
-      case 'removed':
-        return 'bg-red-50 border-red-200 text-red-800';
-      case 'changed':
-        return 'bg-yellow-50 border-yellow-200 text-yellow-800';
-      default:
-        return 'bg-blue-50 border-blue-200 text-foreground';
-    }
   };
 
   const getDiffLabel = (diffType: DiffEntry['type']) => {
@@ -108,38 +97,89 @@ const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
     }
   };
 
-  const handlePageChange = (newPage: number) => {
-    setCurrentPage(Math.max(1, Math.min(newPage, totalPages)));
+  // Create inline diff visualization with grouped consecutive changes
+  const createInlineDiff = (oldValue: string, newValue: string) => {
+    const maxLength = Math.max(oldValue.length, newValue.length);
+    const parts: Array<{ text: string; type: 'same' | 'removed' | 'added' }> = [];
+    
+    let i = 0;
+    while (i < maxLength) {
+      const oldChar = oldValue[i] || '';
+      const newChar = newValue[i] || '';
+      
+      if (oldChar === newChar && oldChar !== '') {
+        // Characters are the same - collect all consecutive same characters
+        let sameText = oldChar;
+        i++;
+        while (i < maxLength && oldValue[i] === newValue[i] && oldValue[i]) {
+          sameText += oldValue[i];
+          i++;
+        }
+        parts.push({ text: sameText, type: 'same' });
+      } else {
+        // Characters are different - collect consecutive changes
+        let removedText = '';
+        let addedText = '';
+        
+        // Collect consecutive different characters
+        while (i < maxLength && (oldValue[i] || '') !== (newValue[i] || '')) {
+          if (oldValue[i]) removedText += oldValue[i];
+          if (newValue[i]) addedText += newValue[i];
+          i++;
+        }
+        
+        // Ensure even number of characters in blocks
+        const makeEvenLength = (text: string) => {
+          return text.length % 2 === 0 ? text : text + ' ';
+        };
+        
+        if (removedText) {
+          parts.push({ text: makeEvenLength(removedText), type: 'removed' });
+        }
+        if (addedText) {
+          parts.push({ text: makeEvenLength(addedText), type: 'added' });
+        }
+      }
+    }
+    
+    return parts.map((part, index) => {
+      const className = part.type === 'removed' 
+        ? 'bg-red-200 dark:bg-red-900/60 text-red-900 dark:text-red-100' 
+        : part.type === 'added'
+        ? 'bg-green-200 dark:bg-green-900/60 text-green-900 dark:text-green-100'
+        : '';
+      
+      return (
+        <span key={index} className={className}>
+          {part.text}
+        </span>
+      );
+    });
   };
-
-  // Reset page when search changes
-  useMemo(() => {
-    setCurrentPage(1);
-  }, [searchTerm]);
 
   if (stateEntries.length === 0) {
     return (
-      <div className="bg-white rounded-lg border p-6 text-center">
+      <div ref={topRef} className="bg-background rounded-lg border p-6 text-center">
         <p className="text-muted-foreground">No state data to display</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg border">
+    <div ref={topRef} className="bg-background rounded-lg border">
       {/* Header */}
-      <div className="px-6 py-4 border-b">
+      <div className="px-6 py-4 border-b bg-muted/30">
         <h2 className="text-xl font-semibold text-foreground">{title}</h2>
         <p className="text-sm text-muted-foreground mt-1">
           {stateEntries.length} entries total
-          {filteredEntries.length !== stateEntries.length && 
+          {filteredEntries.length !== stateEntries.length &&
             ` • ${filteredEntries.length} matching search`
           }
         </p>
       </div>
 
       {/* Search */}
-      <div className="px-6 py-4 border-b bg-gray-50">
+      <div className="px-6 py-4 border-b bg-muted/20">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
@@ -147,107 +187,104 @@ const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
             placeholder="Search keys or values..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
           />
         </div>
       </div>
 
       {/* State Entries */}
-      <div className="divide-y">
-        {currentEntries.length > 0 ? (
-          currentEntries.map(([key, value], index) => {
+      <div className="divide-y divide-border text-left">
+        {filteredEntries.length > 0 ? (
+          filteredEntries.map(([key, value], index) => {
             const diffEntry = parseDiffValue(value);
-            const diffStyling = getDiffStyling(diffEntry.type);
             const diffLabel = getDiffLabel(diffEntry.type);
-            
+
             return (
-              <div key={`${key}-${index}`} className="px-6 py-4 hover:bg-gray-50">
-                <div className="space-y-3">
-                  {/* Key */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                        Key
-                      </label>
-                      <div className="mt-1 flex items-center space-x-2">
-                        <code className="text-sm font-mono text-foreground break-all bg-gray-100 px-2 py-1 rounded">
-                          {key}
-                        </code>
-                        <Button
-                          onClick={() => handleCopy(key, `key-${key}`)}
-                          variant="ghost"
-                          size="sm"
-                          className="flex-shrink-0"
-                          aria-label="Copy key"
-                        >
-                          <Copy className="h-4 w-4" />
-                          <span className="sr-only">Copy</span>
-                          {copiedKey === `key-${key}` && (
-                            <span className="ml-1 text-xs">Copied!</span>
-                          )}
-                        </Button>
-                      </div>
+              <div key={`${key}-${index}`} className="px-6 py-3 hover:bg-muted/30">
+                <div className="space-y-2">
+                  {/* Key Row */}
+                  <div className="flex items-center gap-4">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide w-16 flex-shrink-0">
+                      Key
+                    </label>
+                    <div className="flex items-center space-x-2 flex-1 min-w-0">
+                      <code className="text-sm font-mono text-foreground break-all bg-muted px-2 py-1 rounded border flex-1">
+                        {key}
+                      </code>
+                      <Button
+                        onClick={() => handleCopy(key, `key-${key}`)}
+                        variant="ghost"
+                        size="sm"
+                        className="flex-shrink-0"
+                        aria-label="Copy key"
+                      >
+                        <Copy className="h-4 w-4" />
+                        {copiedKey === `key-${key}` && (
+                          <span className="ml-1 text-xs">Copied!</span>
+                        )}
+                      </Button>
                     </div>
                   </div>
 
-                  {/* Value */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
+                  {/* Value Row */}
+                  <div className="flex items-start gap-4">
+                    <div className="w-16 flex-shrink-0 flex items-center gap-2">
                       <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      {diffEntry.type !== 'normal' ? (
+                        <span className={`px-0.5 py-0.5 rounded text-xs font-semibold ${
+                          diffEntry.type === 'added' ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200' :
+                          diffEntry.type === 'removed' ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200' :
+                          'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-200'
+                        }`}>
+                          {diffEntry.type.toUpperCase()}
+                        </span>
+                      ) : (
+                      <span>
                         {diffLabel}
-                        {diffEntry.type !== 'normal' && (
-                          <span className={`ml-2 px-2 py-0.5 rounded text-xs font-semibold ${
-                            diffEntry.type === 'added' ? 'bg-green-100 text-green-800' :
-                            diffEntry.type === 'removed' ? 'bg-red-100 text-red-800' :
-                            'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {diffEntry.type.toUpperCase()}
-                          </span>
-                        )}
-                      </label>
-                      
+                      </span>
+                      )}
+                    </label>
+                    </div>
+
+                    <div className="flex-1 min-w-0">
                       {diffEntry.type === 'changed' ? (
-                        // Show old and new values for changed entries
-                        <div className="mt-1 space-y-2">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-xs text-red-600 font-medium">Before:</span>
-                            <code className="text-sm font-mono break-all bg-red-50 px-2 py-1 rounded border border-red-200 text-red-800">
-                              <span title={diffEntry.oldValue}>
-                                {formatHexValue(diffEntry.oldValue || '')}
-                              </span>
-                            </code>
-                            <Button
-                              onClick={() => handleCopy(diffEntry.oldValue || '', `old-${key}`)}
-                              variant="ghost"
-                              size="sm"
-                              className="flex-shrink-0"
-                              aria-label="Copy old value"
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <span className="text-xs text-green-600 font-medium">After:</span>
-                            <code className="text-sm font-mono break-all bg-green-50 px-2 py-1 rounded border border-green-200 text-green-800">
-                              <span title={diffEntry.newValue}>
-                                {formatHexValue(diffEntry.newValue || '')}
-                              </span>
-                            </code>
-                            <Button
-                              onClick={() => handleCopy(diffEntry.newValue || '', `new-${key}`)}
-                              variant="ghost"
-                              size="sm"
-                              className="flex-shrink-0"
-                              aria-label="Copy new value"
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                          </div>
+                        // Show inline diff for changed entries
+                        <div className="flex items-center space-x-2">
+                          <code className="text-sm font-mono break-all bg-muted px-2 py-1 rounded border border-border text-foreground flex-1">
+                            <span title={`${diffEntry.oldValue} → ${diffEntry.newValue}`}>
+                              {diffEntry.oldValue && diffEntry.newValue ? (
+                                createInlineDiff(
+                                  diffEntry.oldValue.length > 50 ? formatHexValue(diffEntry.oldValue) : diffEntry.oldValue,
+                                  diffEntry.newValue.length > 50 ? formatHexValue(diffEntry.newValue) : diffEntry.newValue
+                                )
+                              ) : (
+                                formatHexValue(diffEntry.newValue || diffEntry.oldValue || value)
+                              )}
+                            </span>
+                          </code>
+                          <Button
+                            onClick={() => handleCopy(diffEntry.newValue || '', `value-${key}`)}
+                            variant="ghost"
+                            size="sm"
+                            className="flex-shrink-0"
+                            aria-label="Copy new value"
+                          >
+                            <Copy className="h-4 w-4" />
+                            {copiedKey === `value-${key}` && (
+                              <span className="ml-1 text-xs">Copied!</span>
+                            )}
+                          </Button>
                         </div>
                       ) : (
                         // Show single value for normal, added, or removed entries
-                        <div className="mt-1 flex items-center space-x-2">
-                          <code className={`text-sm font-mono break-all px-2 py-1 rounded border ${diffStyling}`}>
+                        <div className="flex items-center space-x-2">
+                          <code className={`text-sm font-mono break-all px-2 py-1 rounded border flex-1 ${
+                            diffEntry.type === 'added'
+                              ? 'bg-green-100 border-green-300 text-green-900 dark:bg-green-900/20 dark:border-green-700 dark:text-green-100'
+                              : diffEntry.type === 'removed'
+                              ? 'bg-red-100 border-red-300 text-red-900 dark:bg-red-900/20 dark:border-red-700 dark:text-red-100'
+                              : 'bg-muted border-border text-foreground'
+                          }`}>
                             <span title={diffEntry.newValue || diffEntry.oldValue || value}>
                               {formatHexValue(diffEntry.newValue || diffEntry.oldValue || value)}
                             </span>
@@ -260,18 +297,11 @@ const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
                             aria-label="Copy value"
                           >
                             <Copy className="h-4 w-4" />
-                            <span className="sr-only">Copy</span>
                             {copiedKey === `value-${key}` && (
                               <span className="ml-1 text-xs">Copied!</span>
                             )}
                           </Button>
                         </div>
-                      )}
-                      
-                      {((diffEntry.newValue || diffEntry.oldValue || value).length > 20) && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Length: {(diffEntry.newValue || diffEntry.oldValue || value).length} characters
-                        </p>
                       )}
                     </div>
                   </div>
@@ -285,38 +315,6 @@ const StateViewer = ({ state, title = "State Data" }: StateViewerProps) => {
           </div>
         )}
       </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="px-6 py-4 border-t bg-gray-50 flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredEntries.length)} of {filteredEntries.length} entries
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              variant="ghost"
-              size="sm"
-              aria-label="Previous page"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-sm text-foreground">
-              Page {currentPage} of {totalPages}
-            </span>
-            <Button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              variant="ghost"
-              size="sm"
-              aria-label="Next page"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
