@@ -56,7 +56,7 @@ const CompositeViewer = ({ value, rawValue, showModeToggle = false }: CompositeV
   if (displayMode === 'raw' && rawValue !== undefined) {
     return (
       <div>
-        <pre className="mt-1 pl-2 text-xs font-mono bg-gray-50 dark:bg-gray-800 rounded p-2 break-all overflow-auto">
+        <pre className="mt-1 pl-2 text-xs font-mono bg-gray-50 dark:bg-background rounded p-2 break-all overflow-auto">
           {rawValue}
         </pre>
         {modeToggle}

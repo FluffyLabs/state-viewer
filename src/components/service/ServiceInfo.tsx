@@ -66,7 +66,7 @@ const ServiceInfo = ({ serviceData, isDiffMode, preState, state }: ServiceInfoPr
           )}
         </div>
       ) : (
-        <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded text-xs">
+        <div className="bg-gray-100 dark:bg-background p-2 rounded text-xs">
           <CompositeViewer
             value={getServiceInfoWithId(activeService, serviceId)}
             rawValue={stateValue}

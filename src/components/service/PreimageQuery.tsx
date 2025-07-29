@@ -50,7 +50,7 @@ const PreimageQuery = ({ serviceId, service, state, disabled = false }: Preimage
           placeholder="Preimage hash (0x-prefixed)"
           value={preimageHash}
           onChange={(e) => setPreimageHash(e.target.value)}
-          className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded text-sm"
+          className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-background dark:text-gray-100 rounded text-sm"
         />
         <Button
           size="sm"
@@ -62,7 +62,7 @@ const PreimageQuery = ({ serviceId, service, state, disabled = false }: Preimage
       </div>
       {preimageHash && !disabled && (
         <div className="space-y-2">
-          <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded text-xs">
+          <div className="bg-gray-100 dark:bg-background p-2 rounded text-xs">
             <div className="text-xs font-mono mb-1">Serialized key: {rawKey}</div>
             <div className="font-medium mb-1">Value ({len} bytes)</div>
             <CompositeViewer
