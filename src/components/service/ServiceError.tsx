@@ -7,7 +7,7 @@ const ServiceError = ({ preError, postError }: ServiceErrorProps) => {
   }
 
   return (
-    <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded mb-3">
+    <div className="bg-red-100 dark:bg-red-900/20 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-100 px-3 py-2 rounded mb-3">
       {preError && <div>Pre-state error: {preError}</div>}
       {postError && <div>Post-state error: {postError}</div>}
     </div>
