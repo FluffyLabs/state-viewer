@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { loadState, config, bytes, serialize as stateSerialize } from "@typeberry/state-merkleization";
 import { CompositeViewer } from './viewer';
+import ServiceViewer from './ServiceViewer';
 
 import { filterStateFieldsWithRawKeysAndValues, highlightSearchMatchesWithContext } from '@/utils/searchUtils';
 
@@ -208,6 +209,11 @@ const InspectStateViewer = ({
               </div>
             )}
           </div>
+
+          <ServiceViewer 
+            preStateAccess={preStateAccess} 
+            postStateAccess={stateAccess} 
+          />
         </div>
       )}
 

@@ -30,7 +30,7 @@ const CompositeViewer = ({ value, rawValue, showModeToggle = false }: CompositeV
         >
           Decoded
         </Button>
-        <Button
+        {rawValue !== undefined && (<Button
           size="sm"
           disabled={displayMode === 'raw'}
           className={displayMode === 'raw' ? 'underline' : ''}
@@ -38,7 +38,7 @@ const CompositeViewer = ({ value, rawValue, showModeToggle = false }: CompositeV
           onClick={() => setDisplayMode('raw')}
         >
           Raw
-        </Button>
+        </Button>)}
         <Button
           size="sm"
           disabled={displayMode === 'string'}
