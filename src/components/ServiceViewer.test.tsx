@@ -28,12 +28,13 @@ vi.mock('./service/ServiceCard', () => ({
   )
 }));
 
-// Mock parseServiceIds
+// Mock parseServiceIds and extractServiceIdsFromState
 vi.mock('./service/serviceUtils', () => ({
-  parseServiceIds: vi.fn()
+  parseServiceIds: vi.fn(),
+  extractServiceIdsFromState: vi.fn()
 }));
 
-import { parseServiceIds } from './service/serviceUtils';
+import { parseServiceIds, extractServiceIdsFromState } from './service/serviceUtils';
 
 describe('ServiceViewer', () => {
   const mockServiceInfo: ServiceAccountInfo = {
@@ -64,6 +65,7 @@ describe('ServiceViewer', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (parseServiceIds as ReturnType<typeof vi.fn>).mockReturnValue([0]);
+    (extractServiceIdsFromState as ReturnType<typeof vi.fn>).mockReturnValue([]);
   });
 
   it('should render with required props', () => {

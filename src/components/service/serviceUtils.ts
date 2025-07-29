@@ -70,3 +70,39 @@ export const parseServiceIds = (input: string): number[] => {
     .map(id => parseInt(id, 10))
     .filter(id => !isNaN(id));
 };
+
+export const extractServiceIdsFromState = (state: Record<string, string>): number[] => {
+  const serviceIds = new Set<number>();
+  
+  for (const key of Object.keys(state)) {
+    if (key.startsWith('0xff') && key.length >= 10) {
+      try {
+        const hexPart = key.slice(4);
+        
+        const serviceIdBytes: number[] = [];
+        for (let i = 0; i < hexPart.length && serviceIdBytes.length < 4; i += 4) {
+          const hexByte = hexPart.slice(i, i + 2);
+          const zeroByte = hexPart.slice(i + 2, i + 4);
+          
+          if (zeroByte === '00' || i + 2 >= hexPart.length) {
+            serviceIdBytes.push(parseInt(hexByte, 16));
+          } else {
+            break;
+          }
+        }
+        
+        if (serviceIdBytes.length === 4) {
+          const serviceId = serviceIdBytes[0] | 
+                           (serviceIdBytes[1] << 8) | 
+                           (serviceIdBytes[2] << 16) | 
+                           (serviceIdBytes[3] << 24);
+          serviceIds.add(serviceId);
+        }
+      } catch {
+        continue;
+      }
+    }
+  }
+  
+  return Array.from(serviceIds).sort((a, b) => a - b);
+};
