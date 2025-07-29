@@ -1,131 +1,76 @@
 # State View
 
-A React application built with Vite, using FluffyLabs shared UI components.
+A web application for inspecting JAM state data. Upload serialized state dumps in JSON format to view and analyze their contents.
 
-## Features
+## What it does
 
-- **React 19** - Latest React version with modern features
-- **TypeScript** - Type-safe development
-- **Vite** - Fast build tool and development server
-- **React Router** - Client-side routing
-- **Tailwind CSS** - Utility-first CSS framework
-- **@fluffylabs/shared-ui** - Shared UI components library with Header and Sidebar
-- **Vitest** - Fast unit testing framework
-- **React Testing Library** - Testing utilities for React components
-- **ESLint** - Code linting and formatting
+State View allows you to:
 
-## Getting Started
+- Upload JSON files containing blockchain state data
+- View state data in a structured, readable format
+- Switch between different views (pre-state, post-state, diff) for test vectors
+- Edit JSON content manually with syntax highlighting
+- Inspect state merkleization and structure
 
-### Prerequisites
+## Supported formats
 
-- Node.js (latest LTS version recommended)
-- npm or yarn
+- STF (State Transition Function) test vectors
+- STF genesis states
+- JIP-4 Chain Spec files
+- Typeberry configuration files
 
-### Installation
+## Development
+
+### Requirements
+
+- Node.js (latest LTS version)
+- npm
+
+### Setup
 
 ```bash
 npm install
 ```
 
-### Development
-
-Start the development server:
+### Running locally
 
 ```bash
 npm run dev
 ```
 
-The application will be available at `http://localhost:5173`
+The application runs at `http://localhost:5173`
+
+### Testing
+
+```bash
+npm run test          # Run tests once
+npm run test:watch    # Run tests in watch mode
+npm run test:coverage # Run tests with coverage report
+```
 
 ### Building
-
-Build for production:
 
 ```bash
 npm run build
 ```
 
-### Linting
-
-Run ESLint:
+### Code quality
 
 ```bash
 npm run lint
 ```
 
-### Testing
-
-Run tests:
-
-```bash
-npm run test
-```
-
-Run tests in watch mode:
-
-```bash
-npm run test:watch
-```
-
-Run tests with coverage:
-
-```bash
-npm run test:coverage
-```
-
-### Preview
-
-Preview the production build:
-
-```bash
-npm run preview
-```
-
-## Project Structure
+## Project structure
 
 ```
 src/
-├── assets/          # Static assets (SVGs, images)
-│   └── tool-name.svg
-├── App.tsx          # Main application component
-├── main.tsx         # Application entry point
-├── index.css        # Global styles
-└── vite-env.d.ts    # Vite type declarations
+├── components/      # React components
+├── utils/           # Utility functions for state parsing
+├── types/           # TypeScript type definitions
+├── constants/       # Application constants
+└── assets/          # Static assets
 ```
-
-## Available Routes
-
-- `/` - Home page with Hello World component
-
-## Technologies Used
-
-- **React** - UI library
-- **TypeScript** - Type safety
-- **Vite** - Build tool and dev server
-- **React Router** - Routing
-- **Tailwind CSS** - Styling
-- **@fluffylabs/shared-ui** - Shared components
-- **Vitest** - Testing framework
-- **React Testing Library** - Component testing
-- **ESLint** - Code quality
-
-## Shared UI Components
-
-This project uses the `@fluffylabs/shared-ui` library which provides:
-
-- Header component with FluffyLabs branding
-- AppsSidebar component with navigation links
-- Dark mode support
-- Consistent styling across FluffyLabs applications
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
 
 ## License
 
-This source code is licensed under the Mozilla Public License, v. 2.0. You can obtain a copy at https://mozilla.org/MPL/2.0/.
+Mozilla Public License, v. 2.0
