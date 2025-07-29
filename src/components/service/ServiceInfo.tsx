@@ -1,0 +1,81 @@
+
+import { CompositeViewer } from '../viewer';
+import { getServiceInfoWithId } from './serviceUtils';
+import { serviceData as serviceDataSerializer } from '../../constants/serviceFields';
+import type { RawState, ServiceData } from './types';
+
+export interface ServiceInfoProps {
+  preState?: RawState;
+  state: RawState;
+  serviceData: ServiceData;
+  isDiffMode: boolean;
+}
+
+const ServiceInfo = ({ serviceData, isDiffMode, preState, state }: ServiceInfoProps) => {
+  const { serviceId, preService, postService } = serviceData;
+  const activeService = postService || preService;
+  if (activeService === null) {
+    return null;
+  }
+
+  const rawKey = serviceDataSerializer(activeService.serviceId as never).key.toString()
+    .substring(0, 64);
+
+  const preStateValue = preState?.[rawKey];
+  const stateValue = state[rawKey];
+
+  const hasChanged = isDiffMode && preStateValue !== stateValue;
+  if (isDiffMode && !hasChanged) {
+    return null;
+  }
+
+  return (
+    <div>
+      <h6 className="font-medium text-sm mb-2">Service Info</h6>
+
+      {/* Raw Key Display */}
+      <div className="mb-3">
+        <div className="text-xs font-mono mb-1">Key: {rawKey}</div>
+      </div>
+
+      {isDiffMode && hasChanged ? (
+        <div className="space-y-2">
+          {preService && (
+            <div>
+              <div className="text-xs font-medium text-red-700 mb-1">Before:</div>
+              <div className="bg-red-50 border border-red-200 p-2 rounded text-xs">
+                <CompositeViewer
+                  value={getServiceInfoWithId(preService, serviceId)}
+                  rawValue={preStateValue}
+                  showModeToggle={true}
+                />
+              </div>
+            </div>
+          )}
+          {postService && (
+            <div>
+              <div className="text-xs font-medium text-green-700 mb-1">After:</div>
+              <div className="bg-green-50 border border-green-200 p-2 rounded text-xs">
+                <CompositeViewer
+                  value={getServiceInfoWithId(postService, serviceId)}
+                  rawValue={stateValue}
+                  showModeToggle={true}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="bg-gray-100 p-2 rounded text-xs">
+          <CompositeViewer
+            value={getServiceInfoWithId(activeService, serviceId)}
+            rawValue={stateValue}
+            showModeToggle={true}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ServiceInfo;

@@ -40,14 +40,13 @@ const UploadScreen = () => {
       const state = extractGenesisState(
         uploadState.content,
         uploadState.format,
-        uploadState.selectedState
       );
-      return state;
+      return state.state === null ? null : { state: state.state, preState: state.preState }
     } catch (error) {
       console.error('Failed to extract state:', error);
       return null;
     }
-  }, [uploadState.content, uploadState.format, uploadState.selectedState, uploadState.isValidJson]);
+  }, [uploadState.content, uploadState.format, uploadState.isValidJson]);
 
   const stateTitle = useMemo(() => {
     if (uploadState.format === 'stf-test-vector' && uploadState.selectedState) {
@@ -150,6 +149,22 @@ const UploadScreen = () => {
       selectedState: stateType,
     }));
   }, []);
+
+  const selectedState= useMemo(() => {
+    if (extractedState === null) {
+      return null;
+    }
+    if (uploadState.selectedState === 'diff') {
+      return extractedState;
+    }
+    if (uploadState.selectedState === 'pre_state' && extractedState.preState !== undefined) {
+      return { state: extractedState.preState, preState: undefined };
+    }
+    if (uploadState.selectedState === 'post_state') {
+      return { state: extractedState.state, preState: undefined };
+    }
+    return extractedState;
+  }, [uploadState.selectedState, extractedState]);
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -291,10 +306,11 @@ const UploadScreen = () => {
       </div>
 
       {/* State Viewer */}
-      {extractedState && Object.keys(extractedState).length > 0 && (
+      {selectedState !== null && Object.keys(selectedState.state).length > 0 && (
         <div className="mb-6">
           <StateViewer
-            state={extractedState}
+            state={selectedState.state}
+            preState={selectedState.preState}
             title={stateTitle}
           />
         </div>

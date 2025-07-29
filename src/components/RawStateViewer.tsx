@@ -1,6 +1,10 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
-import { Search, Copy, Eye, X } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Copy, Eye, X, Info } from 'lucide-react';
 import { Button } from './ui/Button';
+import { Popover } from './ui/Popover';
+import { calculateStateDiff } from '@/utils';
+import { filterEntriesWithFieldNames, highlightSearchMatchesWithContext } from '@/utils/searchUtils';
+import { createRawKeyToFieldMap } from '@/constants/stateFields';
 
 interface DiffEntry {
   type: 'added' | 'removed' | 'changed' | 'normal';
@@ -10,12 +14,18 @@ interface DiffEntry {
 }
 
 interface RawStateViewerProps {
+  preState?: Record<string, string>;
   state: Record<string, string>;
   title?: string;
+  searchTerm?: string;
 }
 
-const RawStateViewer = ({ state, title = "State Data" }: RawStateViewerProps) => {
-  const [searchTerm, setSearchTerm] = useState('');
+const RawStateViewer = ({
+  preState,
+  state,
+  searchTerm: externalSearchTerm,
+}: RawStateViewerProps) => {
+
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [dialogState, setDialogState] = useState<{
     isOpen: boolean;
@@ -23,25 +33,28 @@ const RawStateViewer = ({ state, title = "State Data" }: RawStateViewerProps) =>
     value: string;
     diffEntry: DiffEntry | null;
   }>({ isOpen: false, key: '', value: '', diffEntry: null });
-  const topRef = useRef<HTMLDivElement>(null);
 
-  const stateEntries = useMemo(() => Object.entries(state), [state]);
+  // Calculate the state to display
+  const displayState = useMemo(() => {
+    if (preState !== undefined) {
+      return calculateStateDiff(preState, state);
+    }
+    return state;
+  }, [preState, state]);
+
+  const stateEntries = useMemo(() => Object.entries(displayState), [displayState]);
 
   const filteredEntries = useMemo(() => {
-    if (!searchTerm) return stateEntries;
-    const lowerSearchTerm = searchTerm.toLowerCase();
-    return stateEntries.filter(([key, value]) =>
-      key.toLowerCase().includes(lowerSearchTerm) ||
-      value.toLowerCase().includes(lowerSearchTerm)
-    );
-  }, [stateEntries, searchTerm]);
+    return filterEntriesWithFieldNames(stateEntries, externalSearchTerm || '');
+  }, [stateEntries, externalSearchTerm]);
 
-  // Scroll to top when title changes (switching between pre-state/post-state/diff)
-  useEffect(() => {
-    if (topRef.current) {
-      topRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [title]);
+  // Create mapping for known state field keys
+  const rawKeyToFieldMap = useMemo(() => createRawKeyToFieldMap(), []);
+
+  // Function to get field info for a raw key
+  const getFieldInfo = (rawKey: string) => {
+    return rawKeyToFieldMap.get(rawKey) || rawKeyToFieldMap.get(rawKey.substring(0, rawKey.length - 2));
+  };
 
   const handleCopy = async (text: string, key: string) => {
     try {
@@ -103,26 +116,7 @@ const RawStateViewer = ({ state, title = "State Data" }: RawStateViewerProps) =>
     }
   };
 
-  // Highlight search matches in text
-  const highlightSearchMatches = (text: string, searchTerm: string) => {
-    if (!searchTerm.trim()) return text;
 
-    const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-    const parts = text.split(regex);
-
-    return parts.map((part, index) => {
-      const isMatch = regex.test(part);
-      regex.lastIndex = 0; // Reset regex for next test
-
-      return isMatch ? (
-        <mark key={index} className="bg-yellow-200 dark:bg-yellow-900/60 text-yellow-900 dark:text-yellow-100 px-0.5 rounded">
-          {part}
-        </mark>
-      ) : (
-        part
-      );
-    });
-  };
 
   // Create inline diff visualization with grouped consecutive changes
   const createInlineDiff = (oldValue: string, newValue: string) => {
@@ -186,27 +180,14 @@ const RawStateViewer = ({ state, title = "State Data" }: RawStateViewerProps) =>
 
   if (stateEntries.length === 0) {
     return (
-      <div ref={topRef} className="bg-background rounded-lg border p-6 text-center">
+      <div className="rounded-lg border p-6 text-center">
         <p className="text-muted-foreground">No state data to display</p>
       </div>
     );
   }
 
   return (
-    <div ref={topRef} className="bg-background rounded-lg border">
-      {/* Search */}
-      <div className="px-6 py-4 border-b bg-muted/20">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search keys or values..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
-          />
-        </div>
-      </div>
+    <div>
       {/* State Entries */}
       <div className="divide-y divide-border text-left">
         {filteredEntries.length > 0 ? (
@@ -219,12 +200,32 @@ const RawStateViewer = ({ state, title = "State Data" }: RawStateViewerProps) =>
                 <div className="space-y-2">
                   {/* Key Row */}
                   <div className="flex items-center gap-4">
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide w-16 flex-shrink-0 hidden md:block">
-                      Key
+                    <label className="items-center text-xs font-medium text-muted-foreground w-16 flex-shrink-0 hidden md:flex">
+                      <span className="uppercase tracking-wide mr-2">Key</span>
+                      {getFieldInfo(key) && (
+                        <Popover
+                        trigger={
+                          <div className="flex-shrink-0">
+                            <Info className="h-4 w-4 text-blue-500 hover:text-blue-600 cursor-help" />
+                          </div>
+                        }
+                        content={
+                          <div className="space-y-1">
+                            <div className="font-semibold">{getFieldInfo(key)?.key}</div>
+                            <div className="text-xs opacity-75">
+                              {getFieldInfo(key)?.notation} ({getFieldInfo(key)?.title})
+                            </div>
+                            <div className="text-xs">{getFieldInfo(key)?.description}</div>
+                          </div>
+                        }
+                        position="right"
+                        triggerOn="hover"
+                        />
+                      )}
                     </label>
                     <div className="flex items-center space-x-2 flex-1 min-w-0">
                       <code className="text-sm font-mono text-foreground break-all bg-muted px-2 py-1 rounded flex-1">
-                        {highlightSearchMatches(key, searchTerm)}
+                        {highlightSearchMatchesWithContext(key, externalSearchTerm || '', true)}
                       </code>
                       <Button
                         onClick={() => handleCopy(key, `key-${key}`)}
@@ -273,7 +274,7 @@ const RawStateViewer = ({ state, title = "State Data" }: RawStateViewerProps) =>
                                   diffEntry.newValue.length > 50 ? formatHexValue(diffEntry.newValue) : diffEntry.newValue
                                 )
                               ) : (
-                                highlightSearchMatches(formatHexValue(diffEntry.newValue || diffEntry.oldValue || value), searchTerm)
+                                highlightSearchMatchesWithContext(formatHexValue(diffEntry.newValue || diffEntry.oldValue || value), externalSearchTerm || '', false)
                               )}
                             </span>
                           </code>
@@ -303,7 +304,7 @@ const RawStateViewer = ({ state, title = "State Data" }: RawStateViewerProps) =>
                               : 'bg-muted border-border text-foreground'
                           }`}>
                             <span title={diffEntry.newValue || diffEntry.oldValue || value}>
-                              {highlightSearchMatches(formatHexValue(diffEntry.newValue || diffEntry.oldValue || value), searchTerm)}
+                              {highlightSearchMatchesWithContext(formatHexValue(diffEntry.newValue || diffEntry.oldValue || value), externalSearchTerm || '', false)}
                             </span>
                           </code>
                           <Button

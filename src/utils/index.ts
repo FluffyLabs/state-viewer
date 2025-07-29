@@ -3,6 +3,7 @@ export {
   validateJsonContent,
   extractGenesisState, 
   extractStateFromStfVector,
+  extractBothStatesFromStfVector,
   calculateStateDiff,
   type JsonValidationResult,
   type JsonFileFormat,

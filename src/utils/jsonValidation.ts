@@ -86,11 +86,11 @@ interface FormatDetectionResult {
 export const calculateStateDiff = (preState: Record<string, string>, postState: Record<string, string>): Record<string, string> => {
   const diffResult: Record<string, string> = {};
   const allKeys = new Set([...Object.keys(preState), ...Object.keys(postState)]);
-  
+
   for (const key of allKeys) {
     const preValue = preState[key];
     const postValue = postState[key];
-    
+
     if (preValue === undefined && postValue !== undefined) {
       // Added
       diffResult[key] = `[ADDED] ${postValue}`;
@@ -102,7 +102,7 @@ export const calculateStateDiff = (preState: Record<string, string>, postState: 
       diffResult[key] = `[CHANGED] ${preValue} → ${postValue}`;
     }
   }
-  
+
   return diffResult;
 };
 
@@ -157,9 +157,9 @@ const detectJsonFormat = (parsedJson: unknown): FormatDetectionResult => {
 export const validateJsonContent = (content: string): JsonValidationResult => {
   try {
     const parsedJson = JSON.parse(content);
-    
+
     const { format, description } = detectJsonFormat(parsedJson);
-    
+
     let availableStates: StfStateType[] | undefined;
     if (format === 'stf-test-vector') {
       availableStates = ['pre_state', 'post_state', 'diff'];
@@ -211,7 +211,7 @@ export const validateJsonFile = (file: File): Promise<JsonValidationResult> => {
     reader.onload = (e) => {
       try {
         const content = e.target?.result as string;
-        
+
         const result = validateJsonContent(content);
         resolve(result);
       } catch {
@@ -238,73 +238,90 @@ export const validateJsonFile = (file: File): Promise<JsonValidationResult> => {
 };
 
 export const extractStateFromStfVector = (
-  stfVector: StfTestVector, 
+  stfVector: StfTestVector,
   stateType: StfStateType
 ): Record<string, string> => {
   const state = stateType === 'pre_state' ? stfVector.pre_state : stfVector.post_state;
-  
+
   const stateMap: Record<string, string> = {};
   for (const item of state.keyvals) {
     stateMap[item.key] = item.value;
   }
-  
+
   return stateMap;
 };
 
+export const extractBothStatesFromStfVector = (
+  stfVector: StfTestVector
+): { preState: Record<string, string>, postState: Record<string, string> } => {
+  const preStateMap: Record<string, string> = {};
+  for (const item of stfVector.pre_state.keyvals) {
+    preStateMap[item.key] = item.value;
+  }
+
+  const postStateMap: Record<string, string> = {};
+  for (const item of stfVector.post_state.keyvals) {
+    postStateMap[item.key] = item.value;
+  }
+
+  return {
+    preState: preStateMap,
+    postState: postStateMap
+  };
+};
+
 export const extractGenesisState = (
-  content: string, 
-  format: JsonFileFormat, 
-  stateType?: StfStateType
-): Record<string, string> | null => {
+  content: string,
+  format: JsonFileFormat,
+): {
+  state: Record<string, string> | null,
+  preState?: Record<string, string>,
+} => {
   try {
     const parsedJson = JSON.parse(content);
-    
+
     switch (format) {
       case 'jip4-chainspec': {
         const result = Jip4ChainspecSchema.safeParse(parsedJson);
-        return result.success ? result.data.genesis_state : null;
+        return { state: result.success ? result.data.genesis_state : null };
       }
-        
+
       case 'typeberry-config': {
         const result = TypeberryConfigSchema.safeParse(parsedJson);
-        return result.success ? result.data.chain_spec.genesis_state : null;
+        return {state: result.success ? result.data.chain_spec.genesis_state : null};
       }
-        
+
       case 'stf-test-vector': {
-        if (!stateType) {
-          throw new Error('State type must be specified for STF test vectors');
-        }
         const result = StfTestVectorSchema.safeParse(parsedJson);
-        if (!result.success) return null;
-        
-        if (stateType === 'diff') {
-          const preState = extractStateFromStfVector(result.data, 'pre_state');
-          const postState = extractStateFromStfVector(result.data, 'post_state');
-          return calculateStateDiff(preState, postState);
-        }
-        
-        return extractStateFromStfVector(result.data, stateType);
+        if (!result.success) return { state: null };
+
+        const preState = extractStateFromStfVector(result.data, 'pre_state');
+        const postState = extractStateFromStfVector(result.data, 'post_state');
+        return {
+          state: postState,
+          preState,
+        };
       }
-        
+
       case 'stf-genesis': {
         const result = StfGenesisSchema.safeParse(parsedJson);
-        if (!result.success) return null;
-        
+        if (!result.success) return {state: null};
+
         const stateMap: Record<string, string> = {};
         for (const item of result.data.state.keyvals) {
           stateMap[item.key] = item.value;
         }
-        return stateMap;
+        return {state: stateMap};
       }
-      
+
       default:
-        return null;
+        return {state: null};
     }
   } catch (error) {
     // Re-throw intentional errors, only catch JSON parsing errors
     if (error instanceof Error && error.message === 'State type must be specified for STF test vectors') {
       throw error;
     }
-    return null;
+    return {state: null};
   }
 };

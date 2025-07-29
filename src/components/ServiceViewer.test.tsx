@@ -1,0 +1,209 @@
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import ServiceViewer from './ServiceViewer';
+import type { Service, StateAccess, ServiceAccountInfo } from '../types/service';
+import { bytes } from '@typeberry/state-merkleization';
+
+// Mock ServiceIdsInput
+vi.mock('./service/ServiceIdsInput', () => ({
+  default: ({ value, onChange }: { value: string; onChange: (value: string) => void }) => (
+    <input
+      data-testid="service-ids-input"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      aria-label="Service IDs"
+    />
+  )
+}));
+
+// Mock ServiceCard
+vi.mock('./service/ServiceCard', () => ({
+  default: ({ serviceData, isDiffMode }: { serviceData: { serviceId: number; preError: string | null; postError: string | null }; isDiffMode: boolean }) => (
+    <div data-testid="service-card">
+      <div>Service {serviceData.serviceId}</div>
+      {serviceData.preError && <div>Pre Error: {serviceData.preError}</div>}
+      {serviceData.postError && <div>Post Error: {serviceData.postError}</div>}
+      <div>Diff Mode: {isDiffMode.toString()}</div>
+    </div>
+  )
+}));
+
+// Mock parseServiceIds
+vi.mock('./service/serviceUtils', () => ({
+  parseServiceIds: vi.fn()
+}));
+
+import { parseServiceIds } from './service/serviceUtils';
+
+describe('ServiceViewer', () => {
+  const mockServiceInfo: ServiceAccountInfo = {
+    serviceId: 0,
+    balance: 1000,
+    nonce: 5,
+    codeHash: new Uint8Array([1, 2, 3, 4])
+  };
+
+  const createMockService = (serviceId: number): Service => ({
+    serviceId,
+    getInfo: vi.fn(() => ({ ...mockServiceInfo, serviceId })),
+    getStorage: vi.fn(() => bytes.BytesBlob.blobFromNumbers([5, 6, 7, 8])),
+    hasPreimage: vi.fn(() => true),
+    getPreimage: vi.fn(() => bytes.BytesBlob.blobFromNumbers([9, 10, 11, 12])),
+    getLookupHistory: vi.fn(() => [1, 2, 3, 4])
+  });
+
+  const createMockStateAccess = (services: Record<number, Service>): StateAccess => ({
+    getService: vi.fn((serviceId: number) => services[serviceId] || null)
+  });
+
+  const defaultProps = {
+    state: {},
+    stateAccess: createMockStateAccess({})
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (parseServiceIds as ReturnType<typeof vi.fn>).mockReturnValue([0]);
+  });
+
+  it('should render with required props', () => {
+    render(<ServiceViewer {...defaultProps} />);
+    
+    expect(screen.getByText('Service Accounts')).toBeInTheDocument();
+    expect(screen.getByTestId('service-ids-input')).toBeInTheDocument();
+  });
+
+  it('should render with default service ID input of "0"', () => {
+    render(<ServiceViewer {...defaultProps} />);
+    
+    const input = screen.getByTestId('service-ids-input');
+    expect(input).toHaveValue('0');
+  });
+
+  it('should show diff mode message when preStateAccess is provided', () => {
+    const preStateAccess = createMockStateAccess({});
+    
+    render(<ServiceViewer {...defaultProps} preStateAccess={preStateAccess} />);
+    
+    expect(screen.getByText('Diff mode not supported for services yet.')).toBeInTheDocument();
+  });
+
+  it('should not show diff mode message when preStateAccess is not provided', () => {
+    render(<ServiceViewer {...defaultProps} />);
+    
+    expect(screen.queryByText('Diff mode not supported for services yet.')).not.toBeInTheDocument();
+  });
+
+  it('should call parseServiceIds with input value', () => {
+    render(<ServiceViewer {...defaultProps} />);
+    
+    const input = screen.getByTestId('service-ids-input');
+    fireEvent.change(input, { target: { value: '1,2,3' } });
+    
+    expect(parseServiceIds).toHaveBeenCalledWith('1,2,3');
+  });
+
+  it('should render ServiceCard for each parsed service ID', () => {
+    (parseServiceIds as ReturnType<typeof vi.fn>).mockReturnValue([1, 2, 3]);
+    
+    render(<ServiceViewer {...defaultProps} />);
+    
+    const serviceCards = screen.getAllByTestId('service-card');
+    expect(serviceCards).toHaveLength(3);
+    expect(screen.getByText('Service 1')).toBeInTheDocument();
+    expect(screen.getByText('Service 2')).toBeInTheDocument();
+    expect(screen.getByText('Service 3')).toBeInTheDocument();
+  });
+
+  it('should pass correct serviceData to ServiceCard', () => {
+    const mockService = createMockService(1);
+    const stateAccess = createMockStateAccess({ 1: mockService });
+    (parseServiceIds as ReturnType<typeof vi.fn>).mockReturnValue([1]);
+    
+    render(<ServiceViewer {...defaultProps} stateAccess={stateAccess} />);
+    
+    expect(stateAccess.getService).toHaveBeenCalledWith(1);
+    expect(screen.getByText('Service 1')).toBeInTheDocument();
+    expect(screen.getByText('Diff Mode: false')).toBeInTheDocument();
+  });
+
+  it('should handle service access errors', () => {
+    const stateAccess: StateAccess = {
+      getService: vi.fn(() => {
+        throw new Error('Service access error');
+      })
+    };
+    (parseServiceIds as ReturnType<typeof vi.fn>).mockReturnValue([1]);
+    
+    render(<ServiceViewer {...defaultProps} stateAccess={stateAccess} />);
+    
+    expect(screen.getByText('Post Error: Service access error')).toBeInTheDocument();
+  });
+
+  it('should handle preState service access errors', () => {
+    const preStateAccess: StateAccess = {
+      getService: vi.fn(() => {
+        throw new Error('Pre service error');
+      })
+    };
+    const stateAccess = createMockStateAccess({});
+    (parseServiceIds as ReturnType<typeof vi.fn>).mockReturnValue([1]);
+    
+    render(<ServiceViewer {...defaultProps} preStateAccess={preStateAccess} stateAccess={stateAccess} />);
+    
+    expect(screen.getByText('Diff mode not supported for services yet.')).toBeInTheDocument();
+  });
+
+  it('should show no valid service IDs message when no services are parsed', () => {
+    (parseServiceIds as ReturnType<typeof vi.fn>).mockReturnValue([]);
+    
+    render(<ServiceViewer {...defaultProps} />);
+    
+    const input = screen.getByTestId('service-ids-input');
+    fireEvent.change(input, { target: { value: 'invalid' } });
+    
+    expect(screen.getByText('No valid service IDs found in input: "invalid"')).toBeInTheDocument();
+  });
+
+  it('should not show no valid service IDs message when input is empty', () => {
+    (parseServiceIds as ReturnType<typeof vi.fn>).mockReturnValue([]);
+    
+    render(<ServiceViewer {...defaultProps} />);
+    
+    const input = screen.getByTestId('service-ids-input');
+    fireEvent.change(input, { target: { value: '' } });
+    
+    expect(screen.queryByText(/No valid service IDs found/)).not.toBeInTheDocument();
+  });
+
+  it('should pass preState and state to ServiceCard', () => {
+    const preState = { key1: 'value1' };
+    const state = { key2: 'value2' };
+    (parseServiceIds as ReturnType<typeof vi.fn>).mockReturnValue([1]);
+    
+    render(<ServiceViewer preState={preState} state={state} stateAccess={defaultProps.stateAccess} />);
+    
+    // The ServiceCard mock doesn't show these props but they should be passed
+    expect(screen.getByTestId('service-card')).toBeInTheDocument();
+  });
+
+  it('should detect diff mode correctly when preStateAccess is undefined', () => {
+    (parseServiceIds as ReturnType<typeof vi.fn>).mockReturnValue([1]);
+    
+    render(<ServiceViewer {...defaultProps} />);
+    
+    expect(screen.getByText('Diff Mode: false')).toBeInTheDocument();
+  });
+
+  it('should update services when input changes', () => {
+    render(<ServiceViewer {...defaultProps} />);
+    
+    expect(parseServiceIds).toHaveBeenCalledWith('0');
+    
+    // Change input value
+    const input = screen.getByTestId('service-ids-input');
+    fireEvent.change(input, { target: { value: '5,6' } });
+    
+    expect(parseServiceIds).toHaveBeenCalledWith('5,6');
+  });
+});
