@@ -224,27 +224,40 @@ const UploadScreen = () => {
         <h1 className="text-3xl font-bold text-foreground mb-2">
           JAM State Viewer
         </h1>
-        <p className="text-muted-foreground mb-4">
-          Upload a serialized state dump to inspect it.
+        <p className="text-muted-foreground">
+          Upload a serialized state dump to inspect it or try loading one of the examples:{' '}
+          <button
+            onClick={() => handleExampleLoad(EXAMPLE_FILES[0].content)}
+            className="text-primary hover:text-primary/80 hover:underline transition-colors"
+            title={EXAMPLE_FILES[0].description}
+          >
+            STF Test Vector
+          </button>
+          ,{' '}
+          <button
+            onClick={() => handleExampleLoad(EXAMPLE_FILES[2].content)}
+            className="text-primary hover:text-primary/80 hover:underline transition-colors"
+            title={EXAMPLE_FILES[2].description}
+          >
+            STF Genesis
+          </button>
+          ,{' '}
+          <button
+            onClick={() => handleExampleLoad(EXAMPLE_FILES[1].content)}
+            className="text-primary hover:text-primary/80 hover:underline transition-colors"
+            title={EXAMPLE_FILES[1].description}
+          >
+            JIP-4 Chain Spec
+          </button>
+          ,{' '}
+          <button
+            onClick={() => handleExampleLoad(EXAMPLE_FILES[3].content)}
+            className="text-primary hover:text-primary/80 hover:underline transition-colors"
+            title={EXAMPLE_FILES[3].description}
+          >
+            Typeberry config
+          </button>
         </p>
-        
-        <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">
-            Or try these examples:
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {EXAMPLE_FILES.map((example, index) => (
-              <button
-                key={index}
-                onClick={() => handleExampleLoad(example.content)}
-                className="text-sm text-primary hover:text-primary/80 hover:underline transition-colors"
-                title={example.description}
-              >
-                {example.name}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
       )}
 

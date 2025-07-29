@@ -189,7 +189,7 @@ describe('UploadScreen', () => {
       
       // Verify the component renders without errors
       expect(screen.getByText('JAM State Viewer')).toBeInTheDocument();
-      expect(screen.getByText('Upload a serialized state dump to inspect it.')).toBeInTheDocument();
+      expect(screen.getByText(/upload a serialized state dump to inspect it or try loading one of the examples/i)).toBeInTheDocument();
     });
 
     it('should handle state extraction errors gracefully', () => {
