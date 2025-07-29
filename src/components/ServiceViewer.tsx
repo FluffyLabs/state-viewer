@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import ServiceIdsInput from './service/ServiceIdsInput';
 import ServiceCard from './service/ServiceCard';
-import { parseServiceIds } from './service/serviceUtils';
+import { parseServiceIds, extractServiceIdsFromState } from './service/serviceUtils';
 import type { ServiceData } from './service/types';
 import { StateAccess } from '@/types/service';
 
@@ -13,7 +13,19 @@ export interface ServiceViewerProps {
 }
 
 const ServiceViewer = ({ preStateAccess, stateAccess, preState, state }: ServiceViewerProps) => {
-  const [serviceIdsInput, setServiceIdsInput] = useState('0');
+  const discoveredServiceIds = useMemo(() => {
+    return extractServiceIdsFromState(state);
+  }, [state]);
+
+  const [serviceIdsInput, setServiceIdsInput] = useState(() => {
+    return discoveredServiceIds.length > 0 ? discoveredServiceIds.join(', ') : '0';
+  });
+
+  useEffect(() => {
+    if (discoveredServiceIds.length > 0) {
+      setServiceIdsInput(discoveredServiceIds.join(', '));
+    }
+  }, [discoveredServiceIds]);
 
   const serviceIds = useMemo(() => {
     return parseServiceIds(serviceIdsInput);
