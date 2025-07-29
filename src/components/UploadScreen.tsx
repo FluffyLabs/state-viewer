@@ -6,6 +6,11 @@ import StateViewer from './StateViewer';
 import { Button } from './ui/Button';
 import { validateJsonFile, validateJsonContent, extractGenesisState, type JsonFileFormat, type StfStateType } from '../utils';
 
+import stfTestVectorFixture from '../utils/fixtures/00000001.json';
+import jip4ChainspecFixture from '../utils/fixtures/dev-tiny.json';
+import stfGenesisFixture from '../utils/fixtures/genesis.json';
+import typeberryConfigFixture from '../utils/fixtures/typeberry-dev.json';
+
 interface UploadState {
   file: File | null;
   content: string;
@@ -16,6 +21,35 @@ interface UploadState {
   availableStates?: StfStateType[];
   selectedState?: StfStateType;
 }
+
+interface ExampleFile {
+  name: string;
+  description: string;
+  content: string;
+}
+
+const EXAMPLE_FILES: ExampleFile[] = [
+  {
+    name: 'STF Test Vector',
+    description: 'Example with pre-state and post-state data',
+    content: JSON.stringify(stfTestVectorFixture, null, 2)
+  },
+  {
+    name: 'JIP-4 Chain Spec',
+    description: 'Genesis state from chain specification',
+    content: JSON.stringify(jip4ChainspecFixture, null, 2)
+  },
+  {
+    name: 'STF Genesis',
+    description: 'Initial state with header information',
+    content: JSON.stringify(stfGenesisFixture, null, 2)
+  },
+  {
+    name: 'Typeberry Config',
+    description: 'Typeberry framework configuration',
+    content: JSON.stringify(typeberryConfigFixture, null, 2)
+  }
+];
 
 const UploadScreen = () => {
   const [uploadState, setUploadState] = useState<UploadState>({
@@ -150,6 +184,23 @@ const UploadScreen = () => {
     }));
   }, []);
 
+  const handleExampleLoad = useCallback((exampleContent: string) => {
+    clearUpload();
+    
+    const validation = validateJsonContent(exampleContent);
+    
+    setUploadState({
+      file: null,
+      content: validation.content,
+      error: validation.error,
+      isValidJson: validation.isValid,
+      format: validation.format,
+      formatDescription: validation.formatDescription,
+      availableStates: validation.availableStates,
+      selectedState: validation.availableStates?.includes('diff') ? 'diff' : validation.availableStates?.[0],
+    });
+  }, [clearUpload]);
+
   const selectedState= useMemo(() => {
     if (extractedState === null) {
       return null;
@@ -174,7 +225,38 @@ const UploadScreen = () => {
           JAM State Viewer
         </h1>
         <p className="text-muted-foreground">
-          Upload a serialized state dump to inspect it.
+          Upload a serialized state dump to inspect it or try loading one of the examples:{' '}
+          <button
+            onClick={() => handleExampleLoad(EXAMPLE_FILES[0].content)}
+            className="text-primary hover:text-primary/80 hover:underline transition-colors"
+            title={EXAMPLE_FILES[0].description}
+          >
+            STF Test Vector
+          </button>
+          ,{' '}
+          <button
+            onClick={() => handleExampleLoad(EXAMPLE_FILES[2].content)}
+            className="text-primary hover:text-primary/80 hover:underline transition-colors"
+            title={EXAMPLE_FILES[2].description}
+          >
+            STF Genesis
+          </button>
+          ,{' '}
+          <button
+            onClick={() => handleExampleLoad(EXAMPLE_FILES[1].content)}
+            className="text-primary hover:text-primary/80 hover:underline transition-colors"
+            title={EXAMPLE_FILES[1].description}
+          >
+            JIP-4 Chain Spec
+          </button>
+          ,{' '}
+          <button
+            onClick={() => handleExampleLoad(EXAMPLE_FILES[3].content)}
+            className="text-primary hover:text-primary/80 hover:underline transition-colors"
+            title={EXAMPLE_FILES[3].description}
+          >
+            Typeberry config
+          </button>
         </p>
       </div>
       )}
