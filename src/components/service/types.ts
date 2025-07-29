@@ -1,4 +1,4 @@
-import type { Service, StateAccess } from '../../types/service';
+import type { Service } from '../../types/service';
 
 export interface ServiceData {
   serviceId: number;
@@ -8,38 +8,7 @@ export interface ServiceData {
   postError: string | null;
 }
 
-export interface ServiceViewerProps {
-  preStateAccess?: StateAccess | null;
-  postStateAccess?: StateAccess | null;
-}
-
-export interface ServiceCardProps {
-  serviceData: ServiceData;
-  isDiffMode: boolean;
-}
-
-export interface ServiceInfoProps {
-  serviceData: ServiceData;
-  isDiffMode: boolean;
-}
-
-export interface StorageQueryProps {
-  serviceId: number;
-  service: Service;
-  disabled?: boolean;
-}
-
-export interface PreimageQueryProps {
-  serviceId: number;
-  service: Service;
-  disabled?: boolean;
-}
-
-export interface LookupHistoryQueryProps {
-  serviceId: number;
-  service: Service;
-  disabled?: boolean;
-}
+export type RawState = Record<string, string>;
 
 export interface ServiceErrorProps {
   preError: string | null;

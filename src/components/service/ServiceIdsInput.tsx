@@ -4,7 +4,6 @@ import type { ServiceIdsInputProps } from './types';
 const ServiceIdsInput = ({ value, onChange }: ServiceIdsInputProps) => {
   return (
     <div>
-      <h4 className="text-md font-medium mb-3">Service Accounts</h4>
       <div className="mb-4">
         <label htmlFor="service-ids-input" className="block text-sm font-medium text-gray-700 mb-2">
           Service IDs (comma-separated):

@@ -2,9 +2,17 @@ import { useState, useMemo } from 'react';
 import ServiceIdsInput from './service/ServiceIdsInput';
 import ServiceCard from './service/ServiceCard';
 import { parseServiceIds } from './service/serviceUtils';
-import type { ServiceViewerProps, ServiceData } from './service/types';
+import type { ServiceData } from './service/types';
+import { StateAccess } from '@/types/service';
 
-const ServiceViewer = ({ preStateAccess, postStateAccess }: ServiceViewerProps) => {
+export interface ServiceViewerProps {
+  preState?: Record<string, string>;
+  state: Record<string, string>;
+  preStateAccess?: StateAccess;
+  stateAccess: StateAccess;
+}
+
+const ServiceViewer = ({ preStateAccess, stateAccess, preState, state }: ServiceViewerProps) => {
   const [serviceIdsInput, setServiceIdsInput] = useState('0');
 
   const serviceIds = useMemo(() => {
@@ -25,7 +33,7 @@ const ServiceViewer = ({ preStateAccess, postStateAccess }: ServiceViewerProps) 
       }
 
       try {
-        postService = postStateAccess?.getService?.(serviceId) || null;
+        postService = stateAccess.getService(serviceId) || null;
       } catch (err) {
         postError = err instanceof Error ? err.message : 'Unknown error';
       }
@@ -38,12 +46,22 @@ const ServiceViewer = ({ preStateAccess, postStateAccess }: ServiceViewerProps) 
         postError,
       };
     });
-  }, [serviceIds, preStateAccess, postStateAccess]);
+  }, [serviceIds, preStateAccess, stateAccess]);
 
   const isDiffMode = preStateAccess !== undefined;
 
+  if (isDiffMode) {
+    return (
+      <div className="space-y-4 font-semibold mb-4">
+        <h4 className="text-md font-medium mb-3">Service Accounts</h4>
+        Diff mode not supported for services yet.
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 mb-4">
+      <h4 className="text-md font-medium mb-3">Service Accounts</h4>
       <ServiceIdsInput
         value={serviceIdsInput}
         onChange={setServiceIdsInput}
@@ -53,6 +71,8 @@ const ServiceViewer = ({ preStateAccess, postStateAccess }: ServiceViewerProps) 
         {services.map((serviceData) => (
           <ServiceCard
             key={serviceData.serviceId}
+            preState={preState}
+            state={state}
             serviceData={serviceData}
             isDiffMode={isDiffMode}
           />

@@ -89,6 +89,13 @@ const InspectStateViewer = ({
         </div>
       )}
 
+      {stateAccess !== null && (<ServiceViewer
+        preState={preState}
+        state={state}
+        preStateAccess={(preStateAccess ?? undefined) as StateAccess | undefined}
+        stateAccess={stateAccess as unknown as StateAccess}
+      />)}
+
       {(preStateAccess || stateAccess) && (
         <div className="space-y-4">
 
@@ -99,14 +106,14 @@ const InspectStateViewer = ({
               let preValue: unknown = undefined;
               let postValue: unknown = undefined;
               let fieldError: string | null = null;
-              
+
               try {
                 preValue = preStateAccess?.[key as keyof typeof preStateAccess];
                 postValue = stateAccess?.[key as keyof typeof stateAccess];
               } catch (err) {
                 fieldError = err instanceof Error ? err.message : 'Failed to access state field';
               }
-              
+
               const rawKey = serialize?.key?.toString();
               const preRawValue = rawKey ? getRawValue(rawKey, preState) : undefined;
               const postRawValue = rawKey ? getRawValue(rawKey, state) : undefined;
@@ -210,11 +217,6 @@ const InspectStateViewer = ({
               </div>
             )}
           </div>
-
-          <ServiceViewer 
-            preStateAccess={preStateAccess as StateAccess | null} 
-            postStateAccess={stateAccess as StateAccess | null} 
-          />
         </div>
       )}
 
