@@ -6,6 +6,11 @@ import StateViewer from './StateViewer';
 import { Button } from './ui/Button';
 import { validateJsonFile, validateJsonContent, extractGenesisState, type JsonFileFormat, type StfStateType } from '../utils';
 
+import stfTestVectorFixture from '../utils/fixtures/00000001.json';
+import jip4ChainspecFixture from '../utils/fixtures/dev-tiny.json';
+import stfGenesisFixture from '../utils/fixtures/genesis.json';
+import typeberryConfigFixture from '../utils/fixtures/typeberry-dev.json';
+
 interface UploadState {
   file: File | null;
   content: string;
@@ -16,6 +21,35 @@ interface UploadState {
   availableStates?: StfStateType[];
   selectedState?: StfStateType;
 }
+
+interface ExampleFile {
+  name: string;
+  description: string;
+  content: string;
+}
+
+const EXAMPLE_FILES: ExampleFile[] = [
+  {
+    name: 'STF Test Vector',
+    description: 'Example with pre-state and post-state data',
+    content: JSON.stringify(stfTestVectorFixture, null, 2)
+  },
+  {
+    name: 'JIP-4 Chain Spec',
+    description: 'Genesis state from chain specification',
+    content: JSON.stringify(jip4ChainspecFixture, null, 2)
+  },
+  {
+    name: 'STF Genesis',
+    description: 'Initial state with header information',
+    content: JSON.stringify(stfGenesisFixture, null, 2)
+  },
+  {
+    name: 'Typeberry Config',
+    description: 'Typeberry framework configuration',
+    content: JSON.stringify(typeberryConfigFixture, null, 2)
+  }
+];
 
 const UploadScreen = () => {
   const [uploadState, setUploadState] = useState<UploadState>({
@@ -150,6 +184,23 @@ const UploadScreen = () => {
     }));
   }, []);
 
+  const handleExampleLoad = useCallback((exampleContent: string) => {
+    clearUpload();
+    
+    const validation = validateJsonContent(exampleContent);
+    
+    setUploadState({
+      file: null,
+      content: validation.content,
+      error: validation.error,
+      isValidJson: validation.isValid,
+      format: validation.format,
+      formatDescription: validation.formatDescription,
+      availableStates: validation.availableStates,
+      selectedState: validation.availableStates?.includes('diff') ? 'diff' : validation.availableStates?.[0],
+    });
+  }, [clearUpload]);
+
   const selectedState= useMemo(() => {
     if (extractedState === null) {
       return null;
@@ -173,9 +224,27 @@ const UploadScreen = () => {
         <h1 className="text-3xl font-bold text-foreground mb-2">
           JAM State Viewer
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground mb-4">
           Upload a serialized state dump to inspect it.
         </p>
+        
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            Or try these examples:
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {EXAMPLE_FILES.map((example, index) => (
+              <button
+                key={index}
+                onClick={() => handleExampleLoad(example.content)}
+                className="text-sm text-primary hover:text-primary/80 hover:underline transition-colors"
+                title={example.description}
+              >
+                {example.name}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
       )}
 
