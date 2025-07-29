@@ -56,7 +56,7 @@ const CompositeViewer = ({ value, rawValue, showModeToggle = false }: CompositeV
   if (displayMode === 'raw' && rawValue !== undefined) {
     return (
       <div>
-        <pre className="mt-1 pl-2 text-xs font-mono bg-gray-50 rounded p-2 break-all overflow-auto">
+        <pre className="mt-1 pl-2 text-xs font-mono bg-gray-50 dark-bg-background rounded p-2 break-all overflow-auto">
           {rawValue}
         </pre>
         {modeToggle}
@@ -77,7 +77,7 @@ const CompositeViewer = ({ value, rawValue, showModeToggle = false }: CompositeV
   // Handle decoded mode (default behavior)
   const decodedContent = () => {
     if (value === null) {
-      return <span className="text-gray-500 italic">null</span>;
+      return <span className="text-gray-500 dark:text-gray-400 italic">null</span>;
     }
     if (typeof value === 'object' && 'toJSON' in value && typeof value.toJSON === 'function') {
       return <CompositeViewer value={value.toJSON()} />;

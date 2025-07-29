@@ -38,6 +38,10 @@ html.dark {
     --border: #444;
 }
 
+.dark .dark-bg-background {
+  background-color: var(--background);
+}
+
 @layer base {
     * {
         border-color: var(--border);

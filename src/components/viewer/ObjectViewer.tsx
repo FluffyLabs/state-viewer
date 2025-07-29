@@ -14,8 +14,8 @@ const ObjectViewer = ({ value, renderValue }: ObjectViewerProps) => {
         const itemStr = toSmartString(item);
         const shortStr = shortenString(itemStr);
         return (
-          <details key={key} className="border-l-2 border-gray-200 pl-2">
-            <summary className="cursor-pointer font-mono text-xs text-gray-600 hover:text-gray-800">
+          <details key={key} className="border-l-2 border-gray-200 dark:border-gray-700 pl-2">
+            <summary className="cursor-pointer font-mono text-xs text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100">
               {key}: {shortStr}
             </summary>
             {renderValue(item)}

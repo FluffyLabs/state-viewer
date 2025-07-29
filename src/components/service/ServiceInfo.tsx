@@ -42,8 +42,8 @@ const ServiceInfo = ({ serviceData, isDiffMode, preState, state }: ServiceInfoPr
         <div className="space-y-2">
           {preService && (
             <div>
-              <div className="text-xs font-medium text-red-700 mb-1">Before:</div>
-              <div className="bg-red-50 border border-red-200 p-2 rounded text-xs">
+              <div className="text-xs font-medium text-red-700 dark:text-red-400 mb-1">Before:</div>
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 p-2 rounded text-xs">
                 <CompositeViewer
                   value={getServiceInfoWithId(preService, serviceId)}
                   rawValue={preStateValue}
@@ -54,8 +54,8 @@ const ServiceInfo = ({ serviceData, isDiffMode, preState, state }: ServiceInfoPr
           )}
           {postService && (
             <div>
-              <div className="text-xs font-medium text-green-700 mb-1">After:</div>
-              <div className="bg-green-50 border border-green-200 p-2 rounded text-xs">
+              <div className="text-xs font-medium text-green-700 dark:text-green-400 mb-1">After:</div>
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 p-2 rounded text-xs">
                 <CompositeViewer
                   value={getServiceInfoWithId(postService, serviceId)}
                   rawValue={stateValue}
@@ -66,7 +66,7 @@ const ServiceInfo = ({ serviceData, isDiffMode, preState, state }: ServiceInfoPr
           )}
         </div>
       ) : (
-        <div className="bg-gray-100 p-2 rounded text-xs">
+        <div className="bg-gray-100 dark-bg-background p-2 rounded text-xs">
           <CompositeViewer
             value={getServiceInfoWithId(activeService, serviceId)}
             rawValue={stateValue}

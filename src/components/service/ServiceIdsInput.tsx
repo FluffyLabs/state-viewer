@@ -5,7 +5,7 @@ const ServiceIdsInput = ({ value, onChange }: ServiceIdsInputProps) => {
   return (
     <div>
       <div className="mb-4">
-        <label htmlFor="service-ids-input" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="service-ids-input" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Service IDs (comma-separated):
         </label>
         <input
@@ -13,7 +13,7 @@ const ServiceIdsInput = ({ value, onChange }: ServiceIdsInputProps) => {
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900/20 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="0, 1, 2"
         />
       </div>

@@ -46,14 +46,14 @@ const LookupHistoryQuery = ({ serviceId, service, state, disabled = false }: Loo
           placeholder="Preimage hash for lookup (0x-prefixed)"
           value={hash}
           onChange={(e) => setHash(e.target.value)}
-          className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
+          className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 dark-bg-background dark:text-gray-100 rounded text-sm"
         />
         <input
           type="number"
           placeholder="Length"
           value={length}
           onChange={(e) => setLength(e.target.value)}
-          className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+          className="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 dark-bg-background dark:text-gray-100 rounded text-sm"
         />
         <Button
           size="sm"
@@ -64,7 +64,7 @@ const LookupHistoryQuery = ({ serviceId, service, state, disabled = false }: Loo
         </Button>
       </div>
       {hash && length && !disabled && (
-        <div className="bg-gray-100 p-2 rounded text-xs">
+        <div className="bg-gray-100 dark-bg-background p-2 rounded text-xs">
           <div className="text-xs font-mono">Serialized key: {rawKey}</div>
           <CompositeViewer
             value={getLookupHistoryValue(service, hash, length)}

@@ -80,14 +80,14 @@ const InspectStateViewer = ({
     <div className="text-left p-4">
       <h3 className="text-lg font-semibold mb-4 hidden">{title}</h3>
       {!error && (
-        <p className="text-xs text-muted mb-4">
+        <p className="text-xs text-muted-foreground mb-4">
           The state object is also exported in DevTools console as
           {isDiffMode ? "`preState` and `postState`." : "`state`."}
         </p>
       )}
 
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        <div className="bg-red-100 dark:bg-red-900/20 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-100 px-4 py-3 rounded mb-4">
           <strong>Error loading state:</strong> {error}
         </div>
       )}
@@ -133,37 +133,37 @@ const InspectStateViewer = ({
               }
 
               return (
-                <div key={key} className={`border rounded p-3 ${hasChanged ? 'bg-yellow-50 border-yellow-300' : 'bg-gray-50'}`}>
+                <div key={key} className={`border rounded p-3 ${hasChanged ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-700' : 'bg-gray-50 dark:bg-gray-900/20'}`}>
                   <div className="flex items-start gap-3">
                     <div className="flex flex-col items-center gap-1">
                       <code className={`px-2 py-1 rounded text-xs font-mono w-8 h-6 flex items-center justify-center ${
-                        hasChanged ? 'bg-yellow-200 text-yellow-800' : 'bg-blue-100 text-blue-800'
+                        hasChanged ? 'bg-yellow-200 dark:bg-yellow-800/60 text-yellow-800 dark:text-yellow-200' : 'bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200'
                       }`}>
                         {notation}
                       </code>
-                      <span className="text-xs text-gray-500 w-16 text-center">{title}</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 w-16 text-center">{title}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-mono text-sm font-medium text-gray-900">
+                      <div className="font-mono text-sm font-medium text-gray-900 dark:text-gray-100">
                         {highlightSearchMatchesWithContext(key, searchTerm, false)}
-                        {hasChanged && <span className="ml-2 text-xs bg-yellow-200 text-yellow-800 px-1 rounded">CHANGED</span>}
+                        {hasChanged && <span className="ml-2 text-xs bg-yellow-200 dark:bg-yellow-800/60 text-yellow-800 dark:text-yellow-200 px-1 rounded">CHANGED</span>}
                       </div>
                       {rawKey && (
-                        <div className="text-xs text-gray-500 mt-1 font-mono">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-mono">
                           Key: {highlightSearchMatchesWithContext(rawKey, searchTerm, true)}
                         </div>
                       )}
-                      <div className="text-sm text-gray-600 mt-1">{highlightSearchMatchesWithContext(description, searchTerm, false)}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-300 mt-1">{highlightSearchMatchesWithContext(description, searchTerm, false)}</div>
                       <div className="mt-2">
                         {fieldError ? (
                           <div className="space-y-2">
-                            <div className="bg-red-50 border border-red-200 p-2 rounded text-xs">
-                              <div className="text-red-700 font-medium mb-1">Error accessing field:</div>
-                              <div className="text-red-600 text-xs mb-2">{fieldError}</div>
+                            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 p-2 rounded text-xs">
+                              <div className="text-red-700 dark:text-red-100 font-medium mb-1">Error accessing field:</div>
+                              <div className="text-red-600 dark:text-red-200 text-xs mb-2">{fieldError}</div>
                               {(preRawValue || postRawValue) && (
                                 <div>
-                                  <div className="text-gray-700 font-medium mb-1">Raw value:</div>
-                                  <code className="text-xs bg-gray-100 p-1 rounded block">
+                                  <div className="text-gray-700 dark:text-gray-300 font-medium mb-1">Raw value:</div>
+                                  <code className="text-xs bg-gray-100 dark-bg-background p-1 rounded block">
                                     {postRawValue || preRawValue}
                                   </code>
                                 </div>
@@ -171,13 +171,13 @@ const InspectStateViewer = ({
                             </div>
                           </div>
                         ) : !hasValue ? (
-                          <div className="text-xs text-gray-400">Not found</div>
+                          <div className="text-xs text-gray-400 dark:text-gray-500">Not found</div>
                         ) : isDiffMode && hasChanged ? (
                           <div className="space-y-2">
                             {preValue !== undefined && (
                               <div>
-                                <div className="text-xs font-medium text-red-700 mb-1">Before:</div>
-                                <div className="bg-red-50 border border-red-200 p-2 rounded text-xs">
+                                <div className="text-xs font-medium text-red-700 dark:text-red-400 mb-1">Before:</div>
+                                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 p-2 rounded text-xs">
                                   <CompositeViewer
                                     value={preValue}
                                     rawValue={preRawValue}
@@ -188,8 +188,8 @@ const InspectStateViewer = ({
                             )}
                             {postValue !== undefined && (
                               <div>
-                                <div className="text-xs font-medium text-green-700 mb-1">After:</div>
-                                <div className="bg-green-50 border border-green-200 p-2 rounded text-xs">
+                                <div className="text-xs font-medium text-green-700 dark:text-green-400 mb-1">After:</div>
+                                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 p-2 rounded text-xs">
                                   <CompositeViewer
                                     value={postValue}
                                     rawValue={postRawValue}
@@ -200,7 +200,7 @@ const InspectStateViewer = ({
                             )}
                           </div>
                         ) : (
-                          <div className="bg-gray-100 p-2 rounded text-xs">
+                          <div className="bg-gray-100 dark-bg-background p-2 rounded text-xs">
                             <CompositeViewer
                               value={postValue || preValue}
                               rawValue={postRawValue || preRawValue}
