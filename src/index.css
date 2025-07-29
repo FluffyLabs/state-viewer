@@ -6,10 +6,6 @@
   color: var(--color-brand-dark);
 }
 
-.dark:bg-background {
-  background-color: var(--background);
-}
-
 html {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -40,6 +36,10 @@ html.dark {
     --background: #242424;
     --color-background: #242424;
     --border: #444;
+}
+
+.dark .dark-bg-background {
+  background-color: var(--background);
 }
 
 @layer base {

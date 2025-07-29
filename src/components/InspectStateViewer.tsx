@@ -163,7 +163,7 @@ const InspectStateViewer = ({
                               {(preRawValue || postRawValue) && (
                                 <div>
                                   <div className="text-gray-700 dark:text-gray-300 font-medium mb-1">Raw value:</div>
-                                  <code className="text-xs bg-gray-100 dark:bg-background p-1 rounded block">
+                                  <code className="text-xs bg-gray-100 dark-bg-background p-1 rounded block">
                                     {postRawValue || preRawValue}
                                   </code>
                                 </div>
@@ -200,7 +200,7 @@ const InspectStateViewer = ({
                             )}
                           </div>
                         ) : (
-                          <div className="bg-gray-100 dark:bg-background p-2 rounded text-xs">
+                          <div className="bg-gray-100 dark-bg-background p-2 rounded text-xs">
                             <CompositeViewer
                               value={postValue || preValue}
                               rawValue={postRawValue || preRawValue}

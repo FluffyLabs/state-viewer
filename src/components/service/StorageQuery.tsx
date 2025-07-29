@@ -44,7 +44,7 @@ const StorageQuery = ({ serviceId, service, state, disabled = false }: StorageQu
           placeholder="Storage key (hash or string)"
           value={storageKey}
           onChange={(e) => setStorageKey(e.target.value)}
-          className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-background dark:text-gray-100 rounded text-sm"
+          className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 dark-bg-background dark:text-gray-100 rounded text-sm"
         />
         <Button
           size="sm"
@@ -55,7 +55,7 @@ const StorageQuery = ({ serviceId, service, state, disabled = false }: StorageQu
         </Button>
       </div>
       {storageKey && !disabled && (
-        <div className="bg-gray-100 dark:bg-background p-2 rounded text-xs">
+        <div className="bg-gray-100 dark-bg-background p-2 rounded text-xs">
           <span className="text-xs font-mono">Serialized key: {rawKey}</span>
           <CompositeViewer
             value={getStorageValue(service, storageKey)}
