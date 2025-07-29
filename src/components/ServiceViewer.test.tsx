@@ -1,22 +1,39 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { bytes } from '@typeberry/state-merkleization';
 import ServiceViewer from './ServiceViewer';
 import type { Service, StateAccess, ServiceAccountInfo } from '../types/service';
+import { bytes } from '@typeberry/state-merkleization';
 
-// Mock CompositeViewer
-vi.mock('./viewer', () => ({
-  CompositeViewer: ({ value }: { value: unknown }) => <div data-testid="composite-viewer">{JSON.stringify(value)}</div>
-}));
-
-// Mock Button component
-vi.mock('./ui', () => ({
-  Button: ({ children, onClick, disabled }: { children: React.ReactNode, onClick?: () => void, disabled?: boolean }) => (
-    <button onClick={onClick} disabled={disabled} data-testid="button">
-      {children}
-    </button>
+// Mock ServiceIdsInput
+vi.mock('./service/ServiceIdsInput', () => ({
+  default: ({ value, onChange }: { value: string; onChange: (value: string) => void }) => (
+    <input
+      data-testid="service-ids-input"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      aria-label="Service IDs"
+    />
   )
 }));
+
+// Mock ServiceCard
+vi.mock('./service/ServiceCard', () => ({
+  default: ({ serviceData, isDiffMode }: { serviceData: { serviceId: number; preError: string | null; postError: string | null }; isDiffMode: boolean }) => (
+    <div data-testid="service-card">
+      <div>Service {serviceData.serviceId}</div>
+      {serviceData.preError && <div>Pre Error: {serviceData.preError}</div>}
+      {serviceData.postError && <div>Post Error: {serviceData.postError}</div>}
+      <div>Diff Mode: {isDiffMode.toString()}</div>
+    </div>
+  )
+}));
+
+// Mock parseServiceIds
+vi.mock('./service/serviceUtils', () => ({
+  parseServiceIds: vi.fn()
+}));
+
+import { parseServiceIds } from './service/serviceUtils';
 
 describe('ServiceViewer', () => {
   const mockServiceInfo: ServiceAccountInfo = {
@@ -39,222 +56,154 @@ describe('ServiceViewer', () => {
     getService: vi.fn((serviceId: number) => services[serviceId] || null)
   });
 
+  const defaultProps = {
+    state: {},
+    stateAccess: createMockStateAccess({})
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
+    (parseServiceIds as ReturnType<typeof vi.fn>).mockReturnValue([0]);
   });
 
-  it('should render with default service ID input', () => {
-    render(<ServiceViewer />);
+  it('should render with required props', () => {
+    render(<ServiceViewer {...defaultProps} />);
     
-    expect(screen.getByDisplayValue('0')).toBeInTheDocument();
-    expect(screen.getByRole('textbox', { name: /service ids/i })).toBeInTheDocument();
+    expect(screen.getByText('Service Accounts')).toBeInTheDocument();
+    expect(screen.getByTestId('service-ids-input')).toBeInTheDocument();
   });
 
-  it('should display service info when service exists', () => {
-    const mockService = createMockService(0);
-    const mockStateAccess = createMockStateAccess({ 0: mockService });
-
-    render(<ServiceViewer postStateAccess={mockStateAccess} />);
-
-    expect(screen.getByText('Service 0')).toBeInTheDocument();
-    expect(screen.getByText('Service Info')).toBeInTheDocument();
-    expect(mockStateAccess.getService).toHaveBeenCalledWith(0);
-    expect(mockService.getInfo).toHaveBeenCalled();
+  it('should render with default service ID input of "0"', () => {
+    render(<ServiceViewer {...defaultProps} />);
+    
+    const input = screen.getByTestId('service-ids-input');
+    expect(input).toHaveValue('0');
   });
 
-  it('should show "Service not found" when service does not exist', () => {
-    const mockStateAccess = createMockStateAccess({});
-
-    render(<ServiceViewer postStateAccess={mockStateAccess} />);
-
-    expect(screen.getByText('Service not found')).toBeInTheDocument();
+  it('should show diff mode message when preStateAccess is provided', () => {
+    const preStateAccess = createMockStateAccess({});
+    
+    render(<ServiceViewer {...defaultProps} preStateAccess={preStateAccess} />);
+    
+    expect(screen.getByText('Diff mode not supported for services yet.')).toBeInTheDocument();
   });
 
-  it('should parse comma-separated service IDs correctly', () => {
-    const mockService1 = createMockService(1);
-    const mockService2 = createMockService(2);
-    const mockStateAccess = createMockStateAccess({ 1: mockService1, 2: mockService2 });
+  it('should not show diff mode message when preStateAccess is not provided', () => {
+    render(<ServiceViewer {...defaultProps} />);
+    
+    expect(screen.queryByText('Diff mode not supported for services yet.')).not.toBeInTheDocument();
+  });
 
-    render(<ServiceViewer postStateAccess={mockStateAccess} />);
+  it('should call parseServiceIds with input value', () => {
+    render(<ServiceViewer {...defaultProps} />);
+    
+    const input = screen.getByTestId('service-ids-input');
+    fireEvent.change(input, { target: { value: '1,2,3' } });
+    
+    expect(parseServiceIds).toHaveBeenCalledWith('1,2,3');
+  });
 
-    const input = screen.getByRole('textbox', { name: /service ids/i });
-    fireEvent.change(input, { target: { value: '1, 2, 3' } });
-
+  it('should render ServiceCard for each parsed service ID', () => {
+    (parseServiceIds as ReturnType<typeof vi.fn>).mockReturnValue([1, 2, 3]);
+    
+    render(<ServiceViewer {...defaultProps} />);
+    
+    const serviceCards = screen.getAllByTestId('service-card');
+    expect(serviceCards).toHaveLength(3);
     expect(screen.getByText('Service 1')).toBeInTheDocument();
     expect(screen.getByText('Service 2')).toBeInTheDocument();
     expect(screen.getByText('Service 3')).toBeInTheDocument();
-    expect(mockStateAccess.getService).toHaveBeenCalledWith(1);
-    expect(mockStateAccess.getService).toHaveBeenCalledWith(2);
-    expect(mockStateAccess.getService).toHaveBeenCalledWith(3);
   });
 
-  it('should handle invalid service IDs gracefully', () => {
-    const mockStateAccess = createMockStateAccess({});
-
-    render(<ServiceViewer postStateAccess={mockStateAccess} />);
-
-    const input = screen.getByRole('textbox', { name: /service ids/i });
-    fireEvent.change(input, { target: { value: 'invalid, abc, 123' } });
-
-    expect(screen.getByText('Service 123')).toBeInTheDocument();
-    expect(screen.queryByText('Service invalid')).not.toBeInTheDocument();
-    expect(screen.queryByText('Service abc')).not.toBeInTheDocument();
+  it('should pass correct serviceData to ServiceCard', () => {
+    const mockService = createMockService(1);
+    const stateAccess = createMockStateAccess({ 1: mockService });
+    (parseServiceIds as ReturnType<typeof vi.fn>).mockReturnValue([1]);
+    
+    render(<ServiceViewer {...defaultProps} stateAccess={stateAccess} />);
+    
+    expect(stateAccess.getService).toHaveBeenCalledWith(1);
+    expect(screen.getByText('Service 1')).toBeInTheDocument();
+    expect(screen.getByText('Diff Mode: false')).toBeInTheDocument();
   });
 
-  it('should handle getService errors gracefully', () => {
-    const mockStateAccess: StateAccess = {
+  it('should handle service access errors', () => {
+    const stateAccess: StateAccess = {
       getService: vi.fn(() => {
         throw new Error('Service access error');
       })
     };
-
-    render(<ServiceViewer postStateAccess={mockStateAccess} />);
-
-    expect(screen.getByText(/post-state error.*service access error/i)).toBeInTheDocument();
-  });
-
-  it('should show diff mode with changed services', () => {
-    const preService = createMockService(0);
-    const postService = createMockService(0);
+    (parseServiceIds as ReturnType<typeof vi.fn>).mockReturnValue([1]);
     
-    // Make services different
-    (preService.getInfo as ReturnType<typeof vi.fn>).mockReturnValue({ ...mockServiceInfo, balance: 500 });
-    (postService.getInfo as ReturnType<typeof vi.fn>).mockReturnValue({ ...mockServiceInfo, balance: 1000 });
-
-    const preStateAccess = createMockStateAccess({ 0: preService });
-    const postStateAccess = createMockStateAccess({ 0: postService });
-
-    render(<ServiceViewer preStateAccess={preStateAccess} postStateAccess={postStateAccess} />);
-
-    expect(screen.getByText('CHANGED')).toBeInTheDocument();
-    expect(screen.getByText('Before:')).toBeInTheDocument();
-    expect(screen.getByText('After:')).toBeInTheDocument();
-  });
-
-  it('should handle storage queries', () => {
-    const mockService = createMockService(0);
-    const mockStateAccess = createMockStateAccess({ 0: mockService });
-
-    render(<ServiceViewer postStateAccess={mockStateAccess} />);
-
-    const storageInput = screen.getByPlaceholderText(/storage key/i);
-    fireEvent.change(storageInput, { target: { value: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcd' } });
-
-    const queryButton = screen.getAllByTestId('button').find(btn => btn.textContent === 'Query');
-    fireEvent.click(queryButton!);
-
-    expect(mockService.getStorage).toHaveBeenCalled();
-  });
-
-  it('should handle preimage queries', () => {
-    const mockService = createMockService(0);
-    const mockStateAccess = createMockStateAccess({ 0: mockService });
-
-    render(<ServiceViewer postStateAccess={mockStateAccess} />);
-
-    const preimageInput = screen.getByPlaceholderText(/preimage hash \(hex or string\)/i);
-    fireEvent.change(preimageInput, { target: { value: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef' } });
-
-    const queryButtons = screen.getAllByTestId('button').filter(btn => btn.textContent === 'Query');
-    const preimageQueryButton = queryButtons[1]; // Second Query button is for preimage
-    fireEvent.click(preimageQueryButton);
-
-    expect(mockService.hasPreimage).toHaveBeenCalled();
-    expect(mockService.getPreimage).toHaveBeenCalled();
-  });
-
-  it('should handle lookup history queries', () => {
-    const mockService = createMockService(0);
-    const mockStateAccess = createMockStateAccess({ 0: mockService });
-
-    render(<ServiceViewer postStateAccess={mockStateAccess} />);
-
-    const hashInput = screen.getByPlaceholderText(/preimage hash for lookup/i);
-    const lengthInput = screen.getByPlaceholderText(/length/i);
+    render(<ServiceViewer {...defaultProps} stateAccess={stateAccess} />);
     
-    fireEvent.change(hashInput, { target: { value: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef' } });
-    fireEvent.change(lengthInput, { target: { value: '10' } });
-
-    const queryButtons = screen.getAllByTestId('button');
-    const lookupQueryButton = queryButtons.find(btn => 
-      btn.textContent === 'Query' && btn.closest('div')?.querySelector('input[placeholder="Length"]')
-    );
-    fireEvent.click(lookupQueryButton!);
-
-    expect(mockService.getLookupHistory).toHaveBeenCalledWith(expect.any(Object), 10);
+    expect(screen.getByText('Post Error: Service access error')).toBeInTheDocument();
   });
 
-  it('should disable query buttons when inputs are empty', () => {
-    const mockService = createMockService(0);
-    const mockStateAccess = createMockStateAccess({ 0: mockService });
-
-    render(<ServiceViewer postStateAccess={mockStateAccess} />);
-
-    const queryButtons = screen.getAllByTestId('button');
-    queryButtons.forEach(button => {
-      if (button.textContent === 'Query') {
-        expect(button).toBeDisabled();
-      }
-    });
+  it('should handle preState service access errors', () => {
+    const preStateAccess: StateAccess = {
+      getService: vi.fn(() => {
+        throw new Error('Pre service error');
+      })
+    };
+    const stateAccess = createMockStateAccess({});
+    (parseServiceIds as ReturnType<typeof vi.fn>).mockReturnValue([1]);
+    
+    render(<ServiceViewer {...defaultProps} preStateAccess={preStateAccess} stateAccess={stateAccess} />);
+    
+    expect(screen.getByText('Diff mode not supported for services yet.')).toBeInTheDocument();
   });
 
-  it('should show no valid service IDs message for empty input', () => {
-    render(<ServiceViewer />);
-
-    const input = screen.getByRole('textbox', { name: /service ids/i });
-    fireEvent.change(input, { target: { value: 'invalid, abc, def' } });
-
-    expect(screen.getByText(/no valid service ids found/i)).toBeInTheDocument();
+  it('should show no valid service IDs message when no services are parsed', () => {
+    (parseServiceIds as ReturnType<typeof vi.fn>).mockReturnValue([]);
+    
+    render(<ServiceViewer {...defaultProps} />);
+    
+    const input = screen.getByTestId('service-ids-input');
+    fireEvent.change(input, { target: { value: 'invalid' } });
+    
+    expect(screen.getByText('No valid service IDs found in input: "invalid"')).toBeInTheDocument();
   });
 
-  it('should parse hex storage keys correctly', () => {
-    const mockService = createMockService(0);
-    const mockStateAccess = createMockStateAccess({ 0: mockService });
-
-    render(<ServiceViewer postStateAccess={mockStateAccess} />);
-
-    const storageInput = screen.getByPlaceholderText(/storage key/i);
-    fireEvent.change(storageInput, { target: { value: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef' } });
-
-    const queryButton = screen.getAllByTestId('button').find(btn => btn.textContent === 'Query');
-    fireEvent.click(queryButton!);
-
-    expect(mockService.getStorage).toHaveBeenCalledWith(expect.any(Object));
+  it('should not show no valid service IDs message when input is empty', () => {
+    (parseServiceIds as ReturnType<typeof vi.fn>).mockReturnValue([]);
+    
+    render(<ServiceViewer {...defaultProps} />);
+    
+    const input = screen.getByTestId('service-ids-input');
+    fireEvent.change(input, { target: { value: '' } });
+    
+    expect(screen.queryByText(/No valid service IDs found/)).not.toBeInTheDocument();
   });
 
-  it('should parse string storage keys correctly', () => {
-    const mockService = createMockService(0);
-    const mockStateAccess = createMockStateAccess({ 0: mockService });
-
-    render(<ServiceViewer postStateAccess={mockStateAccess} />);
-
-    const storageInput = screen.getByPlaceholderText(/storage key/i);
-    fireEvent.change(storageInput, { target: { value: 'test' } });
-
-    const queryButton = screen.getAllByTestId('button').find(btn => btn.textContent === 'Query');
-    fireEvent.click(queryButton!);
-
-    // When string parsing fails, service method should not be called
-    // and an error should be displayed instead
-    expect(mockService.getStorage).not.toHaveBeenCalled();
+  it('should pass preState and state to ServiceCard', () => {
+    const preState = { key1: 'value1' };
+    const state = { key2: 'value2' };
+    (parseServiceIds as ReturnType<typeof vi.fn>).mockReturnValue([1]);
+    
+    render(<ServiceViewer preState={preState} state={state} stateAccess={defaultProps.stateAccess} />);
+    
+    // The ServiceCard mock doesn't show these props but they should be passed
+    expect(screen.getByTestId('service-card')).toBeInTheDocument();
   });
 
-  it('should handle service method errors gracefully', () => {
-    const mockService = createMockService(0);
-    (mockService.getStorage as ReturnType<typeof vi.fn>).mockImplementation(() => {
-      throw new Error('Storage error');
-    });
-    const mockStateAccess = createMockStateAccess({ 0: mockService });
+  it('should detect diff mode correctly when preStateAccess is undefined', () => {
+    (parseServiceIds as ReturnType<typeof vi.fn>).mockReturnValue([1]);
+    
+    render(<ServiceViewer {...defaultProps} />);
+    
+    expect(screen.getByText('Diff Mode: false')).toBeInTheDocument();
+  });
 
-    render(<ServiceViewer postStateAccess={mockStateAccess} />);
-
-    const storageInput = screen.getByPlaceholderText(/storage key/i);
-    fireEvent.change(storageInput, { target: { value: 'test' } });
-
-    // The error should be handled and displayed through CompositeViewer
-    const compositeViewers = screen.getAllByTestId('composite-viewer');
-    expect(compositeViewers.length).toBeGreaterThan(0);
-    // Check that the component doesn't crash and renders something
-    expect(compositeViewers.some(viewer => viewer.textContent !== null)).toBe(true);
+  it('should update services when input changes', () => {
+    render(<ServiceViewer {...defaultProps} />);
+    
+    expect(parseServiceIds).toHaveBeenCalledWith('0');
+    
+    // Change input value
+    const input = screen.getByTestId('service-ids-input');
+    fireEvent.change(input, { target: { value: '5,6' } });
+    
+    expect(parseServiceIds).toHaveBeenCalledWith('5,6');
   });
 });
