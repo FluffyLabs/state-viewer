@@ -63,7 +63,8 @@ describe('StateViewer', () => {
     
     // Component should render without throwing errors
     expect(screen.getByText('Encoded')).toBeInTheDocument();
-    expect(screen.getByText('Decoded')).toBeInTheDocument();
+    expect(screen.getByText('Decoded Tiny')).toBeInTheDocument();
+    expect(screen.getByText('Decoded Full')).toBeInTheDocument();
   });
 
   it('should default to inspect tab', () => {
@@ -400,13 +401,21 @@ describe('StateViewer', () => {
       // Should be on Raw tab by default
       expect(screen.getByText('CHANGED')).toBeInTheDocument();
       
-      // Switch to Decoded tab
-      const decodedTab = screen.getByText('Decoded');
-      fireEvent.click(decodedTab);
+      // Switch to Decoded Tiny tab
+      const decodedTinyTab = screen.getByText('Decoded Tiny');
+      fireEvent.click(decodedTinyTab);
       
       // Note: The decoded view might show errors due to mock limitations
       // but the component should still render without crashing
-      expect(decodedTab).toBeInTheDocument();
+      expect(decodedTinyTab).toBeInTheDocument();
+      
+      // Switch to Decoded Full tab
+      const decodedFullTab = screen.getByText('Decoded Full');
+      fireEvent.click(decodedFullTab);
+      
+      // Note: The decoded view might show errors due to mock limitations
+      // but the component should still render without crashing
+      expect(decodedFullTab).toBeInTheDocument();
     });
 
     it('should maintain backward compatibility with single state prop', () => {

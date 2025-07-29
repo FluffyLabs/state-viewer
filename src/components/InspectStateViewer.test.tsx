@@ -5,7 +5,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 vi.mock('@typeberry/state-merkleization', () => ({
   loadState: vi.fn(),
   config: {
-    tinyChainSpec: {}
+    tinyChainSpec: {},
+    fullChainSpec: {}
   },
   bytes: {
     Bytes: {
