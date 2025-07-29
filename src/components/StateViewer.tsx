@@ -26,10 +26,11 @@ const StateViewer = ({
         className="pb-2"
       />
 
-      <Tabs defaultValue="inspect" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 pb-2">
+      <Tabs defaultValue="inspect-tiny" className="w-full">
+        <TabsList className="grid w-full grid-cols-3 pb-2">
           <TabsTrigger value="raw">Encoded</TabsTrigger>
-          <TabsTrigger value="inspect">Decoded</TabsTrigger>
+          <TabsTrigger value="inspect-tiny">Decoded Tiny</TabsTrigger>
+          <TabsTrigger value="inspect-full">Decoded Full</TabsTrigger>
         </TabsList>
 
         <TabsContent value="raw" className="mt-0 border rounded-lg">
@@ -41,11 +42,21 @@ const StateViewer = ({
           />
         </TabsContent>
 
-        <TabsContent value="inspect" className="mt-0">
+        <TabsContent value="inspect-tiny" className="mt-0">
           <InspectStateViewer
             preState={preState}
             state={state}
             searchTerm={searchTerm}
+            chainSpec="tiny"
+          />
+        </TabsContent>
+
+        <TabsContent value="inspect-full" className="mt-0">
+          <InspectStateViewer
+            preState={preState}
+            state={state}
+            searchTerm={searchTerm}
+            chainSpec="full"
           />
         </TabsContent>
       </Tabs>

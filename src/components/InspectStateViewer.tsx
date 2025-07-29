@@ -13,22 +13,24 @@ interface InspectStateViewerProps {
   state: Record<string, string>;
   title?: string;
   searchTerm?: string;
+  chainSpec?: 'tiny' | 'full';
 }
 
 
 
-const spec = config.tinyChainSpec;
 
 const useLoadState = (
   state: Record<string, string> | undefined,
   setError: (error: string | null) => void,
   ctx: string,
+  chainSpec: 'tiny' | 'full',
 ) => {
   return useMemo(() => {
     if (!state) return null;
 
     try {
       setError(null);
+      const spec = chainSpec === 'tiny' ? config.tinyChainSpec : config.fullChainSpec;
       return loadState(spec, Object.entries(state).map(([key, value]) => {
         return [
           bytes.Bytes.parseBytes(key, 31),
@@ -40,7 +42,7 @@ const useLoadState = (
       setError(`${ctx}: ${errorMessage}`);
       return null;
     }
-  }, [state, setError, ctx]);
+  }, [state, setError, ctx, chainSpec]);
 }
 
 const InspectStateViewer = ({
@@ -48,13 +50,14 @@ const InspectStateViewer = ({
   state,
   title = "State Data",
   searchTerm: externalSearchTerm,
+  chainSpec = 'tiny',
 }: InspectStateViewerProps) => {
   const [error, setError] = useState<string | null>(null);
   const searchTerm = externalSearchTerm || '';
   const isDiffMode = preState !== undefined;
 
-  const preStateAccess = useLoadState(preState, setError, 'preState');
-  const stateAccess = useLoadState(state, setError, 'postState');
+  const preStateAccess = useLoadState(preState, setError, 'preState', chainSpec);
+  const stateAccess = useLoadState(state, setError, 'postState', chainSpec);
 
   // Expose all states to the global window object for DevTools inspection.
   (window as unknown as { preState: unknown }).preState = preStateAccess;
