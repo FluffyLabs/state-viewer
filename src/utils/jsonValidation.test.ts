@@ -627,7 +627,7 @@ describe('Integration tests with fixture files', () => {
     // Test extracting genesis state
     const genesisState = extractGenesisState(jip4Content, 'jip4-chainspec');
     expect(genesisState).toBeDefined();
-    expect(genesisState.state!['01000000000000000000000000000000000000000000000000000000000000']).toBe('08000000000000000000000000000000000000000000000000000000000000');
+    expect(genesisState.state!['0x01000000000000000000000000000000000000000000000000000000000000']).toBe('0x08000000000000000000000000000000000000000000000000000000000000');
 
     restore();
   });
@@ -666,7 +666,7 @@ describe('Integration tests with fixture files', () => {
     // Test extracting genesis state from embedded chain_spec
     const genesisState = extractGenesisState(typeberryContent, 'typeberry-config');
     expect(genesisState).toBeDefined();
-    expect(genesisState.state!['01000000000000000000000000000000000000000000000000000000000000']).toBe('08000000000000000000000000000000000000000000000000000000000000');
+    expect(genesisState.state!['0x01000000000000000000000000000000000000000000000000000000000000']).toBe('0x08000000000000000000000000000000000000000000000000000000000000');
 
     restore();
   });

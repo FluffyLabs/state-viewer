@@ -270,6 +270,16 @@ export const extractBothStatesFromStfVector = (
   };
 };
 
+const addHexPrefix = (state: Record<string, string>): Record<string, string> => {
+  const prefixedState: Record<string, string> = {};
+  for (const [key, value] of Object.entries(state)) {
+    const prefixedKey = key.startsWith('0x') ? key : `0x${key}`;
+    const prefixedValue = value.startsWith('0x') ? value : `0x${value}`;
+    prefixedState[prefixedKey] = prefixedValue;
+  }
+  return prefixedState;
+};
+
 export const extractGenesisState = (
   content: string,
   format: JsonFileFormat,
@@ -283,12 +293,12 @@ export const extractGenesisState = (
     switch (format) {
       case 'jip4-chainspec': {
         const result = Jip4ChainspecSchema.safeParse(parsedJson);
-        return { state: result.success ? result.data.genesis_state : null };
+        return { state: result.success ? addHexPrefix(result.data.genesis_state) : null };
       }
 
       case 'typeberry-config': {
         const result = TypeberryConfigSchema.safeParse(parsedJson);
-        return {state: result.success ? result.data.chain_spec.genesis_state : null};
+        return {state: result.success ? addHexPrefix(result.data.chain_spec.genesis_state) : null};
       }
 
       case 'stf-test-vector': {
