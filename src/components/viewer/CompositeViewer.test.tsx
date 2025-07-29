@@ -185,7 +185,7 @@ describe('CompositeViewer', () => {
 
   describe('Display Mode Toggle', () => {
     it('should show mode toggle when showModeToggle is true', () => {
-      render(<CompositeViewer value="test" showModeToggle={true} />);
+      render(<CompositeViewer value="test" rawValue="raw test data" showModeToggle={true} />);
       
       expect(screen.getByText('Decoded')).toBeInTheDocument();
       expect(screen.getByText('Raw')).toBeInTheDocument();
@@ -242,14 +242,13 @@ describe('CompositeViewer', () => {
       expect(screen.queryByText('decoded')).not.toBeInTheDocument();
     });
 
-    it('should fall back to decoded mode when raw value is undefined', () => {
+    it('should not show raw button when raw value is undefined', () => {
       render(<CompositeViewer value="test" showModeToggle={true} />);
-      
-      const rawButton = screen.getByText('Raw');
-      fireEvent.click(rawButton);
-      
-      // Should still show decoded content since no raw value provided
-      expect(screen.getByTestId('tostring-viewer')).toBeInTheDocument();
+
+      // Raw button should not be present when rawValue is undefined
+      expect(screen.queryByText('Raw')).not.toBeInTheDocument();
+      expect(screen.getByText('Decoded')).toBeInTheDocument();
+      expect(screen.getByText('String')).toBeInTheDocument();
     });
   });
 });

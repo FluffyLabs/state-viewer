@@ -10,6 +10,13 @@ interface ServiceViewerProps {
   postStateAccess?: StateAccess | null;
 }
 
+// Helper function to ensure serviceId is included in service info
+const getServiceInfoWithId = (service: Service | null, serviceId: number) => {
+  if (!service) return null;
+  const info = service.getInfo();
+  return { ...info, serviceId };
+};
+
 const ServiceViewer = ({ preStateAccess, postStateAccess }: ServiceViewerProps) => {
   const [serviceIdsInput, setServiceIdsInput] = useState('0');
   const [storageQueries, setStorageQueries] = useState<Record<string, string>>({});
@@ -84,6 +91,10 @@ const ServiceViewer = ({ preStateAccess, postStateAccess }: ServiceViewerProps) 
   const getPreimageValue = (service: Service, hash: string) => {
     try {
       const preimageHash = parsePreimageHash(hash);
+      const hasPreimage = service.hasPreimage(preimageHash);
+      if (!hasPreimage) {
+        return null;
+      }
       return service.getPreimage(preimageHash);
     } catch (err) {
       return `Error: ${err instanceof Error ? err.message : 'Unknown error'}`;
@@ -129,7 +140,9 @@ const ServiceViewer = ({ preStateAccess, postStateAccess }: ServiceViewerProps) 
           const hasService = preService || postService;
           const hasChanged = isDiffMode && (
             (preService === null) !== (postService === null) ||
-            (preService && postService && false) // TODO [ToDr] compare raw values
+            (preService && postService && 
+              JSON.stringify(getServiceInfoWithId(preService, serviceId)) !== 
+              JSON.stringify(getServiceInfoWithId(postService, serviceId)))
           );
 
           if (isDiffMode && !hasChanged && !hasService) {
@@ -165,7 +178,7 @@ const ServiceViewer = ({ preStateAccess, postStateAccess }: ServiceViewerProps) 
                           <div>
                             <div className="text-xs font-medium text-red-700 mb-1">Before:</div>
                             <div className="bg-red-50 border border-red-200 p-2 rounded text-xs">
-                              <CompositeViewer value={preService.getInfo()} showModeToggle={true} />
+                              <CompositeViewer value={getServiceInfoWithId(preService, serviceId)} showModeToggle={true} />
                             </div>
                           </div>
                         )}
@@ -173,7 +186,7 @@ const ServiceViewer = ({ preStateAccess, postStateAccess }: ServiceViewerProps) 
                           <div>
                             <div className="text-xs font-medium text-green-700 mb-1">After:</div>
                             <div className="bg-green-50 border border-green-200 p-2 rounded text-xs">
-                              <CompositeViewer value={postService.getInfo()} showModeToggle={true} />
+                              <CompositeViewer value={getServiceInfoWithId(postService, serviceId)} showModeToggle={true} />
                             </div>
                           </div>
                         )}
@@ -181,7 +194,7 @@ const ServiceViewer = ({ preStateAccess, postStateAccess }: ServiceViewerProps) 
                     ) : (
                       <div className="bg-gray-100 p-2 rounded text-xs">
                         <CompositeViewer
-                          value={(postService || preService)?.getInfo()}
+                          value={getServiceInfoWithId(postService || preService, serviceId)}
                         />
                       </div>
                     )}
