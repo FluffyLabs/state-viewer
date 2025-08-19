@@ -12,9 +12,10 @@ export interface PreimageQueryProps {
   serviceId: number;
   service: Service;
   disabled?: boolean;
+  isDiffMode?: boolean;
 }
 
-const PreimageQuery = ({ serviceId, service, state, disabled = false }: PreimageQueryProps) => {
+const PreimageQuery = ({ serviceId, service, state, preState, isDiffMode = false, disabled = false }: PreimageQueryProps) => {
   const [preimageHash, setPreimageHash] = useState('');
 
   const rawKey = useMemo(() => {
@@ -41,6 +42,10 @@ const PreimageQuery = ({ serviceId, service, state, disabled = false }: Preimage
 
   const len = preimageValue?.length;
 
+  const preRawValue = rawKey && preState ? preState[rawKey] : undefined;
+  const postRawValue = rawKey ? state[rawKey] : undefined;
+  const hasChanged = isDiffMode && preRawValue !== postRawValue;
+
   return (
     <div>
       <h6 className="font-medium text-sm mb-2">Preimages</h6>
@@ -62,14 +67,41 @@ const PreimageQuery = ({ serviceId, service, state, disabled = false }: Preimage
       </div>
       {preimageHash && !disabled && (
         <div className="space-y-2">
-          <div className="bg-gray-100 dark-bg-background p-2 rounded text-xs">
-            <div className="text-xs font-mono mb-1">Serialized key: {rawKey}</div>
-            <div className="font-medium mb-1">Value ({len} bytes)</div>
-            <CompositeViewer
-              value={preimageValue}
-              rawValue={state[rawKey]}
-            />
-          </div>
+          <div className="text-xs font-mono mb-1">Serialized key: {rawKey}</div>
+          <div className="font-medium mb-1">Value ({len} bytes)</div>
+          {isDiffMode && hasChanged ? (
+            <div className="space-y-2">
+              {preRawValue && (
+                <div>
+                  <div className="text-xs font-medium text-red-700 dark:text-red-400 mb-1">Before:</div>
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 p-2 rounded text-xs">
+                    <CompositeViewer
+                      value={preimageValue}
+                      rawValue={preRawValue}
+                    />
+                  </div>
+                </div>
+              )}
+              {postRawValue && (
+                <div>
+                  <div className="text-xs font-medium text-green-700 dark:text-green-400 mb-1">After:</div>
+                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 p-2 rounded text-xs">
+                    <CompositeViewer
+                      value={preimageValue}
+                      rawValue={postRawValue}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="bg-gray-100 dark-bg-background p-2 rounded text-xs">
+              <CompositeViewer
+                value={preimageValue}
+                rawValue={postRawValue || preRawValue}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>

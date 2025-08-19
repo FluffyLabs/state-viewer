@@ -62,15 +62,6 @@ const ServiceViewer = ({ preStateAccess, stateAccess, preState, state }: Service
 
   const isDiffMode = preStateAccess !== undefined;
 
-  if (isDiffMode) {
-    return (
-      <div className="space-y-4 font-semibold mb-4">
-        <h4 className="text-md font-medium mb-3">Service Accounts</h4>
-        Diff mode not supported for services yet.
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4 mb-4">
       <h4 className="text-md font-medium mb-3">Service Accounts</h4>

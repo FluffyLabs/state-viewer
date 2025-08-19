@@ -12,9 +12,10 @@ export interface StorageQueryProps {
   serviceId: number;
   service: Service;
   disabled?: boolean;
+  isDiffMode?: boolean;
 }
 
-const StorageQuery = ({ serviceId, service, state, disabled = false }: StorageQueryProps) => {
+const StorageQuery = ({ serviceId, service, state, preState, isDiffMode = false, disabled = false }: StorageQueryProps) => {
   const [storageKey, setStorageKey] = useState('');
 
   const rawKey = useMemo(() => {
@@ -34,6 +35,10 @@ const StorageQuery = ({ serviceId, service, state, disabled = false }: StorageQu
       console.log(`Storage[${serviceId}][${storageKey}]:`, result);
     }
   };
+
+  const preRawValue = rawKey && preState ? preState[rawKey] : undefined;
+  const postRawValue = rawKey ? state[rawKey] : undefined;
+  const hasChanged = isDiffMode && preRawValue !== postRawValue;
 
   return (
     <div>
@@ -55,12 +60,41 @@ const StorageQuery = ({ serviceId, service, state, disabled = false }: StorageQu
         </Button>
       </div>
       {storageKey && !disabled && (
-        <div className="bg-gray-100 dark-bg-background p-2 rounded text-xs">
-          <span className="text-xs font-mono">Serialized key: {rawKey}</span>
-          <CompositeViewer
-            value={getStorageValue(service, storageKey)}
-            rawValue={state[rawKey]}
-          />
+        <div className="space-y-2">
+          <div className="text-xs font-mono">Serialized key: {rawKey}</div>
+          {isDiffMode && hasChanged ? (
+            <div className="space-y-2">
+              {preRawValue && (
+                <div>
+                  <div className="text-xs font-medium text-red-700 dark:text-red-400 mb-1">Before:</div>
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 p-2 rounded text-xs">
+                    <CompositeViewer
+                      value={getStorageValue(service, storageKey)}
+                      rawValue={preRawValue}
+                    />
+                  </div>
+                </div>
+              )}
+              {postRawValue && (
+                <div>
+                  <div className="text-xs font-medium text-green-700 dark:text-green-400 mb-1">After:</div>
+                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 p-2 rounded text-xs">
+                    <CompositeViewer
+                      value={getStorageValue(service, storageKey)}
+                      rawValue={postRawValue}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="bg-gray-100 dark-bg-background p-2 rounded text-xs">
+              <CompositeViewer
+                value={getStorageValue(service, storageKey)}
+                rawValue={postRawValue || preRawValue}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>

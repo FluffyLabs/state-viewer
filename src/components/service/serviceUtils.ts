@@ -106,3 +106,25 @@ export const extractServiceIdsFromState = (state: Record<string, string>): numbe
   
   return Array.from(serviceIds).sort((a, b) => a - b);
 };
+
+export const getServiceChangeType = (serviceData: import('./types').ServiceData): 'added' | 'removed' | 'changed' | 'normal' => {
+  const { preService, postService, preError, postError } = serviceData;
+  
+  if (preError && postError) return 'normal';
+  
+  if (!preService && postService) return 'added';
+  
+  if (preService && !postService) return 'removed';
+  
+  if (preService && postService) {
+    try {
+      const preInfo = JSON.stringify(preService.getInfo());
+      const postInfo = JSON.stringify(postService.getInfo());
+      return preInfo !== postInfo ? 'changed' : 'normal';
+    } catch {
+      return 'normal';
+    }
+  }
+  
+  return 'normal';
+};

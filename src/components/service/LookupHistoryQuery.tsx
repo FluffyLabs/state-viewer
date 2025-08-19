@@ -12,9 +12,10 @@ export interface LookupHistoryQueryProps {
   serviceId: number;
   service: Service;
   disabled?: boolean;
+  isDiffMode?: boolean;
 }
 
-const LookupHistoryQuery = ({ serviceId, service, state, disabled = false }: LookupHistoryQueryProps) => {
+const LookupHistoryQuery = ({ serviceId, service, state, preState, isDiffMode = false, disabled = false }: LookupHistoryQueryProps) => {
   const [hash, setHash] = useState('');
   const [length, setLength] = useState('');
 
@@ -36,6 +37,10 @@ const LookupHistoryQuery = ({ serviceId, service, state, disabled = false }: Loo
       return null;
     }
   }, [service.serviceId, hash, length]);
+
+  const preRawValue = rawKey && preState ? preState[rawKey] : undefined;
+  const postRawValue = rawKey ? state[rawKey] : undefined;
+  const hasChanged = isDiffMode && preRawValue !== postRawValue;
 
   return (
     <div>
@@ -64,13 +69,44 @@ const LookupHistoryQuery = ({ serviceId, service, state, disabled = false }: Loo
         </Button>
       </div>
       {hash && length && !disabled && (
-        <div className="bg-gray-100 dark-bg-background p-2 rounded text-xs">
+        <div className="space-y-2">
           <div className="text-xs font-mono">Serialized key: {rawKey}</div>
-          <CompositeViewer
-            value={getLookupHistoryValue(service, hash, length)}
-            rawValue={state[rawKey]}
-            showModeToggle={true}
-          />
+          {isDiffMode && hasChanged ? (
+            <div className="space-y-2">
+              {preRawValue && (
+                <div>
+                  <div className="text-xs font-medium text-red-700 dark:text-red-400 mb-1">Before:</div>
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 p-2 rounded text-xs">
+                    <CompositeViewer
+                      value={getLookupHistoryValue(service, hash, length)}
+                      rawValue={preRawValue}
+                      showModeToggle={true}
+                    />
+                  </div>
+                </div>
+              )}
+              {postRawValue && (
+                <div>
+                  <div className="text-xs font-medium text-green-700 dark:text-green-400 mb-1">After:</div>
+                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 p-2 rounded text-xs">
+                    <CompositeViewer
+                      value={getLookupHistoryValue(service, hash, length)}
+                      rawValue={postRawValue}
+                      showModeToggle={true}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="bg-gray-100 dark-bg-background p-2 rounded text-xs">
+              <CompositeViewer
+                value={getLookupHistoryValue(service, hash, length)}
+                rawValue={postRawValue || preRawValue}
+                showModeToggle={true}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>
