@@ -82,18 +82,21 @@ describe('ServiceViewer', () => {
     expect(input).toHaveValue('0');
   });
 
-  it('should show diff mode message when preStateAccess is provided', () => {
+  it('should render services in diff mode when preStateAccess is provided', () => {
     const preStateAccess = createMockStateAccess({});
+    (parseServiceIds as ReturnType<typeof vi.fn>).mockReturnValue([1]);
     
     render(<ServiceViewer {...defaultProps} preStateAccess={preStateAccess} />);
     
-    expect(screen.getByText('Diff mode not supported for services yet.')).toBeInTheDocument();
+    expect(screen.getByText('Diff Mode: true')).toBeInTheDocument();
   });
 
-  it('should not show diff mode message when preStateAccess is not provided', () => {
+  it('should render services in normal mode when preStateAccess is not provided', () => {
+    (parseServiceIds as ReturnType<typeof vi.fn>).mockReturnValue([1]);
+    
     render(<ServiceViewer {...defaultProps} />);
     
-    expect(screen.queryByText('Diff mode not supported for services yet.')).not.toBeInTheDocument();
+    expect(screen.getByText('Diff Mode: false')).toBeInTheDocument();
   });
 
   it('should call parseServiceIds with input value', () => {
@@ -153,7 +156,8 @@ describe('ServiceViewer', () => {
     
     render(<ServiceViewer {...defaultProps} preStateAccess={preStateAccess} stateAccess={stateAccess} />);
     
-    expect(screen.getByText('Diff mode not supported for services yet.')).toBeInTheDocument();
+    expect(screen.getByText('Pre Error: Pre service error')).toBeInTheDocument();
+    expect(screen.getByText('Diff Mode: true')).toBeInTheDocument();
   });
 
   it('should show no valid service IDs message when no services are parsed', () => {
