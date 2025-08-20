@@ -17,6 +17,10 @@ export const parseStorageKey = (input: string): StorageKey => {
     if (input.length === 64) {
       return bytes.Bytes.parseBytes(input, 31);
     }
+    if (input.length === 50) {
+      const paddedInput = input + '0'.repeat(16);
+      return bytes.Bytes.parseBytes(paddedInput, 32);
+    }
   }
   const hasher = blake2b(32);
   hasher.update(bytes.BytesBlob.blobFromString(input).raw);
@@ -24,6 +28,10 @@ export const parseStorageKey = (input: string): StorageKey => {
 };
 
 export const parsePreimageHash = (input: string): PreimageHash => {
+  if (input.startsWith('0x') && input.length === 50) {
+    const paddedInput = input + '0'.repeat(16);
+    return bytes.Bytes.parseBytes(paddedInput, 32);
+  }
   return bytes.Bytes.parseBytes(input, 32);
 };
 
