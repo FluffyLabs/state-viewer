@@ -105,6 +105,8 @@ const StorageQuery = ({ serviceId, preService, service, state, preState, isDiffM
           </div>
         </div>
       )}
+      </div>
+      <div className="flex gap-2 mb-2">
         <input
           type="text"
           placeholder="Storage key (hash or string)"
