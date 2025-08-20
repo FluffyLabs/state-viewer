@@ -30,7 +30,7 @@ const LookupHistoryQuery = ({ serviceId, preService, service, state, preState, i
   const rawKey = useMemo(() => {
     try {
       const result = parsePreimageInput(hash);
-      if (result.type === 'state') {
+      if (result.type === 'raw') {
         return result.key.toString();
       }
 

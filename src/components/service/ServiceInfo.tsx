@@ -25,13 +25,13 @@ const ServiceInfo = ({ serviceData, isDiffMode, preState, state }: ServiceInfoPr
   const stateValue = state[rawKey];
 
   const hasChanged = isDiffMode && preStateValue !== stateValue;
-  if (isDiffMode && !hasChanged) {
-    return null;
-  }
 
   return (
     <div>
-      <h6 className="font-medium text-sm mb-2">Service Info</h6>
+      <h6 className="font-medium text-sm mb-2">
+        Service Info
+        { isDiffMode && !hasChanged && (" (no change)") }
+      </h6>
 
       {/* Raw Key Display */}
       <div className="mb-3">
@@ -43,7 +43,7 @@ const ServiceInfo = ({ serviceData, isDiffMode, preState, state }: ServiceInfoPr
           {preService && (
             <div>
               <div className="text-xs font-medium text-red-700 dark:text-red-400 mb-1">Before:</div>
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 p-2 rounded text-xs">
+              <div className="p-2 rounded text-xs border bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700">
                 <CompositeViewer
                   value={getServiceInfoWithId(preService, serviceId)}
                   rawValue={preStateValue}

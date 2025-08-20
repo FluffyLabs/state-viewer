@@ -22,7 +22,7 @@ const PreimageQuery = ({ serviceId, preService, service, state, preState, isDiff
   const rawKey = useMemo(() => {
     try {
       const input = parsePreimageInput(preimageHash);
-      if (input.type === 'state') {
+      if (input.type === 'raw') {
         return input.key.toString();
       }
       return servicePreimages(

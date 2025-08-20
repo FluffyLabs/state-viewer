@@ -10,36 +10,41 @@ export const getServiceInfoWithId = (service: Service | null, serviceId: number)
   return { ...info, serviceId };
 };
 
-export const parseStorageKey = (input: string): StorageKey => {
+export const parseStorageKey = (input: string): {
+  type: 'storage', key: StorageKey } | { type: 'raw', key: StateKey } => {
   if (input.startsWith('0x')) {
     if (input.length === 66) {
-      return bytes.Bytes.parseBytes(input, 32);
+      return { type: 'storage', key: bytes.Bytes.parseBytes(input, 32) }
     }
     if (input.length === 64) {
-      return bytes.Bytes.parseBytes(input, 31);
+      return { type: 'raw', key: bytes.Bytes.parseBytes(input, 31).asOpaque() };
     }
     if (input.length === 48) {
       const paddedInput = input + '0'.repeat(18);
-      return bytes.Bytes.parseBytes(paddedInput, 32);
+      return { type: 'storage', key: bytes.Bytes.parseBytes(paddedInput, 32) };
     }
   }
   const hasher = blake2b(32);
   hasher.update(bytes.BytesBlob.blobFromString(input).raw);
-  return bytes.Bytes.fromBlob(hasher.digest(), 32);
+  return { type: 'storage', key: bytes.Bytes.fromBlob(hasher.digest(), 32) };
 };
 
-export const parsePreimageInput = (input: string): { type: 'preimage', hash: PreimageHash } | { type: 'state', key: StateKey } => {
+export const parsePreimageInput = (input: string): { type: 'preimage', hash: PreimageHash } | { type: 'raw', key: StateKey } => {
   if (input.startsWith('0x') && input.length === 64) {
-    return { type: 'state', key: bytes.Bytes.parseBytes(input, 31).asOpaque() };
+    return { type: 'raw', key: bytes.Bytes.parseBytes(input, 31).asOpaque() };
   }
 
   return { type: 'preimage', hash: bytes.Bytes.parseBytes(input, 32) };
 };
 
-export const getStorageValue = (service: Service, key: string) => {
+export const getStorageValue = (service: Service, key: string, rawState: RawState) => {
   try {
     const storageKey = parseStorageKey(key);
-    return service.getStorage(storageKey);
+    if (storageKey.type === 'storage') {
+      return service.getStorage(storageKey.key);
+    }
+    const rawValue = rawState[storageKey.key.toString()];
+      return (rawValue === undefined) ? null : bytes.BytesBlob.parseBlob(rawValue);
   } catch (err) {
     return `Error: ${err instanceof Error ? err.message : 'Unknown error'}`;
   }
@@ -48,7 +53,7 @@ export const getStorageValue = (service: Service, key: string) => {
 export const getPreimageValue = (service: Service, hash: string, rawState: RawState) => {
   try {
     const parsed = parsePreimageInput(hash);
-    if (parsed.type === 'state') {
+    if (parsed.type === 'raw') {
       const rawValue = rawState[parsed.key.toString()];
       return (rawValue === undefined) ? null : bytes.BytesBlob.parseBlob(rawValue);
     } else {
@@ -66,7 +71,7 @@ export const getPreimageValue = (service: Service, hash: string, rawState: RawSt
 export const getLookupHistoryValue = (service: Service, hash: string, length: string, rawState: RawState) => {
   try {
     const parsed = parsePreimageInput(hash);
-    if (parsed.type === 'state') {
+    if (parsed.type === 'raw') {
       const rawValue = rawState[parsed.key.toString()];
       return (rawValue === undefined) ? null : bytes.BytesBlob.parseBlob(rawValue);
     }
