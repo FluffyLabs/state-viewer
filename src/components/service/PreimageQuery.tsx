@@ -67,7 +67,7 @@ const PreimageQuery = ({ serviceId, preService, service, state, preState, isDiff
   return (
     <div>
       <h6 className="font-medium text-sm mb-2">Preimages</h6>
-
+      <div className="flex gap-2 mb-2">
       {discoveredKeys.length > 0 && (
         <div className="space-y-3 mb-3">
           <div className="text-xs text-gray-600 dark:text-gray-300">Discovered items</div>
@@ -118,8 +118,6 @@ const PreimageQuery = ({ serviceId, preService, service, state, preState, isDiff
           </div>
         </div>
       )}
-
-      <div className="flex gap-2 mb-2">
         <input
           type="text"
           placeholder="Preimage hash (0x-prefixed)"
