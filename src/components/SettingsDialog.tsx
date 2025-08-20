@@ -9,8 +9,8 @@ interface SettingsDialogProps {
 }
 
 const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
-  const [selectedGpVersion, setSelectedGpVersion] = useState<string>(utils.CURRENT_VERSION as unknown as string);
-  const [selectedSuite, setSelectedSuite] = useState<string>(utils.CURRENT_SUITE as unknown as string);
+  const [selectedGpVersion, setSelectedGpVersion] = useState<string>(window.process.env.GP_VERSION ?? "");
+  const [selectedSuite, setSelectedSuite] = useState<string>(window.process.env.TEST_SUITE ?? "");
 
   const gpOptions = useMemo(() => {
     const values = Object.values(utils.GpVersion).filter((v) => typeof v === 'string') as string[];
