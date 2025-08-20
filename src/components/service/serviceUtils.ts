@@ -33,7 +33,7 @@ export const parsePreimageHash = (input: string): PreimageHash => {
 
 export const parsePreimageInput = (input: string): { type: 'preimage', hash: PreimageHash } | { type: 'storage', key: StorageKey } => {
   if (input.startsWith('0x') && input.length === 64) {
-    return { type: 'storage', key: parseStorageKey(input) };
+    return { type: 'storage', key: bytes.Bytes.parseBytes(input, 31) };
   }
   return { type: 'preimage', hash: parsePreimageHash(input) };
 };
