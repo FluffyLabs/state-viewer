@@ -129,6 +129,59 @@ export const extractServiceIdsFromState = (state: Record<string, string>): numbe
   
   return Array.from(serviceIds).sort((a, b) => a - b);
 };
+export const getServiceIdBytesLE = (serviceId: number): [string, string, string, string] => {
+  const b0 = (serviceId & 0xff).toString(16).padStart(2, '0');
+  const b1 = ((serviceId >>> 8) & 0xff).toString(16).padStart(2, '0');
+  const b2 = ((serviceId >>> 16) & 0xff).toString(16).padStart(2, '0');
+  const b3 = ((serviceId >>> 24) & 0xff).toString(16).padStart(2, '0');
+  return [b0, b1, b2, b3];
+};
+
+export const discoverStorageKeysForService = (state: Record<string, string>, serviceId: number): string[] => {
+  const [b0, b1, b2, b3] = getServiceIdBytesLE(serviceId);
+  const prefix = `0x${b0}ff${b1}ff${b2}ff${b3}ff`;
+  const results: string[] = [];
+  for (const key of Object.keys(state)) {
+    if (key.startsWith(prefix)) {
+      results.push(key);
+    }
+  }
+  return results;
+};
+
+export const discoverPreimageKeysForService = (state: Record<string, string>, serviceId: number): string[] => {
+  const [b0, b1, b2, b3] = getServiceIdBytesLE(serviceId);
+  const prefix = `0x${b0}fe${b1}ff${b2}ff${b3}ff`;
+  const results: string[] = [];
+  for (const key of Object.keys(state)) {
+    if (key.startsWith(prefix)) {
+      results.push(key);
+    }
+  }
+  return results;
+};
+
+export const discoverLookupHistoryKeysForService = (state: Record<string, string>, serviceId: number): string[] => {
+  const [b0, b1, b2, b3] = getServiceIdBytesLE(serviceId);
+  const results: string[] = [];
+  for (const key of Object.keys(state)) {
+    if (!key.startsWith('0x') || key.length < 2 + 16) {
+      continue;
+    }
+    const hex = key.slice(2);
+    const match =
+      hex.slice(0, 2) === b0 &&
+      hex.length >= 16 &&
+      hex.slice(4, 6) === b1 &&
+      hex.slice(8, 10) === b2 &&
+      hex.slice(12, 14) === b3;
+    if (match) {
+      results.push(key);
+    }
+  }
+  return results;
+};
+
 
 export const getServiceChangeType = (serviceData: import('./types').ServiceData): 'added' | 'removed' | 'changed' | 'normal' => {
   const { preService, postService, preError, postError } = serviceData;
