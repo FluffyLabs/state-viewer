@@ -8,6 +8,14 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      window.process = {
+        env: {
+          GP_VERSION: sessionStorage.getItem('GP_VERSION') ?? '0.6.5',
+          TEST_SUITE: sessionStorage.getItem('TEST_SUITE') ?? 'w3f',
+        }
+      };
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
