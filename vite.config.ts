@@ -5,6 +5,9 @@ import tailwindcss from "@tailwindcss/vite";
 
 // https://vite.dev/config/
 export default defineConfig({
+  define: {
+    'process.env': 'window.process.env',
+  },
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {

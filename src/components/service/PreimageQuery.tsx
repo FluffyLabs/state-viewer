@@ -67,9 +67,9 @@ const PreimageQuery = ({ serviceId, preService, service, state, preState, isDiff
   return (
     <div>
       <h6 className="font-medium text-sm mb-2">Preimages</h6>
-      <div className="flex gap-2 mb-2 overflow-hidden">
+      <div className="flex gap-2 mb-2">
       {discoveredKeys.length > 0 && (
-        <div className="space-y-3 mb-3">
+        <div className="space-y-3 mb-3 overflow-hidden">
           <div className="text-xs text-gray-600 dark:text-gray-300">Discovered items</div>
           <div className="space-y-2">
             {discoveredKeys.map((keyHex) => {
@@ -136,7 +136,7 @@ const PreimageQuery = ({ serviceId, preService, service, state, preState, isDiff
         </Button>
       </div>
       {preimageHash && !disabled && (
-        <div className="space-y-2">
+        <div className="space-y-2 overflow-hidden">
           <div className="text-xs font-mono mb-1">Serialized key: {rawKey}</div>
           <div className="font-medium mb-1">Value ({len} bytes)</div>
           {isDiffMode && hasChanged ? (

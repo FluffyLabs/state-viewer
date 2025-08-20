@@ -134,7 +134,7 @@ const LookupHistoryQuery = ({ serviceId, preService, service, state, preState, i
         </Button>
       </div>
       {hash && length && !disabled && (
-        <div className="space-y-2">
+        <div className="space-y-2 overflow-hidden">
           <div className="text-xs font-mono">Serialized key: {rawKey}</div>
           {isDiffMode && hasChanged ? (
             <div className="space-y-2">
