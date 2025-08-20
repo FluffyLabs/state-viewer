@@ -58,6 +58,17 @@ const LookupHistoryQuery = ({ serviceId, preService, service, state, preState, i
         length as never,
       ).key.toString().substring(0, 64);
     } catch {
+      return null;
+    }
+  }, [service.serviceId, hash, length]);
+
+  const preRawValue = rawKey && preState ? preState[rawKey] : undefined;
+  const postRawValue = rawKey ? state[rawKey] : undefined;
+  const hasChanged = isDiffMode && preRawValue !== postRawValue;
+
+  return (
+    <div>
+      <h6 className="font-medium text-sm mb-2">Lookup History</h6>
       {discoveredKeys.length > 0 && (
         <div className="space-y-3 mb-3">
           <div className="text-xs text-gray-600 dark:text-gray-300">Discovered items</div>
@@ -99,17 +110,6 @@ const LookupHistoryQuery = ({ serviceId, preService, service, state, preState, i
           </div>
         </div>
       )}
-      return null;
-    }
-  }, [service.serviceId, hash, length]);
-
-  const preRawValue = rawKey && preState ? preState[rawKey] : undefined;
-  const postRawValue = rawKey ? state[rawKey] : undefined;
-  const hasChanged = isDiffMode && preRawValue !== postRawValue;
-
-  return (
-    <div>
-      <h6 className="font-medium text-sm mb-2">Lookup History</h6>
       <div className="flex gap-2 mb-2">
         <input
           type="text"
