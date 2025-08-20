@@ -18,19 +18,25 @@ const AppHeader = () => {
 
 function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [appReloadKey, setAppReloadKey] = useState(0);
 
   return (
     <div className="flex flex-col overflow-hidden h-[100dvh]">
       <div className="h-[87px] relative">
         <AppHeader />
         <div className="absolute right-4 top-1/2 -translate-y-1/2">
-          <Button onClick={() => setIsSettingsOpen(true)} variant="secondary" size="sm">
+          <Button
+            onClick={() => setIsSettingsOpen(true)}
+            variant="secondary"
+            size="sm"
+            aria-label="Settings"
+            title="Settings"
+          >
             <Settings className="h-4 w-4" />
-            <span>Settings</span>
           </Button>
         </div>
       </div>
-      <div className="flex h-full">
+      <div className="flex h-full" key={appReloadKey}>
         <div className="max-sm:hidden">
           <AppsSidebar
             activeLink="trie"
@@ -51,6 +57,7 @@ function App() {
       <SettingsDialog
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
+        onApply={() => setAppReloadKey((k) => k + 1)}
       />
     </div>
   );
