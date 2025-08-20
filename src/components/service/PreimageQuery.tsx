@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { CompositeViewer } from '../viewer';
 import { Button } from '../ui';
-import { getPreimageValue, parsePreimageHash } from './serviceUtils';
+import { getPreimageValue, parsePreimageInput } from './serviceUtils';
 import { Service } from '@/types/service';
 import { RawState } from './types';
 import { servicePreimages } from '@/constants/serviceFields';
@@ -11,18 +11,23 @@ export interface PreimageQueryProps {
   state: RawState;
   serviceId: number;
   service: Service;
+  preService?: Service;
   disabled?: boolean;
   isDiffMode?: boolean;
 }
 
-const PreimageQuery = ({ serviceId, service, state, preState, isDiffMode = false, disabled = false }: PreimageQueryProps) => {
+const PreimageQuery = ({ serviceId, preService, service, state, preState, isDiffMode = false, disabled = false }: PreimageQueryProps) => {
   const [preimageHash, setPreimageHash] = useState('');
 
   const rawKey = useMemo(() => {
     try {
+      const input = parsePreimageInput(preimageHash);
+      if (input.type === 'raw') {
+        return input.key.toString();
+      }
       return servicePreimages(
         service.serviceId as never,
-        parsePreimageHash(preimageHash).asOpaque()
+        input.hash.asOpaque(),
       ).key.toString().substring(0, 64);
     } catch {
       return null;
@@ -31,14 +36,21 @@ const PreimageQuery = ({ serviceId, service, state, preState, isDiffMode = false
 
   const handleQuery = () => {
     if (preimageHash && service) {
-      const result = getPreimageValue(service, preimageHash);
+      const result = getPreimageValue(service, preimageHash, state);
       console.log(`Preimage[${serviceId}][${preimageHash}] value:`, result);
     }
   };
 
   const preimageValue = useMemo(() => {
-    return getPreimageValue(service, preimageHash);
-  }, [service, preimageHash]);
+    return getPreimageValue(service, preimageHash, state);
+  }, [service, preimageHash, state]);
+
+  const preimagePreValue = useMemo(() => {
+    if (!preState || !preService) {
+      return undefined;
+    }
+    return getPreimageValue(preService, preimageHash, preState);
+  }, [preService, preimageHash, preState]);
 
   const len = preimageValue?.length;
 
@@ -76,7 +88,7 @@ const PreimageQuery = ({ serviceId, service, state, preState, isDiffMode = false
                   <div className="text-xs font-medium text-red-700 dark:text-red-400 mb-1">Before:</div>
                   <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 p-2 rounded text-xs">
                     <CompositeViewer
-                      value={preimageValue}
+                      value={preimagePreValue}
                       rawValue={preRawValue}
                     />
                   </div>

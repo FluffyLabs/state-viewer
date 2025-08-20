@@ -1,6 +1,7 @@
 import blake2b from "blake2b";
 import type { Service, StorageKey, PreimageHash, U32 } from '../../types/service';
-import { bytes } from '@typeberry/state-merkleization';
+import { bytes, StateKey } from '@typeberry/state-merkleization';
+import {RawState} from "./types";
 
 // Helper function to ensure serviceId is included in service info
 export const getServiceInfoWithId = (service: Service | null, serviceId: number) => {
@@ -9,54 +10,76 @@ export const getServiceInfoWithId = (service: Service | null, serviceId: number)
   return { ...info, serviceId };
 };
 
-export const parseStorageKey = (input: string): StorageKey => {
+export const parseStorageKey = (input: string): {
+  type: 'storage', key: StorageKey } | { type: 'raw', key: StateKey } => {
   if (input.startsWith('0x')) {
     if (input.length === 66) {
-      return bytes.Bytes.parseBytes(input, 32);
+      return { type: 'storage', key: bytes.Bytes.parseBytes(input, 32) }
     }
     if (input.length === 64) {
-      return bytes.Bytes.parseBytes(input, 31);
+      return { type: 'raw', key: bytes.Bytes.parseBytes(input, 31).asOpaque() };
+    }
+    if (input.length === 48) {
+      const paddedInput = input + '0'.repeat(18);
+      return { type: 'storage', key: bytes.Bytes.parseBytes(paddedInput, 32) };
     }
   }
   const hasher = blake2b(32);
   hasher.update(bytes.BytesBlob.blobFromString(input).raw);
-  return bytes.Bytes.fromBlob(hasher.digest(), 32);
+  return { type: 'storage', key: bytes.Bytes.fromBlob(hasher.digest(), 32) };
 };
 
-export const parsePreimageHash = (input: string): PreimageHash => {
-  return bytes.Bytes.parseBytes(input, 32);
+export const parsePreimageInput = (input: string): { type: 'preimage', hash: PreimageHash } | { type: 'raw', key: StateKey } => {
+  if (input.startsWith('0x') && input.length === 64) {
+    return { type: 'raw', key: bytes.Bytes.parseBytes(input, 31).asOpaque() };
+  }
+
+  return { type: 'preimage', hash: bytes.Bytes.parseBytes(input, 32) };
 };
 
-export const getStorageValue = (service: Service, key: string) => {
+export const getStorageValue = (service: Service, key: string, rawState: RawState) => {
   try {
     const storageKey = parseStorageKey(key);
-    return service.getStorage(storageKey);
-  } catch (err) {
-    return `Error: ${err instanceof Error ? err.message : 'Unknown error'}`;
-  }
-};
-
-export const getPreimageValue = (service: Service, hash: string) => {
-  try {
-    const preimageHash = parsePreimageHash(hash);
-    const hasPreimage = service.hasPreimage(preimageHash);
-    if (!hasPreimage) {
-      return null;
+    if (storageKey.type === 'storage') {
+      return service.getStorage(storageKey.key);
     }
-    return service.getPreimage(preimageHash);
+    const rawValue = rawState[storageKey.key.toString()];
+      return (rawValue === undefined) ? null : bytes.BytesBlob.parseBlob(rawValue);
   } catch (err) {
     return `Error: ${err instanceof Error ? err.message : 'Unknown error'}`;
   }
 };
 
-export const getLookupHistoryValue = (service: Service, hash: string, length: string) => {
+export const getPreimageValue = (service: Service, hash: string, rawState: RawState) => {
   try {
-    const preimageHash = parsePreimageHash(hash);
+    const parsed = parsePreimageInput(hash);
+    if (parsed.type === 'raw') {
+      const rawValue = rawState[parsed.key.toString()];
+      return (rawValue === undefined) ? null : bytes.BytesBlob.parseBlob(rawValue);
+    } else {
+      const hasPreimage = service.hasPreimage(parsed.hash);
+      if (!hasPreimage) {
+        return null;
+      }
+      return service.getPreimage(parsed.hash);
+    }
+  } catch (err) {
+    return `Error: ${err instanceof Error ? err.message : 'Unknown error'}`;
+  }
+};
+
+export const getLookupHistoryValue = (service: Service, hash: string, length: string, rawState: RawState) => {
+  try {
+    const parsed = parsePreimageInput(hash);
+    if (parsed.type === 'raw') {
+      const rawValue = rawState[parsed.key.toString()];
+      return (rawValue === undefined) ? null : bytes.BytesBlob.parseBlob(rawValue);
+    }
     const len = parseInt(length, 10) as U32;
     if (isNaN(len)) {
       return 'Error: Invalid length';
     }
-    return service.getLookupHistory(preimageHash, len);
+    return service.getLookupHistory(parsed.hash, len);
   } catch (err) {
     return `Error: ${err instanceof Error ? err.message : 'Unknown error'}`;
   }

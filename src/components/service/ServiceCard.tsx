@@ -52,9 +52,9 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
 
       <div className="space-y-4">
         <ServiceInfo serviceData={serviceData} preState={preState} state={state} isDiffMode={isDiffMode} />
-        <StorageQuery serviceId={serviceId} preState={preState} state={state} service={activeService} isDiffMode={isDiffMode} />
-        <PreimageQuery serviceId={serviceId} preState={preState} state={state} service={activeService} isDiffMode={isDiffMode} />
-        <LookupHistoryQuery serviceId={serviceId} preState={preState} state={state} service={activeService} isDiffMode={isDiffMode} />
+        <StorageQuery serviceId={serviceId} preService={preService ?? undefined} preState={preState} state={state} service={activeService} isDiffMode={isDiffMode} />
+        <PreimageQuery serviceId={serviceId} preService={preService ?? undefined} preState={preState} state={state} service={activeService} isDiffMode={isDiffMode} />
+        <LookupHistoryQuery serviceId={serviceId} preService={preService ?? undefined} preState={preState} state={state} service={activeService} isDiffMode={isDiffMode} />
       </div>
     </div>
   );

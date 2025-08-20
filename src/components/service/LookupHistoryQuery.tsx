@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { CompositeViewer } from '../viewer';
 import { Button } from '../ui';
-import { getLookupHistoryValue, parsePreimageHash } from './serviceUtils';
+import { getLookupHistoryValue, parsePreimageInput } from './serviceUtils';
 import { Service } from '@/types/service';
 import { RawState } from './types';
 import { serviceLookupHistory } from '@/constants/serviceFields';
@@ -10,27 +10,33 @@ export interface LookupHistoryQueryProps {
   preState?: RawState;
   state: RawState;
   serviceId: number;
+  preService?: Service;
   service: Service;
   disabled?: boolean;
   isDiffMode?: boolean;
 }
 
-const LookupHistoryQuery = ({ serviceId, service, state, preState, isDiffMode = false, disabled = false }: LookupHistoryQueryProps) => {
+const LookupHistoryQuery = ({ serviceId, preService, service, state, preState, isDiffMode = false, disabled = false }: LookupHistoryQueryProps) => {
   const [hash, setHash] = useState('');
   const [length, setLength] = useState('');
 
   const handleQuery = () => {
     if (hash && length && service) {
-      const result = getLookupHistoryValue(service, hash, length);
+      const result = getLookupHistoryValue(service, hash, length, state);
       console.log(`LookupHistory[${serviceId}][${hash}][${length}]:`, result);
     }
   };
 
   const rawKey = useMemo(() => {
     try {
+      const result = parsePreimageInput(hash);
+      if (result.type === 'raw') {
+        return result.key.toString();
+      }
+
       return serviceLookupHistory(
         service.serviceId as never,
-        parsePreimageHash(hash).asOpaque(),
+        result.hash.asOpaque(),
         length as never,
       ).key.toString().substring(0, 64);
     } catch {
@@ -73,12 +79,12 @@ const LookupHistoryQuery = ({ serviceId, service, state, preState, isDiffMode = 
           <div className="text-xs font-mono">Serialized key: {rawKey}</div>
           {isDiffMode && hasChanged ? (
             <div className="space-y-2">
-              {preRawValue && (
+              {preRawValue && preState && preService && (
                 <div>
                   <div className="text-xs font-medium text-red-700 dark:text-red-400 mb-1">Before:</div>
                   <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 p-2 rounded text-xs">
                     <CompositeViewer
-                      value={getLookupHistoryValue(service, hash, length)}
+                      value={getLookupHistoryValue(preService, hash, length, preState)}
                       rawValue={preRawValue}
                       showModeToggle={true}
                     />
@@ -90,7 +96,7 @@ const LookupHistoryQuery = ({ serviceId, service, state, preState, isDiffMode = 
                   <div className="text-xs font-medium text-green-700 dark:text-green-400 mb-1">After:</div>
                   <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 p-2 rounded text-xs">
                     <CompositeViewer
-                      value={getLookupHistoryValue(service, hash, length)}
+                      value={getLookupHistoryValue(service, hash, length, state)}
                       rawValue={postRawValue}
                       showModeToggle={true}
                     />
@@ -101,7 +107,7 @@ const LookupHistoryQuery = ({ serviceId, service, state, preState, isDiffMode = 
           ) : (
             <div className="bg-gray-100 dark-bg-background p-2 rounded text-xs">
               <CompositeViewer
-                value={getLookupHistoryValue(service, hash, length)}
+                value={getLookupHistoryValue(service, hash, length, state)}
                 rawValue={postRawValue || preRawValue}
                 showModeToggle={true}
               />
