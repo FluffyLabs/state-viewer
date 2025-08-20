@@ -1,14 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { Button } from './ui/Button';
-import * as Typeberry from '@typeberry/state-merkleization';
+import { utils } from '@typeberry/state-merkleization';
 
 interface SettingsDialogProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-type UnknownRecord = Record<string, unknown>;
 
 const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
   const [selectedGpVersion, setSelectedGpVersion] = useState<string>('');
@@ -16,53 +14,30 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
   const [applyError, setApplyError] = useState<string | null>(null);
   const [applySuiteError, setApplySuiteError] = useState<string | null>(null);
 
-  const mod = Typeberry as unknown as UnknownRecord;
-
-  const GpVersionEnum: Record<string, string> | undefined = useMemo(() => {
-    const val = mod['GpVersion'];
-    return typeof val === 'object' && val !== null ? (val as Record<string, string>) : undefined;
-  }, [mod]);
-
-  const TestSuiteEnum: Record<string, string> | undefined = useMemo(() => {
-    const val = mod['TestSuite'];
-    return typeof val === 'object' && val !== null ? (val as Record<string, string>) : undefined;
-  }, [mod]);
-
-  const Compatibility: UnknownRecord | undefined = useMemo(() => {
-    const val = mod['Compatibility'];
-    return typeof val === 'function' || typeof val === 'object' ? (val as unknown as UnknownRecord) : undefined;
-  }, [mod]);
-
   const gpOptions = useMemo(() => {
-    if (!GpVersionEnum) return [] as string[];
-    const values = Object.values(GpVersionEnum).filter((v) => typeof v === 'string') as string[];
+    const src = utils?.GpVersion as Record<string, unknown> | undefined;
+    if (!src) return [] as string[];
+    const values = Object.values(src).filter((v) => typeof v === 'string') as string[];
     return [...new Set(values)];
-  }, [GpVersionEnum]);
+  }, []);
 
   const suiteOptions = useMemo(() => {
-    if (!TestSuiteEnum) return [] as string[];
-    const values = Object.values(TestSuiteEnum).filter((v) => typeof v === 'string') as string[];
+    const src = utils?.TestSuite as Record<string, unknown> | undefined;
+    if (!src) return [] as string[];
+    const values = Object.values(src).filter((v) => typeof v === 'string') as string[];
     return [...new Set(values)];
-  }, [TestSuiteEnum]);
+  }, []);
 
-  const hasOverride = typeof (Compatibility?.['override']) === 'function';
-  const hasOverrideSuite = typeof (Compatibility?.['overrideSuite']) === 'function';
+  const hasOverride = typeof utils?.Compatibility?.override === 'function';
+  const hasOverrideSuite = typeof utils?.Compatibility?.overrideSuite === 'function';
 
   useEffect(() => {
     if (!isOpen) return;
     setApplyError(null);
     setApplySuiteError(null);
 
-    if (gpOptions.length > 0) {
-      setSelectedGpVersion(gpOptions[0]);
-    } else {
-      setSelectedGpVersion('');
-    }
-    if (suiteOptions.length > 0) {
-      setSelectedSuite(suiteOptions[0]);
-    } else {
-      setSelectedSuite('');
-    }
+    setSelectedGpVersion(gpOptions[0] ?? '');
+    setSelectedSuite(suiteOptions[0] ?? '');
   }, [isOpen, gpOptions, suiteOptions]);
 
   if (!isOpen) return null;
@@ -70,10 +45,10 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
   const applyGpVersion = (value: string) => {
     setSelectedGpVersion(value);
     setApplyError(null);
-    const fn = Compatibility?.['override'];
+    const fn = utils?.Compatibility?.override;
     if (typeof fn === 'function') {
       try {
-        (fn as (v: unknown) => void)(value);
+        fn(value as unknown as never);
         window.location.reload();
       } catch (e) {
         setApplyError(e instanceof Error ? e.message : 'Failed to apply Gray Paper version.');
@@ -84,10 +59,10 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
   const applySuite = (value: string) => {
     setSelectedSuite(value);
     setApplySuiteError(null);
-    const fn = Compatibility?.['overrideSuite'];
+    const fn = utils?.Compatibility?.overrideSuite as ((v: unknown) => void) | undefined;
     if (typeof fn === 'function') {
       try {
-        (fn as (s: unknown) => void)(value);
+        fn(value as unknown as never);
         window.location.reload();
       } catch (e) {
         setApplySuiteError(e instanceof Error ? e.message : 'Failed to apply Test Suite.');
@@ -109,7 +84,7 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
           </button>
         </div>
 
-        <div className="p-4 space-y-6">
+        <div className="p-4 space-y-6 text-left">
           <div className="space-y-2">
             <label className="text-sm text-muted-foreground">Gray Paper Version</label>
             <select
@@ -167,7 +142,7 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
           </div>
         </div>
 
-        <div className="p-4 border-t border-border flex justify-end">
+        <div className="p-4 border-t border-border flex justify-start">
           <Button onClick={onClose} variant="secondary">
             Close
           </Button>
