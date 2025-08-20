@@ -10,8 +10,8 @@ interface SettingsDialogProps {
 }
 
 const SettingsDialog = ({ isOpen, onClose, onApply }: SettingsDialogProps) => {
-  const [selectedGpVersion, setSelectedGpVersion] = useState<string>('');
-  const [selectedSuite, setSelectedSuite] = useState<string>('');
+  const [selectedGpVersion, setSelectedGpVersion] = useState<string>(utils.CURRENT_VERSION as unknown as string);
+  const [selectedSuite, setSelectedSuite] = useState<string>(utils.CURRENT_SUITE as unknown as string);
   const [applyError, setApplyError] = useState<string | null>(null);
   const [applySuiteError, setApplySuiteError] = useState<string | null>(null);
 
@@ -29,9 +29,9 @@ const SettingsDialog = ({ isOpen, onClose, onApply }: SettingsDialogProps) => {
     if (!isOpen) return;
     setApplyError(null);
     setApplySuiteError(null);
-    setSelectedGpVersion(gpOptions[0] ?? '');
-    setSelectedSuite(suiteOptions[0] ?? '');
-  }, [isOpen, gpOptions, suiteOptions]);
+    setSelectedGpVersion(utils.CURRENT_VERSION as unknown as string);
+    setSelectedSuite(utils.CURRENT_SUITE as unknown as string);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
