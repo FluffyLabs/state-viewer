@@ -29,14 +29,13 @@ const AppHeader = ({ onOpenSettings }: { onOpenSettings: () => void }) => {
 
 function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [appReloadKey, setAppReloadKey] = useState(0);
 
   return (
     <div className="flex flex-col overflow-hidden h-[100dvh]">
       <div className="h-[87px]">
         <AppHeader onOpenSettings={() => setIsSettingsOpen(true)} />
       </div>
-      <div className="flex h-full" key={appReloadKey}>
+      <div className="flex h-full">
         <div className="max-sm:hidden">
           <AppsSidebar
             activeLink="trie"
@@ -57,7 +56,6 @@ function App() {
       <SettingsDialog
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
-        onApply={() => setAppReloadKey((k) => k + 1)}
       />
     </div>
   );

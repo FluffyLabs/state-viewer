@@ -6,14 +6,11 @@ import { utils } from '@typeberry/state-merkleization';
 interface SettingsDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onApply: () => void;
 }
 
-const SettingsDialog = ({ isOpen, onClose, onApply }: SettingsDialogProps) => {
+const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
   const [selectedGpVersion, setSelectedGpVersion] = useState<string>(utils.CURRENT_VERSION as unknown as string);
   const [selectedSuite, setSelectedSuite] = useState<string>(utils.CURRENT_SUITE as unknown as string);
-  const [applyError, setApplyError] = useState<string | null>(null);
-  const [applySuiteError, setApplySuiteError] = useState<string | null>(null);
 
   const gpOptions = useMemo(() => {
     const values = Object.values(utils.GpVersion).filter((v) => typeof v === 'string') as string[];
@@ -27,8 +24,6 @@ const SettingsDialog = ({ isOpen, onClose, onApply }: SettingsDialogProps) => {
 
   useEffect(() => {
     if (!isOpen) return;
-    setApplyError(null);
-    setApplySuiteError(null);
     setSelectedGpVersion(utils.CURRENT_VERSION as unknown as string);
     setSelectedSuite(utils.CURRENT_SUITE as unknown as string);
   }, [isOpen]);
@@ -36,22 +31,9 @@ const SettingsDialog = ({ isOpen, onClose, onApply }: SettingsDialogProps) => {
   if (!isOpen) return null;
 
   const handleApply = () => {
-    setApplyError(null);
-    setApplySuiteError(null);
-    try {
-      utils.Compatibility.override(selectedGpVersion as unknown as never);
-    } catch (e) {
-      setApplyError(e instanceof Error ? e.message : 'Failed to apply Gray Paper version.');
-      return;
-    }
-    try {
-      utils.Compatibility.overrideSuite(selectedSuite as unknown as never);
-    } catch (e) {
-      setApplySuiteError(e instanceof Error ? e.message : 'Failed to apply Test Suite.');
-      return;
-    }
-    onApply();
-    onClose();
+    window.sessionStorage.setItem('GP_VERSION', selectedGpVersion);
+    window.sessionStorage.setItem('TEST_SUITE', selectedSuite);
+    window.location.reload();
   };
 
   return (
@@ -86,9 +68,6 @@ const SettingsDialog = ({ isOpen, onClose, onApply }: SettingsDialogProps) => {
                 ))
               )}
             </select>
-            {applyError && (
-              <p className="text-xs text-destructive">{applyError}</p>
-            )}
           </div>
 
           <div className="space-y-2">
@@ -108,15 +87,12 @@ const SettingsDialog = ({ isOpen, onClose, onApply }: SettingsDialogProps) => {
                 ))
               )}
             </select>
-            {applySuiteError && (
-              <p className="text-xs text-destructive">{applySuiteError}</p>
-            )}
           </div>
         </div>
 
         <div className="p-4 border-t border-border flex justify-start space-x-2">
           <Button onClick={handleApply} variant="secondary">
-            Apply
+            Reload
           </Button>
         </div>
       </div>
