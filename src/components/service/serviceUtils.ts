@@ -1,6 +1,7 @@
 import blake2b from "blake2b";
 import type { Service, StorageKey, PreimageHash, U32 } from '../../types/service';
-import { bytes } from '@typeberry/state-merkleization';
+import { bytes, StateKey } from '@typeberry/state-merkleization';
+import {RawState} from "./types";
 
 // Helper function to ensure serviceId is included in service info
 export const getServiceInfoWithId = (service: Service | null, serviceId: number) => {
@@ -27,15 +28,12 @@ export const parseStorageKey = (input: string): StorageKey => {
   return bytes.Bytes.fromBlob(hasher.digest(), 32);
 };
 
-export const parsePreimageHash = (input: string): PreimageHash => {
-  return bytes.Bytes.parseBytes(input, 32);
-};
-
-export const parsePreimageInput = (input: string): { type: 'preimage', hash: PreimageHash } | { type: 'storage', key: StorageKey } => {
+export const parsePreimageInput = (input: string): { type: 'preimage', hash: PreimageHash } | { type: 'state', key: StateKey } => {
   if (input.startsWith('0x') && input.length === 64) {
-    return { type: 'storage', key: bytes.Bytes.parseBytes(input, 31) };
+    return { type: 'state', key: bytes.Bytes.parseBytes(input, 31).asOpaque() };
   }
-  return { type: 'preimage', hash: parsePreimageHash(input) };
+
+  return { type: 'preimage', hash: bytes.Bytes.parseBytes(input, 32) };
 };
 
 export const getStorageValue = (service: Service, key: string) => {
@@ -47,11 +45,12 @@ export const getStorageValue = (service: Service, key: string) => {
   }
 };
 
-export const getPreimageValue = (service: Service, hash: string) => {
+export const getPreimageValue = (service: Service, hash: string, rawState: RawState) => {
   try {
     const parsed = parsePreimageInput(hash);
-    if (parsed.type === 'storage') {
-      return service.getStorage(parsed.key);
+    if (parsed.type === 'state') {
+      const rawValue = rawState[parsed.key.toString()];
+      return (rawValue === undefined) ? null : bytes.BytesBlob.parseBlob(rawValue);
     } else {
       const hasPreimage = service.hasPreimage(parsed.hash);
       if (!hasPreimage) {
@@ -64,11 +63,12 @@ export const getPreimageValue = (service: Service, hash: string) => {
   }
 };
 
-export const getLookupHistoryValue = (service: Service, hash: string, length: string) => {
+export const getLookupHistoryValue = (service: Service, hash: string, length: string, rawState: RawState) => {
   try {
     const parsed = parsePreimageInput(hash);
-    if (parsed.type === 'storage') {
-      return 'Error: Lookup history is not available for storage keys';
+    if (parsed.type === 'state') {
+      const rawValue = rawState[parsed.key.toString()];
+      return (rawValue === undefined) ? null : bytes.BytesBlob.parseBlob(rawValue);
     }
     const len = parseInt(length, 10) as U32;
     if (isNaN(len)) {

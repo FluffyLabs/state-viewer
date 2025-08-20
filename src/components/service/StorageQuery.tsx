@@ -11,11 +11,12 @@ export interface StorageQueryProps {
   state: RawState;
   serviceId: number;
   service: Service;
+  preService?: Service;
   disabled?: boolean;
   isDiffMode?: boolean;
 }
 
-const StorageQuery = ({ serviceId, service, state, preState, isDiffMode = false, disabled = false }: StorageQueryProps) => {
+const StorageQuery = ({ serviceId, preService, service, state, preState, isDiffMode = false, disabled = false }: StorageQueryProps) => {
   const [storageKey, setStorageKey] = useState('');
 
   const rawKey = useMemo(() => {
@@ -64,12 +65,12 @@ const StorageQuery = ({ serviceId, service, state, preState, isDiffMode = false,
           <div className="text-xs font-mono">Serialized key: {rawKey}</div>
           {isDiffMode && hasChanged ? (
             <div className="space-y-2">
-              {preRawValue && (
+              {preRawValue && preService && (
                 <div>
                   <div className="text-xs font-medium text-red-700 dark:text-red-400 mb-1">Before:</div>
                   <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 p-2 rounded text-xs">
                     <CompositeViewer
-                      value={getStorageValue(service, storageKey)}
+                      value={getStorageValue(preService, storageKey)}
                       rawValue={preRawValue}
                     />
                   </div>
