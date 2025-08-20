@@ -17,8 +17,8 @@ export const parseStorageKey = (input: string): StorageKey => {
     if (input.length === 64) {
       return bytes.Bytes.parseBytes(input, 31);
     }
-    if (input.length === 50) {
-      const paddedInput = input + '0'.repeat(16);
+    if (input.length === 48) {
+      const paddedInput = input + '0'.repeat(18);
       return bytes.Bytes.parseBytes(paddedInput, 32);
     }
   }
@@ -28,11 +28,14 @@ export const parseStorageKey = (input: string): StorageKey => {
 };
 
 export const parsePreimageHash = (input: string): PreimageHash => {
-  if (input.startsWith('0x') && input.length === 50) {
-    const paddedInput = input + '0'.repeat(16);
-    return bytes.Bytes.parseBytes(paddedInput, 32);
-  }
   return bytes.Bytes.parseBytes(input, 32);
+};
+
+export const parsePreimageInput = (input: string): { type: 'preimage', hash: PreimageHash } | { type: 'storage', key: StorageKey } => {
+  if (input.startsWith('0x') && input.length === 64) {
+    return { type: 'storage', key: parseStorageKey(input) };
+  }
+  return { type: 'preimage', hash: parsePreimageHash(input) };
 };
 
 export const getStorageValue = (service: Service, key: string) => {
@@ -46,12 +49,16 @@ export const getStorageValue = (service: Service, key: string) => {
 
 export const getPreimageValue = (service: Service, hash: string) => {
   try {
-    const preimageHash = parsePreimageHash(hash);
-    const hasPreimage = service.hasPreimage(preimageHash);
-    if (!hasPreimage) {
-      return null;
+    const parsed = parsePreimageInput(hash);
+    if (parsed.type === 'storage') {
+      return service.getStorage(parsed.key);
+    } else {
+      const hasPreimage = service.hasPreimage(parsed.hash);
+      if (!hasPreimage) {
+        return null;
+      }
+      return service.getPreimage(parsed.hash);
     }
-    return service.getPreimage(preimageHash);
   } catch (err) {
     return `Error: ${err instanceof Error ? err.message : 'Unknown error'}`;
   }
@@ -59,12 +66,15 @@ export const getPreimageValue = (service: Service, hash: string) => {
 
 export const getLookupHistoryValue = (service: Service, hash: string, length: string) => {
   try {
-    const preimageHash = parsePreimageHash(hash);
+    const parsed = parsePreimageInput(hash);
+    if (parsed.type === 'storage') {
+      return 'Error: Lookup history is not available for storage keys';
+    }
     const len = parseInt(length, 10) as U32;
     if (isNaN(len)) {
       return 'Error: Invalid length';
     }
-    return service.getLookupHistory(preimageHash, len);
+    return service.getLookupHistory(parsed.hash, len);
   } catch (err) {
     return `Error: ${err instanceof Error ? err.message : 'Unknown error'}`;
   }
