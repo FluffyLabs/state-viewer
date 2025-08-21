@@ -27,7 +27,7 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
   const changeType = isDiffMode ? getServiceChangeType(serviceData) : 'normal';
   const backgroundClass = isDiffMode ? {
     'added': 'bg-green-100 dark:bg-green-900/20 border-green-300 dark:border-green-700',
-    'removed': 'bg-red-100 dark:bg-red-900/20 border-red-300 dark:border-red-700', 
+    'removed': 'bg-red-100 dark:bg-red-900/20 border-red-300 dark:border-red-700',
     'changed': 'bg-yellow-100 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-700',
     'normal': 'bg-gray-50 dark:bg-gray-900/20'
   }[changeType] : 'bg-gray-50 dark:bg-gray-900/20';
@@ -40,7 +40,12 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
   return (
     <div className={`border rounded p-4 ${backgroundClass}`}>
       <div className="flex items-center gap-2 mb-3">
-        <h5 className="font-semibold text-lg">Service <span className="font-mono">{serviceId}</span></h5>
+        <h5 className="font-semibold text-lg flex items-center gap-2">
+          <code className="px-1 py-0.5 rounded text-xs font-mono bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200">
+            δ[{serviceId}]
+          </code>
+          Service <span className="font-mono">{serviceId}</span>
+        </h5>
         {isDiffMode && changeType !== 'normal' && (
           <span className={`px-2 py-1 rounded text-xs font-semibold ${
             changeType === 'added' ? 'bg-green-200 text-green-800 dark:bg-green-800/60 dark:text-green-200' :
@@ -60,21 +65,36 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
 
       <div className="space-y-4">
         <ServiceInfo serviceData={serviceData} preState={preState} state={state} isDiffMode={isDiffMode} />
-        
+
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="storage">Storage</TabsTrigger>
-            <TabsTrigger value="preimages">Preimages</TabsTrigger>
-            <TabsTrigger value="lookup-history">Lookup History</TabsTrigger>
+            <TabsTrigger value="storage" className="flex justify-start items-center gap-2">
+              <code className="px-1 py-0.5 rounded text-xs font-mono bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200">
+                aₛ
+              </code>
+              Storage
+            </TabsTrigger>
+            <TabsTrigger value="preimages" className="flex justify-start items-center gap-2">
+              <code className="px-1 py-0.5 rounded text-xs font-mono bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200">
+                aₚ
+              </code>
+              Preimages
+            </TabsTrigger>
+            <TabsTrigger value="lookup-history" className="flex justify-start items-center gap-2">
+              <code className="px-1 py-0.5 rounded text-xs font-mono bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200">
+                aₗ
+              </code>
+              Lookup History
+            </TabsTrigger>
           </TabsList>
-          
+
           <div className="mt-4">
             <div className="mb-4">
               {activeTab === 'storage' && storageQuery.renderQueryInput()}
               {activeTab === 'preimages' && preimageQuery.renderQueryInput()}
               {activeTab === 'lookup-history' && lookupHistoryQuery.renderQueryInput()}
             </div>
-            
+
             <TabsContent value="storage" className="mt-0">
               {storageQuery.renderResults()}
             </TabsContent>
