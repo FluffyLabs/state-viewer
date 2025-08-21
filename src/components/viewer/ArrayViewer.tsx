@@ -11,7 +11,7 @@ const ArrayViewer = ({ array, renderValue }: ArrayViewerProps) => {
     <div className="space-y-1" data-testid="array-viewer">
       <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">Array ({array.length} items)</div>
       {array.map((item, index) => {
-        const itemStr = toSmartString(item);
+        const itemStr = toSmartString(item, {});
         const shortStr = shortenString(itemStr);
         return (
           <details key={index} className="border-l-2 border-gray-200 dark:border-gray-700 pl-2">

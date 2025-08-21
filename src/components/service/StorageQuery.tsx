@@ -5,6 +5,7 @@ import { getStorageValue, parseStorageKey, discoverStorageKeysForService } from 
 import { Service } from '@/types/service';
 import { RawState } from './types';
 import { serviceStorage } from '@/constants/serviceFields';
+import { cn } from '@fluffylabs/shared-ui';
 
 export interface StorageQueryProps {
   preState?: RawState;
@@ -51,77 +52,27 @@ const StorageQuery = ({ serviceId, preService, service, state, preState, isDiffM
   const postRawValue = rawKey ? state[rawKey] : undefined;
   const hasChanged = isDiffMode && preRawValue !== postRawValue;
 
-  return (
-    <div>
-      <h6 className="font-medium text-sm mb-2">Storage</h6>
-      <div className="flex gap-2 mb-2">
-      {discoveredKeys.length > 0 && (
-        <div className="space-y-3 mb-3 overflow-hidden">
-          <div className="text-xs text-gray-600 dark:text-gray-300">Discovered items</div>
-          <div className="space-y-2">
-            {discoveredKeys.map((keyHex) => {
-              const preRawValueItem = preState ? preState[keyHex] : undefined;
-              const postRawValueItem = state[keyHex];
-              const itemChanged = isDiffMode && preRawValueItem !== postRawValueItem;
-              return (
-                <div key={keyHex} className="border border-gray-200 dark:border-gray-700 rounded p-2">
-                  <div className="text-xs font-mono mb-1 break-all">{keyHex}</div>
-                  {isDiffMode && itemChanged ? (
-                    <div className="space-y-2">
-                      {preRawValueItem && preService && preState && (
-                        <div>
-                          <div className="text-xs font-medium text-red-700 dark:text-red-400 mb-1">Before:</div>
-                          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 p-2 rounded text-xs">
-                            <CompositeViewer
-                              value={getStorageValue(preService, keyHex, preState)}
-                              rawValue={preRawValueItem}
-                            />
-                          </div>
-                        </div>
-                      )}
-                      {postRawValueItem && (
-                        <div>
-                          <div className="text-xs font-medium text-green-700 dark:text-green-400 mb-1">After:</div>
-                          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 p-2 rounded text-xs">
-                            <CompositeViewer
-                              value={getStorageValue(service, keyHex, state)}
-                              rawValue={postRawValueItem}
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="bg-gray-100 dark-bg-background p-2 rounded text-xs">
-                      <CompositeViewer
-                        value={getStorageValue(service, keyHex, state)}
-                        rawValue={postRawValueItem || preRawValueItem}
-                      />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-      </div>
-      <div className="flex gap-2 mb-2">
-        <input
-          type="text"
-          placeholder="Storage key (hash or string)"
-          value={storageKey}
-          onChange={(e) => setStorageKey(e.target.value)}
-          className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 dark-bg-background dark:text-gray-100 rounded text-sm"
-        />
-        <Button
-          size="sm"
-          onClick={handleQuery}
-          disabled={!storageKey || disabled}
-        >
-          Query
-        </Button>
-      </div>
+  const renderQueryInput = () => (
+    <div className="flex gap-2">
+      <input
+        type="text"
+        placeholder="Storage key (hash or string)"
+        value={storageKey}
+        onChange={(e) => setStorageKey(e.target.value)}
+        className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 dark-bg-background dark:text-gray-100 rounded text-sm"
+      />
+      <Button
+        size="sm"
+        onClick={handleQuery}
+        disabled={!storageKey || disabled}
+      >
+        Query
+      </Button>
+    </div>
+  );
+
+  const renderResults = () => (
+    <div className="space-y-4">
       {storageKey && !disabled && (
         <div className="space-y-2 overflow-hidden">
           <div className="text-xs font-mono">Serialized key: {rawKey}</div>
@@ -160,8 +111,64 @@ const StorageQuery = ({ serviceId, preService, service, state, preState, isDiffM
           )}
         </div>
       )}
+
+      {discoveredKeys.length > 0 && (
+        <div className="space-y-3 overflow-hidden text-gray-600 dark:text-gray-300">
+          <div className="text-xs">Discovered items</div>
+          <div className="space-y-2">
+            {discoveredKeys.map((keyHex) => {
+              const preRawValueItem = preState ? preState[keyHex] : undefined;
+              const postRawValueItem = state[keyHex];
+              const itemChanged = isDiffMode && preRawValueItem !== postRawValueItem;
+              return (
+                <div key={keyHex} className={cn("border border-gray-200 dark:border-gray-700 rounded p-2", itemChanged ? "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700" : "")}>
+                  <div className="text-xs font-mono mb-1 break-all">Key: <strong>{keyHex}</strong> {isDiffMode && !itemChanged && "(no change)"}</div>
+                  {isDiffMode && itemChanged ? (
+                    <div className="space-y-2">
+                      {preRawValueItem && preService && preState && (
+                        <div>
+                          <div className="text-xs font-medium text-red-700 dark:text-red-400 mb-1">Before:</div>
+                          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 p-2 rounded text-xs">
+                            <CompositeViewer
+                              value={getStorageValue(preService, keyHex, preState)}
+                              rawValue={preRawValueItem}
+                              showBytesLength
+                            />
+                          </div>
+                        </div>
+                      )}
+                      {postRawValueItem && (
+                        <div>
+                          <div className="text-xs font-medium text-green-700 dark:text-green-400 mb-1">After:</div>
+                          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 p-2 rounded text-xs">
+                            <CompositeViewer
+                              value={getStorageValue(service, keyHex, state)}
+                              rawValue={postRawValueItem}
+                              showBytesLength
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : !isDiffMode && (
+                    <div className="bg-gray-100 dark-bg-background p-2 rounded text-xs">
+                      <CompositeViewer
+                        value={getStorageValue(service, keyHex, state)}
+                        rawValue={postRawValueItem || preRawValueItem}
+                        showBytesLength
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
+
+  return { renderQueryInput, renderResults };
 };
 
 export default StorageQuery;

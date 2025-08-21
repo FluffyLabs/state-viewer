@@ -1,10 +1,12 @@
 
+import { useState } from 'react';
 import ServiceError from './ServiceError';
 import ServiceInfo from './ServiceInfo';
 import StorageQuery from './StorageQuery';
 import PreimageQuery from './PreimageQuery';
 import LookupHistoryQuery from './LookupHistoryQuery';
 import { getServiceChangeType } from './serviceUtils';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui';
 import type { RawState, ServiceData } from './types';
 
 export interface ServiceCardProps {
@@ -15,6 +17,7 @@ export interface ServiceCardProps {
 }
 
 const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardProps) => {
+  const [activeTab, setActiveTab] = useState('storage');
   const { serviceId, preService, postService, preError, postError } = serviceData;
   const activeService = postService || preService;
   if (activeService === null) {
@@ -28,6 +31,11 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
     'changed': 'bg-yellow-100 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-700',
     'normal': 'bg-gray-50 dark:bg-gray-900/20'
   }[changeType] : 'bg-gray-50 dark:bg-gray-900/20';
+
+  // Get query components
+  const storageQuery = StorageQuery({ serviceId, preService: preService ?? undefined, preState, state, service: activeService, isDiffMode });
+  const preimageQuery = PreimageQuery({ serviceId, preService: preService ?? undefined, preState, state, service: activeService, isDiffMode });
+  const lookupHistoryQuery = LookupHistoryQuery({ serviceId, preService: preService ?? undefined, preState, state, service: activeService, isDiffMode });
 
   return (
     <div className={`border rounded p-4 ${backgroundClass}`}>
@@ -52,9 +60,32 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
 
       <div className="space-y-4">
         <ServiceInfo serviceData={serviceData} preState={preState} state={state} isDiffMode={isDiffMode} />
-        <StorageQuery serviceId={serviceId} preService={preService ?? undefined} preState={preState} state={state} service={activeService} isDiffMode={isDiffMode} />
-        <PreimageQuery serviceId={serviceId} preService={preService ?? undefined} preState={preState} state={state} service={activeService} isDiffMode={isDiffMode} />
-        <LookupHistoryQuery serviceId={serviceId} preService={preService ?? undefined} preState={preState} state={state} service={activeService} isDiffMode={isDiffMode} />
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="storage">Storage</TabsTrigger>
+            <TabsTrigger value="preimages">Preimages</TabsTrigger>
+            <TabsTrigger value="lookup-history">Lookup History</TabsTrigger>
+          </TabsList>
+          
+          <div className="mt-4">
+            <div className="mb-4">
+              {activeTab === 'storage' && storageQuery.renderQueryInput()}
+              {activeTab === 'preimages' && preimageQuery.renderQueryInput()}
+              {activeTab === 'lookup-history' && lookupHistoryQuery.renderQueryInput()}
+            </div>
+            
+            <TabsContent value="storage" className="mt-0">
+              {storageQuery.renderResults()}
+            </TabsContent>
+            <TabsContent value="preimages" className="mt-0">
+              {preimageQuery.renderResults()}
+            </TabsContent>
+            <TabsContent value="lookup-history" className="mt-0">
+              {lookupHistoryQuery.renderResults()}
+            </TabsContent>
+          </div>
+        </Tabs>
       </div>
     </div>
   );
