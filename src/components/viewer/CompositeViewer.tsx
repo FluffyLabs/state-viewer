@@ -10,9 +10,10 @@ interface CompositeViewerProps {
   value: unknown;
   rawValue?: string;
   showModeToggle?: boolean;
+  showBytesLength?: boolean;
 }
 
-const CompositeViewer = ({ value, rawValue, showModeToggle = false }: CompositeViewerProps) => {
+const CompositeViewer = ({ value, rawValue, showModeToggle = false, showBytesLength }: CompositeViewerProps) => {
   const [displayMode, setDisplayMode] = useState<DisplayMode>('decoded');
 
   const renderValue = (val: unknown) => <CompositeViewer value={val} />;
@@ -68,7 +69,7 @@ const CompositeViewer = ({ value, rawValue, showModeToggle = false }: CompositeV
   if (displayMode === 'string') {
     return (
       <div>
-        <ToStringViewer value={value} />
+        <ToStringViewer value={value} showBytesLength={showBytesLength} />
         {modeToggle}
       </div>
     );
@@ -80,7 +81,7 @@ const CompositeViewer = ({ value, rawValue, showModeToggle = false }: CompositeV
       return <span className="text-gray-500 dark:text-gray-400 italic">null</span>;
     }
     if (typeof value === 'object' && 'toJSON' in value && typeof value.toJSON === 'function') {
-      return <CompositeViewer value={value.toJSON()} />;
+      return <CompositeViewer value={value.toJSON()} showBytesLength={showBytesLength} />;
     }
 
     if (Array.isArray(value)) {
@@ -91,7 +92,7 @@ const CompositeViewer = ({ value, rawValue, showModeToggle = false }: CompositeV
       return <ObjectViewer value={value as Record<string, unknown>} renderValue={renderValue} />;
     }
 
-    return <ToStringViewer value={value} />;
+    return <ToStringViewer value={value} showBytesLength={showBytesLength} />;
   };
 
   return (

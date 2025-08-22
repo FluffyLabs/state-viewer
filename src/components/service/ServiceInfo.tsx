@@ -28,14 +28,11 @@ const ServiceInfo = ({ serviceData, isDiffMode, preState, state }: ServiceInfoPr
 
   return (
     <div>
-      <h6 className="font-medium text-sm mb-2">
-        Service Info
-        { isDiffMode && !hasChanged && (" (no change)") }
-      </h6>
-
       {/* Raw Key Display */}
       <div className="mb-3">
-        <div className="text-xs font-mono mb-1">Key: {rawKey}</div>
+        <div className="text-xs font-mono mb-1">Key: {rawKey}
+          { isDiffMode && !hasChanged && (" (no change)") }
+        </div>
       </div>
 
       {isDiffMode && hasChanged ? (

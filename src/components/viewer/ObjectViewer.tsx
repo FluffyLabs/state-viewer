@@ -11,7 +11,7 @@ const ObjectViewer = ({ value, renderValue }: ObjectViewerProps) => {
     <div className="space-y-1" data-testid="object-viewer">
       {Object.keys(value).map((key) => {
         const item = value[key];
-        const itemStr = toSmartString(item);
+        const itemStr = toSmartString(item, {});
         const shortStr = shortenString(itemStr);
         return (
           <details key={key} className="border-l-2 border-gray-200 dark:border-gray-700 pl-2">
