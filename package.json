@@ -23,7 +23,7 @@
     "@typeberry/state-merkleization": "0.0.1-4a2610e",
     "@uiw/react-codemirror": "^4.25.1",
     "blake2b": "^2.1.4",
-    "lucide-react": "^0.540.0",
+    "lucide-react": "^0.541.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-dropzone": "^14.3.8",
