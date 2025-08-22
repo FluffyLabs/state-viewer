@@ -85,7 +85,7 @@ describe('InspectStateViewer', () => {
     render(<InspectStateViewer state={{ 'key1': 'value1' }} />);
 
     const container = screen.getByText('State Data').closest('div');
-    expect(container).toHaveClass('text-left', 'p-4');
+    expect(container).toHaveClass('text-left', 'py-4');
 
     const heading = screen.getByText('State Data');
     expect(heading).toHaveClass('text-lg', 'font-semibold', 'mb-4');

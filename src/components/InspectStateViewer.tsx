@@ -77,7 +77,7 @@ const InspectStateViewer = ({
   }, [searchTerm, preState, state]);
 
   return (
-    <div className="text-left p-4">
+    <div className="text-left py-4">
       <h3 className="text-lg font-semibold mb-4 hidden">{title}</h3>
       {!error && (
         <p className="text-xs text-muted-foreground mb-4">
