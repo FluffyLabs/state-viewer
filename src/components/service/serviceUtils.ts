@@ -85,6 +85,17 @@ export const getLookupHistoryValue = (service: Service, hash: string, length: st
   }
 };
 
+export const calculatePreimageHash = (rawValue: string): string => {
+  try {
+    const blob = bytes.BytesBlob.parseBlob(rawValue);
+    const hasher = blake2b(32);
+    hasher.update(blob.raw);
+    return bytes.BytesBlob.blobFrom(hasher.digest()).toString();
+  } catch (err) {
+    return `Error: ${err instanceof Error ? err.message : 'Unknown error'}`;
+  }
+};
+
 export const parseServiceIds = (input: string): number[] => {
   return input
     .split(',')
@@ -96,28 +107,28 @@ export const parseServiceIds = (input: string): number[] => {
 
 export const extractServiceIdsFromState = (state: Record<string, string>): number[] => {
   const serviceIds = new Set<number>();
-  
+
   for (const key of Object.keys(state)) {
     if (key.startsWith('0xff') && key.length >= 10) {
       try {
         const hexPart = key.slice(4);
-        
+
         const serviceIdBytes: number[] = [];
         for (let i = 0; i < hexPart.length && serviceIdBytes.length < 4; i += 4) {
           const hexByte = hexPart.slice(i, i + 2);
           const zeroByte = hexPart.slice(i + 2, i + 4);
-          
+
           if (zeroByte === '00' || i + 2 >= hexPart.length) {
             serviceIdBytes.push(parseInt(hexByte, 16));
           } else {
             break;
           }
         }
-        
+
         if (serviceIdBytes.length === 4) {
-          const serviceId = serviceIdBytes[0] | 
-                           (serviceIdBytes[1] << 8) | 
-                           (serviceIdBytes[2] << 16) | 
+          const serviceId = serviceIdBytes[0] |
+                           (serviceIdBytes[1] << 8) |
+                           (serviceIdBytes[2] << 16) |
                            (serviceIdBytes[3] << 24);
           serviceIds.add(serviceId);
         }
@@ -126,7 +137,7 @@ export const extractServiceIdsFromState = (state: Record<string, string>): numbe
       }
     }
   }
-  
+
   return Array.from(serviceIds).sort((a, b) => a - b);
 };
 export const getServiceIdBytesLE = (serviceId: number): [string, string, string, string] => {
@@ -185,13 +196,13 @@ export const discoverLookupHistoryKeysForService = (state: Record<string, string
 
 export const getServiceChangeType = (serviceData: import('./types').ServiceData): 'added' | 'removed' | 'changed' | 'normal' => {
   const { preService, postService, preError, postError } = serviceData;
-  
+
   if (preError && postError) return 'normal';
-  
+
   if (!preService && postService) return 'added';
-  
+
   if (preService && !postService) return 'removed';
-  
+
   if (preService && postService) {
     try {
       const preInfo = JSON.stringify(preService.getInfo());
@@ -201,6 +212,6 @@ export const getServiceChangeType = (serviceData: import('./types').ServiceData)
       return 'normal';
     }
   }
-  
+
   return 'normal';
 };

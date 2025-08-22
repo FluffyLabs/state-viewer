@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { CompositeViewer } from '../viewer';
 import { Button } from '../ui';
 import { getLookupHistoryValue, parsePreimageInput, discoverLookupHistoryKeysForService, discoverStorageKeysForService, discoverPreimageKeysForService } from './serviceUtils';
+import ValueDisplay from './ValueDisplay';
+import ValueDiffSection from './ValueDiffSection';
 import { Service } from '@/types/service';
 import { RawState } from './types';
 import { serviceLookupHistory } from '@/constants/serviceFields';
@@ -100,34 +101,24 @@ const LookupHistoryQuery = ({ serviceId, preService, service, state, preState, i
           <div className="text-xs font-mono">Serialized key: {rawKey}</div>
           {isDiffMode && hasChanged ? (
             <div className="space-y-2">
-              {preRawValue && preState && preService && (
-                <div>
-                  <div className="text-xs font-medium text-red-700 dark:text-red-400 mb-1">Before:</div>
-                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 p-2 rounded text-xs">
-                    <CompositeViewer
-                      value={getLookupHistoryValue(preService, hash, length, preState)}
-                      rawValue={preRawValue}
-                      showModeToggle={true}
-                    />
-                  </div>
-                </div>
-              )}
-              {postRawValue && (
-                <div>
-                  <div className="text-xs font-medium text-green-700 dark:text-green-400 mb-1">After:</div>
-                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 p-2 rounded text-xs">
-                    <CompositeViewer
-                      value={getLookupHistoryValue(service, hash, length, state)}
-                      rawValue={postRawValue}
-                      showModeToggle={true}
-                    />
-                  </div>
-                </div>
-              )}
+              <ValueDiffSection
+                title="Before:"
+                value={preState && preService ? getLookupHistoryValue(preService, hash, length, preState) : undefined}
+                rawValue={preRawValue}
+                variant="before"
+                showModeToggle={true}
+              />
+              <ValueDiffSection
+                title="After:"
+                value={getLookupHistoryValue(service, hash, length, state)}
+                rawValue={postRawValue}
+                variant="after"
+                showModeToggle={true}
+              />
             </div>
           ) : (
             <div className="bg-gray-100 dark-bg-background p-2 rounded text-xs">
-              <CompositeViewer
+              <ValueDisplay
                 value={getLookupHistoryValue(service, hash, length, state)}
                 rawValue={postRawValue || preRawValue}
                 showModeToggle={true}
@@ -150,37 +141,27 @@ const LookupHistoryQuery = ({ serviceId, preService, service, state, preState, i
                   <div className="text-xs font-mono mb-1 break-all">Key: <strong>{keyHex}</strong> {isDiffMode && !itemChanged && "(no change)"}</div>
                   {isDiffMode && itemChanged ? (
                     <div className="space-y-2">
-                      {preRawValueItem && (
-                        <div>
-                          <div className="text-xs font-medium text-red-700 dark:text-red-400 mb-1">Before:</div>
-                          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 p-2 rounded text-xs font-mono break-all">
-                            <CompositeViewer
-                              value={preRawValueItem}
-                              rawValue={preRawValueItem}
-                              showBytesLength
-                            />
-                          </div>
-                        </div>
-                      )}
-                      {postRawValueItem && (
-                        <div>
-                          <div className="text-xs font-medium text-green-700 dark:text-green-400 mb-1">After:</div>
-                          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 p-2 rounded text-xs font-mono break-all">
-                            <CompositeViewer
-                              value={postRawValueItem}
-                              rawValue={postRawValueItem}
-                              showBytesLength
-                            />
-                          </div>
-                        </div>
-                      )}
+                      <ValueDiffSection
+                        title="Before:"
+                        value={preRawValueItem}
+                        rawValue={preRawValueItem}
+                        variant="before"
+                        showBytesLength
+                      />
+                      <ValueDiffSection
+                        title="After:"
+                        value={postRawValueItem}
+                        rawValue={postRawValueItem}
+                        variant="after"
+                        showBytesLength
+                      />
                     </div>
                   ) : !isDiffMode && (
                     <div className="bg-gray-100 dark-bg-background p-2 rounded text-xs font-mono break-all">
-                      <CompositeViewer
-                      value={postRawValueItem || preRawValueItem}
-                      rawValue={postRawValueItem || preRawValueItem}
-                      showBytesLength
+                      <ValueDisplay
+                        value={postRawValueItem || preRawValueItem}
+                        rawValue={postRawValueItem || preRawValueItem}
+                        showBytesLength
                       />
                     </div>
                   )}

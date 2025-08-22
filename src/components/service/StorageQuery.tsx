@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { CompositeViewer } from '../viewer';
 import { Button } from '../ui';
 import { getStorageValue, parseStorageKey, discoverStorageKeysForService } from './serviceUtils';
+import ValueDisplay from './ValueDisplay';
+import ValueDiffSection from './ValueDiffSection';
 import { Service } from '@/types/service';
 import { RawState } from './types';
 import { serviceStorage } from '@/constants/serviceFields';
@@ -78,32 +79,22 @@ const StorageQuery = ({ serviceId, preService, service, state, preState, isDiffM
           <div className="text-xs font-mono">Serialized key: {rawKey}</div>
           {isDiffMode && hasChanged ? (
             <div className="space-y-2">
-              {preRawValue && preService && preState && (
-                <div>
-                  <div className="text-xs font-medium text-red-700 dark:text-red-400 mb-1">Before:</div>
-                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 p-2 rounded text-xs">
-                    <CompositeViewer
-                      value={getStorageValue(preService, storageKey, preState)}
-                      rawValue={preRawValue}
-                    />
-                  </div>
-                </div>
-              )}
-              {postRawValue && (
-                <div>
-                  <div className="text-xs font-medium text-green-700 dark:text-green-400 mb-1">After:</div>
-                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 p-2 rounded text-xs">
-                    <CompositeViewer
-                      value={getStorageValue(service, storageKey, state)}
-                      rawValue={postRawValue}
-                    />
-                  </div>
-                </div>
-              )}
+              <ValueDiffSection
+                title="Before:"
+                value={preState && preService ? getStorageValue(preService, storageKey, preState) : undefined}
+                rawValue={preRawValue}
+                variant="before"
+              />
+              <ValueDiffSection
+                title="After:"
+                value={getStorageValue(service, storageKey, state)}
+                rawValue={postRawValue}
+                variant="after"
+              />
             </div>
           ) : (
             <div className="bg-gray-100 dark-bg-background p-2 rounded text-xs">
-              <CompositeViewer
+              <ValueDisplay
                 value={getStorageValue(service, storageKey, state)}
                 rawValue={postRawValue || preRawValue}
               />
@@ -125,34 +116,24 @@ const StorageQuery = ({ serviceId, preService, service, state, preState, isDiffM
                   <div className="text-xs font-mono mb-1 break-all">Key: <strong>{keyHex}</strong> {isDiffMode && !itemChanged && "(no change)"}</div>
                   {isDiffMode && itemChanged ? (
                     <div className="space-y-2">
-                      {preRawValueItem && preService && preState && (
-                        <div>
-                          <div className="text-xs font-medium text-red-700 dark:text-red-400 mb-1">Before:</div>
-                          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 p-2 rounded text-xs">
-                            <CompositeViewer
-                              value={getStorageValue(preService, keyHex, preState)}
-                              rawValue={preRawValueItem}
-                              showBytesLength
-                            />
-                          </div>
-                        </div>
-                      )}
-                      {postRawValueItem && (
-                        <div>
-                          <div className="text-xs font-medium text-green-700 dark:text-green-400 mb-1">After:</div>
-                          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 p-2 rounded text-xs">
-                            <CompositeViewer
-                              value={getStorageValue(service, keyHex, state)}
-                              rawValue={postRawValueItem}
-                              showBytesLength
-                            />
-                          </div>
-                        </div>
-                      )}
+                      <ValueDiffSection
+                        title="Before:"
+                        value={preState && preService ? getStorageValue(preService, keyHex, preState) : undefined}
+                        rawValue={preRawValueItem}
+                        variant="before"
+                        showBytesLength
+                      />
+                      <ValueDiffSection
+                        title="After:"
+                        value={getStorageValue(service, keyHex, state)}
+                        rawValue={postRawValueItem}
+                        variant="after"
+                        showBytesLength
+                      />
                     </div>
                   ) : !isDiffMode && (
                     <div className="bg-gray-100 dark-bg-background p-2 rounded text-xs">
-                      <CompositeViewer
+                      <ValueDisplay
                         value={getStorageValue(service, keyHex, state)}
                         rawValue={postRawValueItem || preRawValueItem}
                         showBytesLength

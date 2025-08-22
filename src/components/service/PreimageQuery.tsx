@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
-import { CompositeViewer } from '../viewer';
+
 import { Button } from '../ui';
 import { getPreimageValue, parsePreimageInput, discoverPreimageKeysForService } from './serviceUtils';
+import PreimageHashDisplay from './PreimageHashDisplay';
+import PreimageDiffSection from './PreimageDiffSection';
 import { Service } from '@/types/service';
 import { RawState } from './types';
 import { servicePreimages } from '@/constants/serviceFields';
@@ -92,34 +94,25 @@ const PreimageQuery = ({ serviceId, preService, service, state, preState, isDiff
           <div className="text-xs font-medium mb-1">Length: {len} bytes</div>
           {isDiffMode && hasChanged ? (
             <div className="space-y-2">
-              {preRawValue && (
-                <div>
-                  <div className="text-xs font-medium text-red-700 dark:text-red-400 mb-1">Before:</div>
-                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 p-2 rounded text-xs">
-                    <CompositeViewer
-                      value={preimagePreValue}
-                      rawValue={preRawValue}
-                    />
-                  </div>
-                </div>
-              )}
-              {postRawValue && (
-                <div>
-                  <div className="text-xs font-medium text-green-700 dark:text-green-400 mb-1">After:</div>
-                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 p-2 rounded text-xs">
-                    <CompositeViewer
-                      value={preimageValue}
-                      rawValue={postRawValue}
-                    />
-                  </div>
-                </div>
-              )}
+              <PreimageDiffSection
+                title="Before:"
+                value={preimagePreValue}
+                rawValue={preRawValue}
+                variant="before"
+              />
+              <PreimageDiffSection
+                title="After:"
+                value={preimageValue}
+                rawValue={postRawValue}
+                variant="after"
+              />
             </div>
           ) : (
             <div className="bg-gray-100 dark-bg-background p-2 rounded text-xs">
-              <CompositeViewer
+              <PreimageHashDisplay
                 value={preimageValue}
                 rawValue={postRawValue || preRawValue}
+                variant="normal"
               />
             </div>
           )}
@@ -139,37 +132,25 @@ const PreimageQuery = ({ serviceId, preService, service, state, preState, isDiff
                   <div className="text-xs font-mono mb-1 break-all">Key: <strong>{keyHex}</strong> {isDiffMode && !itemChanged && "(no change)"}</div>
                   {isDiffMode && itemChanged ? (
                     <div className="space-y-2">
-                      {preRawValueItem && (
-                        <div>
-                          <div className="text-xs font-medium text-red-700 dark:text-red-400 mb-1">Before:</div>
-                          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 p-2 rounded text-xs">
-                            <CompositeViewer
-                              value={getPreimageValue(preService ?? service, keyHex, preState ?? state)}
-                              rawValue={preRawValueItem}
-                              showBytesLength
-                            />
-                          </div>
-                        </div>
-                      )}
-                      {postRawValueItem && (
-                        <div>
-                          <div className="text-xs font-medium text-green-700 dark:text-green-400 mb-1">After:</div>
-                          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 p-2 rounded text-xs">
-                            <CompositeViewer
-                              value={getPreimageValue(service, keyHex, state)}
-                              rawValue={postRawValueItem}
-                              showBytesLength
-                            />
-                          </div>
-                        </div>
-                      )}
+                      <PreimageDiffSection
+                        title="Before:"
+                        value={getPreimageValue(preService ?? service, keyHex, preState ?? state)}
+                        rawValue={preRawValueItem}
+                        variant="before"
+                      />
+                      <PreimageDiffSection
+                        title="After:"
+                        value={getPreimageValue(service, keyHex, state)}
+                        rawValue={postRawValueItem}
+                        variant="after"
+                      />
                     </div>
                   ) : !isDiffMode && (
                     <div className="bg-gray-100 dark-bg-background p-2 rounded text-xs">
-                      <CompositeViewer
+                      <PreimageHashDisplay
                         value={getPreimageValue(service, keyHex, state)}
                         rawValue={postRawValueItem || preRawValueItem}
-                        showBytesLength
+                        variant="normal"
                       />
                     </div>
                   )}
