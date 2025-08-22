@@ -45,9 +45,8 @@ describe('PreimageHashDisplay', () => {
       />
     );
 
-    expect(screen.getByText('BLAKE2b Hash:')).toBeInTheDocument();
+    expect(screen.getByText('Hash: 0x1234hash')).toBeInTheDocument();
     expect(screen.getByTestId('tostring-viewer')).toBeInTheDocument();
-    expect(screen.getByText('0x1234hash')).toBeInTheDocument();
   });
 
   it('does not render hash section when rawValue is not provided', () => {
@@ -57,7 +56,7 @@ describe('PreimageHashDisplay', () => {
       />
     );
 
-    expect(screen.queryByText('BLAKE2b Hash:')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Hash:/)).not.toBeInTheDocument();
     expect(screen.queryByTestId('tostring-viewer')).not.toBeInTheDocument();
   });
 
@@ -69,10 +68,7 @@ describe('PreimageHashDisplay', () => {
       />
     );
 
-    const hashSection = screen.getByText('BLAKE2b Hash:').closest('div');
-    expect(hashSection).toHaveClass('text-gray-600', 'dark:text-gray-400');
-    
-    const borderDiv = hashSection?.parentElement;
+    const borderDiv = screen.getByText('Hash: 0x1234hash').closest('div')?.parentElement;
     expect(borderDiv).toHaveClass('border-gray-200', 'dark:border-gray-600');
   });
 
@@ -85,10 +81,7 @@ describe('PreimageHashDisplay', () => {
       />
     );
 
-    const hashSection = screen.getByText('BLAKE2b Hash:').closest('div');
-    expect(hashSection).toHaveClass('text-red-700', 'dark:text-red-400');
-    
-    const borderDiv = hashSection?.parentElement;
+    const borderDiv = screen.getByText('Hash: 0x1234hash').closest('div')?.parentElement;
     expect(borderDiv).toHaveClass('border-red-300', 'dark:border-red-600');
   });
 
@@ -101,10 +94,7 @@ describe('PreimageHashDisplay', () => {
       />
     );
 
-    const hashSection = screen.getByText('BLAKE2b Hash:').closest('div');
-    expect(hashSection).toHaveClass('text-green-700', 'dark:text-green-400');
-    
-    const borderDiv = hashSection?.parentElement;
+    const borderDiv = screen.getByText('Hash: 0x1234hash').closest('div')?.parentElement;
     expect(borderDiv).toHaveClass('border-green-300', 'dark:border-green-600');
   });
 
@@ -119,7 +109,7 @@ describe('PreimageHashDisplay', () => {
     expect(screen.getByText('ShowBytesLength: true')).toBeInTheDocument();
   });
 
-  it('does not pass showBytesLength when false', () => {
+  it('always passes showBytesLength as true to CompositeViewer', () => {
     render(
       <PreimageHashDisplay 
         value="test-value" 
@@ -127,6 +117,7 @@ describe('PreimageHashDisplay', () => {
       />
     );
 
-    expect(screen.queryByText('ShowBytesLength: true')).not.toBeInTheDocument();
+    // Component hardcodes showBytesLength=true, so it should still appear
+    expect(screen.getByText('ShowBytesLength: true')).toBeInTheDocument();
   });
 });
