@@ -12,6 +12,7 @@ const AppHeader = ({ onOpenSettings }: { onOpenSettings: () => void }) => {
     <Header
       toolNameSrc={ToolName}
       ghRepoName="state-view"
+      keepNameWhenSmall
       endSlot={
         <Button
           onClick={onOpenSettings}
