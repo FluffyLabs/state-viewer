@@ -67,7 +67,7 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
         <ServiceInfo serviceData={serviceData} preState={preState} state={state} isDiffMode={isDiffMode} />
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full sm:grid-cols-3 grid-cols-1">
             <TabsTrigger value="storage" className="flex justify-start items-center gap-2">
               <code className="px-1 py-0.5 rounded text-xs font-mono bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200">
                 aₛ

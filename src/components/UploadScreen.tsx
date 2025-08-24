@@ -276,7 +276,7 @@ const UploadScreen = () => {
           }`}
         >
           <input {...getInputProps()} />
-          <div className="flex flex-row items-center space-x-6">
+          <div className="flex flex-col sm:flex-row items-center gap-6">
             {uploadState.error ? (
               <AlertCircle className="h-12 w-12 text-destructive" />
             ) : uploadState.isValidJson ? (
