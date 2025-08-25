@@ -6,6 +6,18 @@ import ToolName from "@/assets/tool-name.svg";
 import { UploadScreen } from "@/components";
 import { Button } from "@/components/ui/Button";
 import SettingsDialog from "@/components/SettingsDialog";
+import { utils } from "@typeberry/state-merkleization";
+
+const VersionDisplay = () => {
+  const currentVersion = utils.CURRENT_VERSION as string;
+  const currentSuite = utils.CURRENT_SUITE as string;
+  
+  return (
+    <span className="text-sm text-muted-foreground mr-2">
+      GP: {currentVersion}, Suite: {currentSuite}
+    </span>
+  );
+};
 
 const AppHeader = ({ onOpenSettings }: { onOpenSettings: () => void }) => {
   return (
@@ -14,15 +26,18 @@ const AppHeader = ({ onOpenSettings }: { onOpenSettings: () => void }) => {
       ghRepoName="state-view"
       keepNameWhenSmall
       endSlot={
-        <Button
-          onClick={onOpenSettings}
-          variant="secondary"
-          size="sm"
-          aria-label="Settings"
-          title="Settings"
-        >
-          <Settings className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center">
+          <VersionDisplay />
+          <Button
+            onClick={onOpenSettings}
+            variant="secondary"
+            size="sm"
+            aria-label="Settings"
+            title="Settings"
+          >
+            <Settings className="h-4 w-4" />
+          </Button>
+        </div>
       }
     />
   );
