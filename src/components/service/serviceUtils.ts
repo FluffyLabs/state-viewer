@@ -199,6 +199,36 @@ export const discoverLookupHistoryKeysForService = (state: Record<string, string
 };
 
 
+const compareUint8Arrays = (a?: Uint8Array, b?: Uint8Array): boolean => {
+  if (a === b) return true;
+  if (!a || !b) return a === b;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+};
+
+const compareServiceAccountInfo = (a: import('../../types/service').ServiceAccountInfo, b: import('../../types/service').ServiceAccountInfo): boolean => {
+  if (a.serviceId !== b.serviceId) return false;
+  if (a.balance !== b.balance) return false;
+  if (a.nonce !== b.nonce) return false;
+  
+  if (!compareUint8Arrays(a.codeHash, b.codeHash)) return false;
+  
+  const aKeys = Object.keys(a).filter(k => !['serviceId', 'balance', 'nonce', 'codeHash'].includes(k));
+  const bKeys = Object.keys(b).filter(k => !['serviceId', 'balance', 'nonce', 'codeHash'].includes(k));
+  
+  if (aKeys.length !== bKeys.length) return false;
+  
+  for (const key of aKeys) {
+    if (!bKeys.includes(key)) return false;
+    if (a[key] !== b[key]) return false;
+  }
+  
+  return true;
+};
+
 export const getServiceChangeType = (serviceData: import('./types').ServiceData): 'added' | 'removed' | 'changed' | 'normal' => {
   const { preService, postService, preError, postError } = serviceData;
 
@@ -210,9 +240,9 @@ export const getServiceChangeType = (serviceData: import('./types').ServiceData)
 
   if (preService && postService) {
     try {
-      const preInfo = JSON.stringify(preService.getInfo());
-      const postInfo = JSON.stringify(postService.getInfo());
-      return preInfo !== postInfo ? 'changed' : 'normal';
+      const preInfo = preService.getInfo();
+      const postInfo = postService.getInfo();
+      return compareServiceAccountInfo(preInfo, postInfo) ? 'normal' : 'changed';
     } catch {
       return 'normal';
     }
