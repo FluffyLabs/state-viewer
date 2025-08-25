@@ -99,14 +99,14 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
                   <span className="text-xs text-muted-foreground">
                     {counts.storage.changed > 0 || counts.storage.preCount !== counts.storage.postCount ? (
                       <>
-                        ({counts.storage.preCount}/{counts.storage.postCount}
+                        ({counts.storage.changed}/{counts.storage.preCount}
                         {counts.storage.added > 0 && <span className="text-green-700 dark:text-green-400"> +{counts.storage.added}</span>}
                         {counts.storage.removed > 0 && <span className="text-red-700 dark:text-red-400"> /-{counts.storage.removed}</span>}
                         )
                       </>
                     ) : (
                       <>
-                        ({counts.storage.postCount}
+                        ({counts.storage.preCount}
                         {counts.storage.added > 0 && <span className="text-green-700 dark:text-green-400"> +{counts.storage.added}</span>}
                         {counts.storage.removed > 0 && <span className="text-red-700 dark:text-red-400"> /-{counts.storage.removed}</span>}
                         )
@@ -128,14 +128,14 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
                   <span className="text-xs text-muted-foreground">
                     {counts.preimages.changed > 0 || counts.preimages.preCount !== counts.preimages.postCount ? (
                       <>
-                        ({counts.preimages.preCount}/{counts.preimages.postCount}
+                        ({counts.preimages.changed}/{counts.preimages.preCount}
                         {counts.preimages.added > 0 && <span className="text-green-700 dark:text-green-400"> +{counts.preimages.added}</span>}
                         {counts.preimages.removed > 0 && <span className="text-red-700 dark:text-red-400"> /-{counts.preimages.removed}</span>}
                         )
                       </>
                     ) : (
                       <>
-                        ({counts.preimages.postCount}
+                        ({counts.preimages.preCount}
                         {counts.preimages.added > 0 && <span className="text-green-700 dark:text-green-400"> +{counts.preimages.added}</span>}
                         {counts.preimages.removed > 0 && <span className="text-red-700 dark:text-red-400"> /-{counts.preimages.removed}</span>}
                         )
@@ -157,14 +157,14 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
                   <span className="text-xs text-muted-foreground">
                     {counts.lookup.changed > 0 || counts.lookup.preCount !== counts.lookup.postCount ? (
                       <>
-                        ({counts.lookup.preCount}/{counts.lookup.postCount}
+                        ({counts.lookup.changed}/{counts.lookup.preCount}
                         {counts.lookup.added > 0 && <span className="text-green-700 dark:text-green-400"> +{counts.lookup.added}</span>}
                         {counts.lookup.removed > 0 && <span className="text-red-700 dark:text-red-400"> /-{counts.lookup.removed}</span>}
                         )
                       </>
                     ) : (
                       <>
-                        ({counts.lookup.postCount}
+                        ({counts.lookup.preCount}
                         {counts.lookup.added > 0 && <span className="text-green-700 dark:text-green-400"> +{counts.lookup.added}</span>}
                         {counts.lookup.removed > 0 && <span className="text-red-700 dark:text-red-400"> /-{counts.lookup.removed}</span>}
                         )
