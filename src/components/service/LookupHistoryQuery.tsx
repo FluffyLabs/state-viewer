@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Button } from '../ui';
-import { getLookupHistoryValue, parsePreimageInput, discoverLookupHistoryKeysForService, discoverStorageKeysForService, discoverPreimageKeysForService } from './serviceUtils';
+import { getLookupHistoryValue, parsePreimageInput, discoverLookupHistoryKeysForService } from './serviceUtils';
 import ValueDisplay from './ValueDisplay';
 import ValueDiffSection from './ValueDiffSection';
 import { Service } from '@/types/service';
@@ -24,19 +24,7 @@ const LookupHistoryQuery = ({ serviceId, preService, service, state, preState, i
   const discoveredKeys = useMemo(() => {
     const postLookup = discoverLookupHistoryKeysForService(state, service.serviceId);
     const preLookup = preState ? discoverLookupHistoryKeysForService(preState, service.serviceId) : [];
-
-    const storagePost = new Set(discoverStorageKeysForService(state, service.serviceId));
-    const storagePre = new Set(preState ? discoverStorageKeysForService(preState, service.serviceId) : []);
-    const preimagePost = new Set(discoverPreimageKeysForService(state, service.serviceId));
-    const preimagePre = new Set(preState ? discoverPreimageKeysForService(preState, service.serviceId) : []);
-
-    const combined = new Set([...(postLookup || []), ...(preLookup || [])]);
-    const filtered: string[] = [];
-    for (const k of combined) {
-      if (storagePost.has(k) || storagePre.has(k) || preimagePost.has(k) || preimagePre.has(k)) continue;
-      filtered.push(k);
-    }
-    return filtered;
+    return Array.from(new Set([...(postLookup || []), ...(preLookup || [])]));
   }, [state, preState, service.serviceId]);
 
 

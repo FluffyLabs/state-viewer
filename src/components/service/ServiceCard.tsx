@@ -1,11 +1,11 @@
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import ServiceError from './ServiceError';
 import ServiceInfo from './ServiceInfo';
 import StorageQuery from './StorageQuery';
 import PreimageQuery from './PreimageQuery';
 import LookupHistoryQuery from './LookupHistoryQuery';
-import { getServiceChangeType } from './serviceUtils';
+import { getServiceChangeType, discoverStorageKeysForService, discoverPreimageKeysForService, discoverLookupHistoryKeysForService } from './serviceUtils';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui';
 import type { RawState, ServiceData } from './types';
 
@@ -20,9 +20,6 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
   const [activeTab, setActiveTab] = useState('storage');
   const { serviceId, preService, postService, preError, postError } = serviceData;
   const activeService = postService || preService;
-  if (activeService === null) {
-    return null;
-  }
 
   const changeType = isDiffMode ? getServiceChangeType(serviceData) : 'normal';
   const backgroundClass = isDiffMode ? {
@@ -31,6 +28,28 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
     'changed': 'bg-yellow-100 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-700',
     'normal': 'bg-gray-50 dark:bg-gray-900/20'
   }[changeType] : 'bg-gray-50 dark:bg-gray-900/20';
+  const counts = useMemo(() => {
+    const calc = (discoverFn: (s: Record<string, string>, id: number) => string[]) => {
+      const post = discoverFn(state, serviceId);
+      const pre = preState ? discoverFn(preState, serviceId) : [];
+      const preSet = new Set(pre);
+      const postSet = new Set(post);
+      const total = Array.from(new Set([...pre, ...post]));
+      const added = post.filter((k) => !preSet.has(k));
+      const removed = pre.filter((k) => !postSet.has(k));
+      const changed = total.filter((k) => preSet.has(k) && postSet.has(k) && preState && preState[k] !== state[k]);
+      return { totalCount: total.length, preCount: pre.length, postCount: post.length, added: added.length, removed: removed.length, changed: changed.length };
+    };
+    return {
+      storage: calc(discoverStorageKeysForService),
+      preimages: calc(discoverPreimageKeysForService),
+      lookup: calc(discoverLookupHistoryKeysForService),
+    };
+  }, [state, preState, serviceId]);
+
+  if (activeService === null) {
+    return null;
+  }
 
   // Get query components
   const storageQuery = StorageQuery({ serviceId, preService: preService ?? undefined, preState, state, service: activeService, isDiffMode });
@@ -72,19 +91,88 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
               <code className="px-1 py-0.5 rounded text-xs font-mono bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200">
                 aₛ
               </code>
-              Storage
+              <span className="flex items-center gap-1">
+                <span>Storage</span>
+                {!isDiffMode ? (
+                  <span className="text-xs text-muted-foreground">({counts.storage.totalCount})</span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">
+                    {counts.storage.changed > 0 ? (
+                      <>
+                        ({counts.storage.changed}/{counts.storage.preCount}
+                        {counts.storage.added > 0 && <span className="text-green-700 dark:text-green-400"> +{counts.storage.added}</span>}
+                        {counts.storage.removed > 0 && <span className="text-red-700 dark:text-red-400"> /-{counts.storage.removed}</span>}
+                        )
+                      </>
+                    ) : (
+                      <>
+                        ({counts.storage.preCount}
+                        {counts.storage.added > 0 && <span className="text-green-700 dark:text-green-400"> +{counts.storage.added}</span>}
+                        {counts.storage.removed > 0 && <span className="text-red-700 dark:text-red-400"> /-{counts.storage.removed}</span>}
+                        )
+                      </>
+                    )}
+                  </span>
+                )}
+              </span>
             </TabsTrigger>
             <TabsTrigger value="preimages" className="flex justify-start items-center gap-2">
               <code className="px-1 py-0.5 rounded text-xs font-mono bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200">
                 aₚ
               </code>
-              Preimages
+              <span className="flex items-center gap-1">
+                <span>Preimages</span>
+                {!isDiffMode ? (
+                  <span className="text-xs text-muted-foreground">({counts.preimages.totalCount})</span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">
+                    {counts.preimages.changed > 0 ? (
+                      <>
+                        ({counts.preimages.changed}/{counts.preimages.preCount}
+                        {counts.preimages.added > 0 && <span className="text-green-700 dark:text-green-400"> +{counts.preimages.added}</span>}
+                        {counts.preimages.removed > 0 && <span className="text-red-700 dark:text-red-400"> /-{counts.preimages.removed}</span>}
+                        )
+                      </>
+                    ) : (
+                      <>
+                        ({counts.preimages.preCount}
+                        {counts.preimages.added > 0 && <span className="text-green-700 dark:text-green-400"> +{counts.preimages.added}</span>}
+                        {counts.preimages.removed > 0 && <span className="text-red-700 dark:text-red-400"> /-{counts.preimages.removed}</span>}
+                        )
+                      </>
+                    )}
+                  </span>
+                )}
+              </span>
             </TabsTrigger>
             <TabsTrigger value="lookup-history" className="flex justify-start items-center gap-2">
               <code className="px-1 py-0.5 rounded text-xs font-mono bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200">
                 aₗ
               </code>
-              Lookup History
+              <span className="flex items-center gap-1">
+                <span>Lookup History</span>
+                {!isDiffMode ? (
+                  <span className="text-xs text-muted-foreground">({counts.lookup.totalCount})</span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">
+                    {counts.lookup.changed > 0 ? (
+                      <>
+                        ({counts.lookup.changed}/{counts.lookup.preCount}
+                        {counts.lookup.added > 0 && <span className="text-green-700 dark:text-green-400"> +{counts.lookup.added}</span>}
+                        {counts.lookup.removed > 0 && <span className="text-red-700 dark:text-red-400"> /-{counts.lookup.removed}</span>}
+                        )
+                      </>
+                    ) : (
+                      <>
+                        ({counts.lookup.preCount}
+                        {counts.lookup.added > 0 && <span className="text-green-700 dark:text-green-400"> +{counts.lookup.added}</span>}
+                        {counts.lookup.removed > 0 && <span className="text-red-700 dark:text-red-400"> /-{counts.lookup.removed}</span>}
+                        )
+                      </>
+                    )}
+                  </span>
+                )}
+              </span>
             </TabsTrigger>
           </TabsList>
 
