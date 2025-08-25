@@ -103,7 +103,7 @@ const InspectStateViewer = ({
         <div className="space-y-4">
 
           <h4 className="text-md font-medium mb-3">State Fields</h4>
-          <div className="flex flex-col gap-3 overflow-hidden">
+          <div className="flex flex-col gap-3 overflow-hidden break-all">
             {filteredStateFields.map(({ key, notation, title, description, serialize }) => {
               // Safely access state values with error handling
               let preValue: unknown = undefined;

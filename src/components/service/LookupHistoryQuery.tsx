@@ -82,7 +82,7 @@ const LookupHistoryQuery = ({ serviceId, preService, service, state, preState, i
         placeholder="Length"
         value={length}
         onChange={(e) => setLength(e.target.value)}
-        className="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 dark-bg-background dark:text-gray-100 rounded text-sm"
+        className="sm:w-20 w-14 px-2 py-1 border border-gray-300 dark:border-gray-600 dark-bg-background dark:text-gray-100 rounded text-sm"
       />
       <Button
         size="sm"

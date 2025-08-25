@@ -27,7 +27,7 @@ const ServiceInfo = ({ serviceData, isDiffMode, preState, state }: ServiceInfoPr
   const hasChanged = isDiffMode && preStateValue !== stateValue;
 
   return (
-    <div>
+    <div className="break-all">
       {/* Raw Key Display */}
       <div className="mb-3">
         <div className="text-xs font-mono mb-1">Key: {rawKey}
@@ -36,7 +36,7 @@ const ServiceInfo = ({ serviceData, isDiffMode, preState, state }: ServiceInfoPr
       </div>
 
       {isDiffMode && hasChanged ? (
-        <div className="space-y-2">
+        <div className="space-y-2 overflow-auto">
           {preService && (
             <div>
               <div className="text-xs font-medium text-red-700 dark:text-red-400 mb-1">Before:</div>
