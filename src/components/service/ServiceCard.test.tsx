@@ -75,9 +75,9 @@ describe('ServiceCard', () => {
 
     expect(screen.getByText('Service')).toBeInTheDocument();
     expect(screen.getByText('1')).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'aₛ Storage' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'aₚ Preimages' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'aₗ Lookup History' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /aₛ Storage/ })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /aₚ Preimages/ })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /aₗ Lookup History/ })).toBeInTheDocument();
     expect(screen.getByTestId('service-info')).toBeInTheDocument();
   });
 
@@ -92,7 +92,7 @@ describe('ServiceCard', () => {
       />
     );
 
-    const storageTab = screen.getByRole('tab', { name: 'aₛ Storage' });
+    const storageTab = screen.getByRole('tab', { name: /aₛ Storage/ });
     expect(storageTab).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByTestId('storage-input')).toBeInTheDocument();
     expect(screen.getByTestId('storage-results')).toBeInTheDocument();
@@ -109,7 +109,7 @@ describe('ServiceCard', () => {
       />
     );
 
-    const preimagesTab = screen.getByRole('tab', { name: 'aₚ Preimages' });
+    const preimagesTab = screen.getByRole('tab', { name: /aₚ Preimages/ });
     fireEvent.click(preimagesTab);
 
     expect(preimagesTab).toHaveAttribute('aria-selected', 'true');
@@ -129,7 +129,7 @@ describe('ServiceCard', () => {
       />
     );
 
-    const lookupHistoryTab = screen.getByRole('tab', { name: 'aₗ Lookup History' });
+    const lookupHistoryTab = screen.getByRole('tab', { name: /aₗ Lookup History/ });
     fireEvent.click(lookupHistoryTab);
 
     expect(lookupHistoryTab).toHaveAttribute('aria-selected', 'true');
@@ -242,13 +242,13 @@ describe('ServiceCard', () => {
     expect(screen.queryByTestId('lookup-input')).not.toBeInTheDocument();
 
     // Switch to preimages
-    fireEvent.click(screen.getByRole('tab', { name: 'aₚ Preimages' }));
+    fireEvent.click(screen.getByRole('tab', { name: /aₚ Preimages/ }));
     expect(screen.getByTestId('preimage-input')).toBeInTheDocument();
     expect(screen.queryByTestId('storage-input')).not.toBeInTheDocument();
     expect(screen.queryByTestId('lookup-input')).not.toBeInTheDocument();
 
     // Switch to lookup history
-    fireEvent.click(screen.getByRole('tab', { name: 'aₗ Lookup History' }));
+    fireEvent.click(screen.getByRole('tab', { name: /aₗ Lookup History/ }));
     expect(screen.getByTestId('lookup-input')).toBeInTheDocument();
     expect(screen.queryByTestId('storage-input')).not.toBeInTheDocument();
     expect(screen.queryByTestId('preimage-input')).not.toBeInTheDocument();
@@ -271,12 +271,12 @@ describe('ServiceCard', () => {
     expect(screen.getByTestId('storage-results')).toBeInTheDocument();
     
     // Switch tabs and verify content changes
-    fireEvent.click(screen.getByRole('tab', { name: 'aₚ Preimages' }));
+    fireEvent.click(screen.getByRole('tab', { name: /aₚ Preimages/ }));
     expect(screen.getByTestId('preimage-input')).toBeInTheDocument();
     expect(screen.getByTestId('preimage-results')).toBeInTheDocument();
     
     // Switch to lookup history tab
-    fireEvent.click(screen.getByRole('tab', { name: 'aₗ Lookup History' }));
+    fireEvent.click(screen.getByRole('tab', { name: /aₗ Lookup History/ }));
     expect(screen.getByTestId('lookup-input')).toBeInTheDocument();
     expect(screen.getByTestId('lookup-results')).toBeInTheDocument();
   });
