@@ -97,7 +97,7 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
                   <span className="text-xs text-muted-foreground">({counts.storage.totalCount})</span>
                 ) : (
                   <span className="text-xs text-muted-foreground">
-                    {counts.storage.changed > 0 || counts.storage.preCount !== counts.storage.postCount ? (
+                    {counts.storage.changed > 0 ? (
                       <>
                         ({counts.storage.changed}/{counts.storage.preCount}
                         {counts.storage.added > 0 && <span className="text-green-700 dark:text-green-400"> +{counts.storage.added}</span>}
@@ -126,7 +126,7 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
                   <span className="text-xs text-muted-foreground">({counts.preimages.totalCount})</span>
                 ) : (
                   <span className="text-xs text-muted-foreground">
-                    {counts.preimages.changed > 0 || counts.preimages.preCount !== counts.preimages.postCount ? (
+                    {counts.preimages.changed > 0 ? (
                       <>
                         ({counts.preimages.changed}/{counts.preimages.preCount}
                         {counts.preimages.added > 0 && <span className="text-green-700 dark:text-green-400"> +{counts.preimages.added}</span>}
@@ -155,7 +155,7 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
                   <span className="text-xs text-muted-foreground">({counts.lookup.totalCount})</span>
                 ) : (
                   <span className="text-xs text-muted-foreground">
-                    {counts.lookup.changed > 0 || counts.lookup.preCount !== counts.lookup.postCount ? (
+                    {counts.lookup.changed > 0 ? (
                       <>
                         ({counts.lookup.changed}/{counts.lookup.preCount}
                         {counts.lookup.added > 0 && <span className="text-green-700 dark:text-green-400"> +{counts.lookup.added}</span>}
