@@ -5,6 +5,7 @@ import { Popover } from './ui/Popover';
 import { calculateStateDiff } from '@/utils';
 import { filterEntriesWithFieldNames, highlightSearchMatchesWithContext } from '@/utils/searchUtils';
 import { createRawKeyToFieldMap } from '@/constants/stateFields';
+import { detectServiceKeyType, generateServiceTooltipContent } from './service/serviceUtils';
 
 interface DiffEntry {
   type: 'added' | 'removed' | 'changed' | 'normal';
@@ -54,6 +55,15 @@ const RawStateViewer = ({
   // Function to get field info for a raw key
   const getFieldInfo = (rawKey: string) => {
     return rawKeyToFieldMap.get(rawKey) || rawKeyToFieldMap.get(rawKey.substring(0, rawKey.length - 2));
+  };
+
+  // Function to get service info for a raw key
+  const getServiceInfo = (rawKey: string) => {
+    const serviceKeyInfo = detectServiceKeyType(rawKey);
+    if (serviceKeyInfo.type) {
+      return generateServiceTooltipContent(serviceKeyInfo);
+    }
+    return null;
   };
 
   const handleCopy = async (text: string, key: string) => {
@@ -202,7 +212,7 @@ const RawStateViewer = ({
                   <div className="flex items-center gap-4">
                     <label className="items-center text-xs font-medium text-muted-foreground w-16 flex-shrink-0 hidden md:flex">
                       <span className="uppercase tracking-wide mr-2">Key</span>
-                      {getFieldInfo(key) && (
+                      {(getFieldInfo(key) || getServiceInfo(key)) && (
                         <Popover
                         trigger={
                           <div className="flex-shrink-0">
@@ -210,13 +220,17 @@ const RawStateViewer = ({
                           </div>
                         }
                         content={
-                          <div className="space-y-1">
-                            <div className="font-semibold">{getFieldInfo(key)?.key}</div>
-                            <div className="text-xs opacity-75">
-                              {getFieldInfo(key)?.notation} ({getFieldInfo(key)?.title})
+                          getFieldInfo(key) ? (
+                            <div className="space-y-1">
+                              <div className="font-semibold">{getFieldInfo(key)?.key}</div>
+                              <div className="text-xs opacity-75">
+                                {getFieldInfo(key)?.notation} ({getFieldInfo(key)?.title})
+                              </div>
+                              <div className="text-xs">{getFieldInfo(key)?.description}</div>
                             </div>
-                            <div className="text-xs">{getFieldInfo(key)?.description}</div>
-                          </div>
+                          ) : (
+                            getServiceInfo(key)
+                          )
                         }
                         position="right"
                         triggerOn="hover"
