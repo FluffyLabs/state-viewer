@@ -111,7 +111,7 @@ const StorageQuery = ({ serviceId, preService, service, state, preState, isDiffM
               const preRawValueItem = preState ? preState[keyHex] : undefined;
               const postRawValueItem = state[keyHex];
               const itemChanged = isDiffMode && preRawValueItem !== postRawValueItem;
-              return (
+              return (itemChanged || !isDiffMode) && (
                 <div key={keyHex} className={cn("border border-gray-200 dark:border-gray-700 rounded p-2", itemChanged ? "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700" : "")}>
                   <div className="text-xs font-mono mb-1 break-all">Key: <strong>{keyHex}</strong> {isDiffMode && !itemChanged && "(no change)"}</div>
                   {isDiffMode && itemChanged ? (

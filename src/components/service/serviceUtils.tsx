@@ -213,17 +213,8 @@ export const getServiceChangeType = (serviceData: import('./types').ServiceData)
       const preInfo = preService.getInfo();
       const postInfo = postService.getInfo();
       
-      const preInfoForComparison = {
-        ...preInfo,
-        codeHash: preInfo.codeHash ? Array.from(preInfo.codeHash) : preInfo.codeHash
-      };
-      const postInfoForComparison = {
-        ...postInfo,
-        codeHash: postInfo.codeHash ? Array.from(postInfo.codeHash) : postInfo.codeHash
-      };
-      
-      const preInfoStr = JSON.stringify(preInfoForComparison);
-      const postInfoStr = JSON.stringify(postInfoForComparison);
+      const preInfoStr = `${preInfo}`;
+      const postInfoStr = `${postInfo}`;
       return preInfoStr !== postInfoStr ? 'changed' : 'normal';
     } catch {
       return 'normal';
@@ -283,4 +274,85 @@ export const getComprehensiveServiceChangeType = (
     hasPreimageChanges,
     hasLookupHistoryChanges,
   };
+}
+
+export interface ServiceKeyInfo {
+  type: 'service-info' | 'storage' | 'preimage' | 'lookup-history' | null;
+  serviceId: number | null;
+}
+
+export const detectServiceKeyType = (key: string): ServiceKeyInfo => {
+  if (!key.startsWith('0x') || key.length < 10) {
+    return { type: null, serviceId: null };
+  }
+
+  const hex = key.slice(2);
+  
+  const serviceId = extractServiceIdFromKey(key);
+  if (serviceId === null) {
+    return { type: null, serviceId: null };
+  }
+
+  const [b0, b1, b2, b3] = getServiceIdBytesLE(serviceId);
+  
+  if (key.startsWith('0xff') && hex.length >= 8) {
+    const expectedPattern = `ff${b0}00${b1}00${b2}00${b3}00`;
+    if (hex.startsWith(expectedPattern)) {
+      return { type: 'service-info', serviceId };
+    }
+  }
+  
+  const storagePrefix = `${b0}ff${b1}ff${b2}ff${b3}ff`;
+  if (hex.startsWith(storagePrefix)) {
+    return { type: 'storage', serviceId };
+  }
+  
+  const preimagePrefix = `${b0}fe${b1}ff${b2}ff${b3}ff`;
+  if (hex.startsWith(preimagePrefix)) {
+    return { type: 'preimage', serviceId };
+  }
+  
+  const match = 
+    hex.slice(0, 2) === b0 &&
+    hex.length >= 16 &&
+    hex.slice(4, 6) === b1 &&
+    hex.slice(8, 10) === b2 &&
+    hex.slice(12, 14) === b3;
+  if (match && !hex.startsWith(storagePrefix) && !hex.startsWith(preimagePrefix)) {
+    return { type: 'lookup-history', serviceId };
+  }
+  
+  return { type: null, serviceId: null };
+};
+
+const extractServiceIdFromKey = (key: string): number | null => {
+  if (!key.startsWith('0x') || key.length < 10) return null;
+  
+  const hex = key.slice(2);
+  
+  if (key.startsWith('0xff') && hex.length >= 8) {
+    try {
+      const serviceIdBytes = [
+        parseInt(hex.slice(2, 4), 16),
+        parseInt(hex.slice(6, 8), 16),
+        parseInt(hex.slice(10, 12), 16),
+        parseInt(hex.slice(14, 16), 16)
+      ];
+      return serviceIdBytes[0] | (serviceIdBytes[1] << 8) | (serviceIdBytes[2] << 16) | (serviceIdBytes[3] << 24);
+    } catch {
+      return null;
+    }
+  }
+  
+  try {
+    const serviceIdBytes = [
+      parseInt(hex.slice(0, 2), 16),
+      parseInt(hex.slice(4, 6), 16),
+      parseInt(hex.slice(8, 10), 16),
+      parseInt(hex.slice(12, 14), 16)
+    ];
+    return serviceIdBytes[0] | (serviceIdBytes[1] << 8) | (serviceIdBytes[2] << 16) | (serviceIdBytes[3] << 24);
+  } catch {
+    return null;
+  }
 };

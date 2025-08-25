@@ -92,7 +92,7 @@ const ServiceViewer = ({ preStateAccess, stateAccess, preState, state }: Service
 
         {services.length === 0 && serviceIdsInput.trim() && (
           <div className="text-center py-4 text-gray-500">
-            No valid service IDs found in input: "{serviceIdsInput}"
+            Didn't find any {isDiffMode && 'changed'} services with given ids.
           </div>
         )}
       </div>
