@@ -220,3 +220,55 @@ export const getServiceChangeType = (serviceData: import('./types').ServiceData)
 
   return 'normal';
 };
+
+export const getComprehensiveServiceChangeType = (
+  serviceData: import('./types').ServiceData,
+  state: Record<string, string>,
+  preState?: Record<string, string>
+): {
+  hasAnyChanges: boolean;
+  hasServiceInfoChanges: boolean;
+  hasStorageChanges: boolean;
+  hasPreimageChanges: boolean;
+  hasLookupHistoryChanges: boolean;
+} => {
+  const { serviceId } = serviceData;
+  const serviceInfoChangeType = getServiceChangeType(serviceData);
+  const hasServiceInfoChanges = serviceInfoChangeType !== 'normal';
+  
+  if (!preState) {
+    return {
+      hasAnyChanges: hasServiceInfoChanges,
+      hasServiceInfoChanges,
+      hasStorageChanges: false,
+      hasPreimageChanges: false,
+      hasLookupHistoryChanges: false,
+    };
+  }
+  
+  const calc = (discoverFn: (s: Record<string, string>, id: number) => string[]) => {
+    const post = discoverFn(state, serviceId);
+    const pre = discoverFn(preState, serviceId);
+    const preSet = new Set(pre);
+    const postSet = new Set(post);
+    const total = Array.from(new Set([...pre, ...post]));
+    const changed = total.filter((k) => preSet.has(k) && postSet.has(k) && preState[k] !== state[k]);
+    const added = post.filter((k) => !preSet.has(k));
+    const removed = pre.filter((k) => !postSet.has(k));
+    return added.length > 0 || removed.length > 0 || changed.length > 0;
+  };
+  
+  const hasStorageChanges = calc(discoverStorageKeysForService);
+  const hasPreimageChanges = calc(discoverPreimageKeysForService);
+  const hasLookupHistoryChanges = calc(discoverLookupHistoryKeysForService);
+  
+  const hasAnyChanges = hasServiceInfoChanges || hasStorageChanges || hasPreimageChanges || hasLookupHistoryChanges;
+  
+  return {
+    hasAnyChanges,
+    hasServiceInfoChanges,
+    hasStorageChanges,
+    hasPreimageChanges,
+    hasLookupHistoryChanges,
+  };
+};

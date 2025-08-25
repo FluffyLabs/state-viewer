@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import ServiceIdsInput from './service/ServiceIdsInput';
 import ServiceCard from './service/ServiceCard';
-import { parseServiceIds, extractServiceIdsFromState } from './service/serviceUtils';
+import { parseServiceIds, extractServiceIdsFromState, getComprehensiveServiceChangeType } from './service/serviceUtils';
 import type { ServiceData } from './service/types';
 import { StateAccess } from '@/types/service';
 
@@ -31,8 +31,10 @@ const ServiceViewer = ({ preStateAccess, stateAccess, preState, state }: Service
     return parseServiceIds(serviceIdsInput);
   }, [serviceIdsInput]);
 
+  const isDiffMode = preStateAccess !== undefined;
+
   const services = useMemo((): ServiceData[] => {
-    return serviceIds.map(serviceId => {
+    const allServices = serviceIds.map(serviceId => {
       let preService = null;
       let postService = null;
       let preError = null;
@@ -58,9 +60,16 @@ const ServiceViewer = ({ preStateAccess, stateAccess, preState, state }: Service
         postError,
       };
     });
-  }, [serviceIds, preStateAccess, stateAccess]);
 
-  const isDiffMode = preStateAccess !== undefined;
+    if (isDiffMode && preState) {
+      return allServices.filter(serviceData => {
+        const changeInfo = getComprehensiveServiceChangeType(serviceData, state, preState);
+        return changeInfo.hasAnyChanges;
+      });
+    }
+
+    return allServices;
+  }, [serviceIds, preStateAccess, stateAccess, isDiffMode, preState, state]);
 
   return (
     <div className="space-y-4 mb-4">

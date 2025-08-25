@@ -5,7 +5,7 @@ import ServiceInfo from './ServiceInfo';
 import StorageQuery from './StorageQuery';
 import PreimageQuery from './PreimageQuery';
 import LookupHistoryQuery from './LookupHistoryQuery';
-import { getServiceChangeType, discoverStorageKeysForService, discoverPreimageKeysForService, discoverLookupHistoryKeysForService } from './serviceUtils';
+import { getServiceChangeType, discoverStorageKeysForService, discoverPreimageKeysForService, discoverLookupHistoryKeysForService, getComprehensiveServiceChangeType } from './serviceUtils';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui';
 import type { RawState, ServiceData } from './types';
 
@@ -22,6 +22,8 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
   const activeService = postService || preService;
 
   const changeType = isDiffMode ? getServiceChangeType(serviceData) : 'normal';
+  const changeInfo = isDiffMode ? getComprehensiveServiceChangeType(serviceData, state, preState) : null;
+  
   const backgroundClass = isDiffMode ? {
     'added': 'bg-green-100 dark:bg-green-900/20 border-green-300 dark:border-green-700',
     'removed': 'bg-red-100 dark:bg-red-900/20 border-red-300 dark:border-red-700',
@@ -87,7 +89,14 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full sm:grid-cols-3 grid-cols-1">
-            <TabsTrigger value="storage" className="flex justify-start items-center gap-2">
+            <TabsTrigger 
+              value="storage" 
+              className={`flex justify-start items-center gap-2 ${
+                isDiffMode && changeInfo && !changeInfo.hasServiceInfoChanges && changeInfo.hasStorageChanges 
+                  ? 'bg-yellow-100 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-700' 
+                  : ''
+              }`}
+            >
               <code className="px-1 py-0.5 rounded text-xs font-mono bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200">
                 aₛ
               </code>
@@ -116,7 +125,14 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
                 )}
               </span>
             </TabsTrigger>
-            <TabsTrigger value="preimages" className="flex justify-start items-center gap-2">
+            <TabsTrigger 
+              value="preimages" 
+              className={`flex justify-start items-center gap-2 ${
+                isDiffMode && changeInfo && !changeInfo.hasServiceInfoChanges && changeInfo.hasPreimageChanges 
+                  ? 'bg-yellow-100 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-700' 
+                  : ''
+              }`}
+            >
               <code className="px-1 py-0.5 rounded text-xs font-mono bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200">
                 aₚ
               </code>
@@ -145,7 +161,14 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
                 )}
               </span>
             </TabsTrigger>
-            <TabsTrigger value="lookup-history" className="flex justify-start items-center gap-2">
+            <TabsTrigger 
+              value="lookup-history" 
+              className={`flex justify-start items-center gap-2 ${
+                isDiffMode && changeInfo && !changeInfo.hasServiceInfoChanges && changeInfo.hasLookupHistoryChanges 
+                  ? 'bg-yellow-100 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-700' 
+                  : ''
+              }`}
+            >
               <code className="px-1 py-0.5 rounded text-xs font-mono bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200">
                 aₗ
               </code>
