@@ -168,7 +168,7 @@ describe('ServiceViewer', () => {
     const input = screen.getByTestId('service-ids-input');
     fireEvent.change(input, { target: { value: 'invalid' } });
     
-    expect(screen.getByText('No valid service IDs found in input: "invalid"')).toBeInTheDocument();
+    expect(screen.getByText('Didn\'t find any services with given ids.')).toBeInTheDocument();
   });
 
   it('should not show no valid service IDs message when input is empty', () => {
@@ -179,7 +179,7 @@ describe('ServiceViewer', () => {
     const input = screen.getByTestId('service-ids-input');
     fireEvent.change(input, { target: { value: '' } });
     
-    expect(screen.queryByText(/No valid service IDs found/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Didn't find any services with given ids/)).not.toBeInTheDocument();
   });
 
   it('should pass preState and state to ServiceCard', () => {

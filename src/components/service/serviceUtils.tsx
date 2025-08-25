@@ -1,4 +1,3 @@
-import React from 'react';
 import blake2b from "blake2b";
 import type { Service, StorageKey, PreimageHash, U32 } from '../../types/service';
 import { bytes, StateKey } from '@typeberry/state-merkleization';
@@ -211,9 +210,12 @@ export const getServiceChangeType = (serviceData: import('./types').ServiceData)
 
   if (preService && postService) {
     try {
-      const preInfo = JSON.stringify(preService.getInfo());
-      const postInfo = JSON.stringify(postService.getInfo());
-      return preInfo !== postInfo ? 'changed' : 'normal';
+      const preInfo = preService.getInfo();
+      const postInfo = postService.getInfo();
+      
+      const preInfoStr = `${preInfo}`;
+      const postInfoStr = `${postInfo}`;
+      return preInfoStr !== postInfoStr ? 'changed' : 'normal';
     } catch {
       return 'normal';
     }
@@ -221,6 +223,58 @@ export const getServiceChangeType = (serviceData: import('./types').ServiceData)
 
   return 'normal';
 };
+
+export const getComprehensiveServiceChangeType = (
+  serviceData: import('./types').ServiceData,
+  state: Record<string, string>,
+  preState?: Record<string, string>
+): {
+  hasAnyChanges: boolean;
+  hasServiceInfoChanges: boolean;
+  hasStorageChanges: boolean;
+  hasPreimageChanges: boolean;
+  hasLookupHistoryChanges: boolean;
+} => {
+  const { serviceId } = serviceData;
+  const serviceInfoChangeType = getServiceChangeType(serviceData);
+  const hasServiceInfoChanges = serviceInfoChangeType !== 'normal';
+  
+  if (!preState) {
+    return {
+      hasAnyChanges: hasServiceInfoChanges,
+      hasServiceInfoChanges,
+      hasStorageChanges: false,
+      hasPreimageChanges: false,
+      hasLookupHistoryChanges: false,
+    };
+  }
+  
+  const calc = (discoverFn: (s: Record<string, string>, id: number) => string[]) => {
+    const post = discoverFn(state, serviceId);
+    const pre = discoverFn(preState, serviceId);
+    const preSet = new Set(pre);
+    const postSet = new Set(post);
+    const total = Array.from(new Set([...pre, ...post]));
+    const changed = total.filter((k) => preSet.has(k) && postSet.has(k) && preState[k] !== state[k]);
+    const added = post.filter((k) => !preSet.has(k));
+    const removed = pre.filter((k) => !postSet.has(k));
+    return added.length > 0 || removed.length > 0 || changed.length > 0;
+  };
+  
+  const hasStorageChanges = calc(discoverStorageKeysForService);
+  const hasPreimageChanges = calc(discoverPreimageKeysForService);
+  const hasLookupHistoryChanges = calc(discoverLookupHistoryKeysForService);
+  
+  const hasAnyChanges = hasServiceInfoChanges || hasStorageChanges || hasPreimageChanges || hasLookupHistoryChanges;
+  
+  return {
+    hasAnyChanges,
+    hasServiceInfoChanges,
+    hasStorageChanges,
+    hasPreimageChanges,
+    hasLookupHistoryChanges,
+  };
+}
 
 export interface ServiceKeyInfo {
   type: 'service-info' | 'storage' | 'preimage' | 'lookup-history' | null;
@@ -300,46 +354,5 @@ const extractServiceIdFromKey = (key: string): number | null => {
     return serviceIdBytes[0] | (serviceIdBytes[1] << 8) | (serviceIdBytes[2] << 16) | (serviceIdBytes[3] << 24);
   } catch {
     return null;
-  }
-};
-
-export const generateServiceTooltipContent = (keyInfo: ServiceKeyInfo): React.ReactNode => {
-  if (!keyInfo.type || keyInfo.serviceId === null) return null;
-  
-  switch (keyInfo.type) {
-    case 'service-info':
-      return (
-        <div className="space-y-1">
-          <div className="font-semibold">Service {keyInfo.serviceId}</div>
-          <div className="text-xs opacity-75">δ[{keyInfo.serviceId}]</div>
-          <div className="text-xs">Service Account Info</div>
-        </div>
-      );
-    case 'storage':
-      return (
-        <div className="space-y-1">
-          <div className="font-semibold">Storage</div>
-          <div className="text-xs opacity-75">a_s[.]</div>
-          <div className="text-xs">Part of service {keyInfo.serviceId}</div>
-        </div>
-      );
-    case 'preimage':
-      return (
-        <div className="space-y-1">
-          <div className="font-semibold">Preimage</div>
-          <div className="text-xs opacity-75">a_p[.]</div>
-          <div className="text-xs">Part of service {keyInfo.serviceId}</div>
-        </div>
-      );
-    case 'lookup-history':
-      return (
-        <div className="space-y-1">
-          <div className="font-semibold">Lookup History</div>
-          <div className="text-xs opacity-75">a_l[.]</div>
-          <div className="text-xs">Part of service {keyInfo.serviceId}</div>
-        </div>
-      );
-    default:
-      return null;
   }
 };

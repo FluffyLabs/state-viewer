@@ -5,7 +5,8 @@ import { Popover } from './ui/Popover';
 import { calculateStateDiff } from '@/utils';
 import { filterEntriesWithFieldNames, highlightSearchMatchesWithContext } from '@/utils/searchUtils';
 import { createRawKeyToFieldMap } from '@/constants/stateFields';
-import { detectServiceKeyType, generateServiceTooltipContent } from './service/serviceUtils';
+import { detectServiceKeyType } from './service/serviceUtils';
+import {generateServiceTooltipContent} from './service/EncodedServiceTooltip';
 
 interface DiffEntry {
   type: 'added' | 'removed' | 'changed' | 'normal';
