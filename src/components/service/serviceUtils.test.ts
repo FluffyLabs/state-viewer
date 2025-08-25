@@ -10,7 +10,7 @@ import {
   discoverStorageKeysForService,
   getServiceChangeType
 } from './serviceUtils';
-import type { Service } from '@/types/service';
+import type { Service, ServiceAccountInfo } from '@/types/service';
 
 
 describe('serviceUtils', () => {
@@ -234,7 +234,7 @@ describe('serviceUtils', () => {
   describe('getServiceChangeType', () => {
     const mockService: Service = {
       serviceId: 1,
-      getInfo: vi.fn(() => (new ServiceInfo({ serviceId: 1, balance: 100, nonce: 0, codeHash: new Uint8Array([1, 2, 3]) }))),
+      getInfo: vi.fn(() => (new ServiceInfo({ serviceId: 1, balance: 100, nonce: 0, codeHash: new Uint8Array([1, 2, 3]) })) as ServiceAccountInfo),
       getStorage: vi.fn(),
       hasPreimage: vi.fn(),
       getPreimage: vi.fn(),
@@ -272,7 +272,7 @@ describe('serviceUtils', () => {
     it('returns "changed" when service info differs', () => {
       const changedService: Service = {
         ...mockService,
-        getInfo: vi.fn(() => (new ServiceInfo({ serviceId: 1, balance: 200, nonce: 1, codeHash: new Uint8Array([1, 2, 3]) })))
+        getInfo: vi.fn(() => (new ServiceInfo({ serviceId: 1, balance: 200, nonce: 1, codeHash: new Uint8Array([1, 2, 3]) })) as ServiceAccountInfo)
       };
       
       const serviceData = {
