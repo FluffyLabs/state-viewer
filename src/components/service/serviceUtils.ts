@@ -174,9 +174,14 @@ export const discoverPreimageKeysForService = (state: Record<string, string>, se
 
 export const discoverLookupHistoryKeysForService = (state: Record<string, string>, serviceId: number): string[] => {
   const [b0, b1, b2, b3] = getServiceIdBytesLE(serviceId);
+  const storagePrefix = `0x${b0}ff${b1}ff${b2}ff${b3}ff`;
+  const preimagePrefix = `0x${b0}fe${b1}ff${b2}ff${b3}ff`;
   const results: string[] = [];
   for (const key of Object.keys(state)) {
     if (!key.startsWith('0x') || key.length < 2 + 16) {
+      continue;
+    }
+    if (key.startsWith(storagePrefix) || key.startsWith(preimagePrefix)) {
       continue;
     }
     const hex = key.slice(2);
