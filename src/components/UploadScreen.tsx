@@ -1,15 +1,25 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, AlertCircle, Edit, FolderOpen } from 'lucide-react';
 import JsonEditorDialog from './JsonEditorDialog';
 import StateViewer from './StateViewer';
 import { Button } from './ui/Button';
-import { validateJsonFile, validateJsonContent, extractGenesisState, type JsonFileFormat, type StfStateType } from '../utils';
+import { validateJsonFile, validateJsonContent, extractGenesisState, type JsonFileFormat, type StfStateType, type JsonValidationResult } from '../utils';
 
 import stfTestVectorFixture from '../utils/fixtures/00000001.json';
 import jip4ChainspecFixture from '../utils/fixtures/dev-tiny.json';
 import stfGenesisFixture from '../utils/fixtures/genesis.json';
 import typeberryConfigFixture from '../utils/fixtures/typeberry-dev.json';
+
+const SESSION_STORAGE_KEY = 'LAST_LOADED_FILE';
+
+interface StoredFileData {
+  content: string;
+  format: JsonFileFormat;
+  formatDescription: string;
+  availableStates?: StfStateType[];
+  selectedState?: StfStateType;
+}
 
 interface UploadState {
   file: File | null;
@@ -112,6 +122,25 @@ const UploadScreen = () => {
       format: 'unknown',
       formatDescription: '',
     });
+    sessionStorage.removeItem(SESSION_STORAGE_KEY);
+  }, []);
+
+  const handleUploadStateWithStorage = useCallback((
+    newState: UploadState | ((prev: UploadState) => UploadState),
+    validation?: JsonValidationResult
+  ) => {
+    setUploadState(newState);
+    
+    if (validation?.isValid) {
+      const dataToStore: StoredFileData = {
+        content: validation.content,
+        format: validation.format,
+        formatDescription: validation.formatDescription,
+        availableStates: validation.availableStates,
+        selectedState: validation.availableStates?.includes('diff') ? 'diff' : validation.availableStates?.[0],
+      };
+      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(dataToStore));
+    }
   }, []);
 
   const handleFileDrop = useCallback(async (acceptedFiles: File[]) => {
@@ -121,7 +150,7 @@ const UploadScreen = () => {
 
     const validation = await validateJsonFile(file);
 
-    setUploadState({
+    const newUploadState = {
       file,
       content: validation.content,
       error: validation.error,
@@ -129,9 +158,11 @@ const UploadScreen = () => {
       format: validation.format,
       formatDescription: validation.formatDescription,
       availableStates: validation.availableStates,
-      selectedState: validation.availableStates?.includes('diff') ? 'diff' : validation.availableStates?.[0], // Default to diff for test vectors
-    });
-  }, [clearUpload]);
+      selectedState: validation.availableStates?.includes('diff') ? 'diff' : validation.availableStates?.[0],
+    };
+
+    handleUploadStateWithStorage(newUploadState, validation);
+  }, [clearUpload, handleUploadStateWithStorage]);
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop: handleFileDrop,
@@ -147,35 +178,31 @@ const UploadScreen = () => {
   }, []);
 
   const handleSaveManualEdit = useCallback((content: string) => {
-    // Re-validate the manually edited content
     const validateManualContent = async () => {
       const validation = validateJsonContent(content);
 
-      // Set format error if JSON is valid but format is unknown
       if (validation.isValid && validation.format === 'unknown') {
         setFormatError('The JSON is valid but does not match any of the known formats (JIP-4 Chain Spec, STF Test Vector, STF Genesis).');
-        // Keep dialog open to show the error
       } else {
         setFormatError(null);
-        // Close dialog only if there's no format error
         setIsDialogOpen(false);
       }
 
-      setUploadState(prev => ({
+      handleUploadStateWithStorage(prev => ({
         ...prev,
         content: validation.content,
         error: validation.error,
         isValidJson: validation.isValid,
-        file: null, // Clear file since this is manual input
+        file: null,
         format: validation.format,
         formatDescription: validation.formatDescription,
         availableStates: validation.availableStates,
         selectedState: validation.availableStates?.includes('diff') ? 'diff' : validation.availableStates?.[0],
-      }));
+      }), validation);
     };
 
     validateManualContent();
-  }, []);
+  }, [handleUploadStateWithStorage]);
 
   const handleStateSelection = useCallback((stateType: StfStateType) => {
     setUploadState(prev => ({
@@ -189,7 +216,7 @@ const UploadScreen = () => {
     
     const validation = validateJsonContent(exampleContent);
     
-    setUploadState({
+    const newUploadState = {
       file: null,
       content: validation.content,
       error: validation.error,
@@ -198,8 +225,40 @@ const UploadScreen = () => {
       formatDescription: validation.formatDescription,
       availableStates: validation.availableStates,
       selectedState: validation.availableStates?.includes('diff') ? 'diff' : validation.availableStates?.[0],
-    });
-  }, [clearUpload]);
+    };
+
+    handleUploadStateWithStorage(newUploadState, validation);
+  }, [clearUpload, handleUploadStateWithStorage]);
+
+  useEffect(() => {
+    const loadFromSessionStorage = () => {
+      try {
+        const stored = sessionStorage.getItem(SESSION_STORAGE_KEY);
+        if (stored) {
+          const data: StoredFileData = JSON.parse(stored);
+          const validation = validateJsonContent(data.content);
+          if (validation.isValid && validation.format === data.format) {
+            setUploadState({
+              file: null,
+              content: data.content,
+              error: null,
+              isValidJson: true,
+              format: data.format,
+              formatDescription: data.formatDescription,
+              availableStates: data.availableStates,
+              selectedState: data.selectedState,
+            });
+          } else {
+            sessionStorage.removeItem(SESSION_STORAGE_KEY);
+          }
+        }
+      } catch {
+        sessionStorage.removeItem(SESSION_STORAGE_KEY);
+      }
+    };
+    
+    loadFromSessionStorage();
+  }, []);
 
   const selectedState= useMemo(() => {
     if (extractedState === null) {
@@ -406,6 +465,7 @@ const UploadScreen = () => {
           setFormatError(null);
         }}
         onSave={handleSaveManualEdit}
+        onReset={clearUpload}
         initialContent={uploadState.content || '{\n  \n}'}
         formatError={formatError}
       />

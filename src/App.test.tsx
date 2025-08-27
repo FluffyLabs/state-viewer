@@ -101,7 +101,7 @@ describe('App', () => {
 
     const sidebar = screen.getByTestId('apps-sidebar');
     expect(sidebar).toBeInTheDocument();
-    expect(sidebar).toHaveAttribute('data-active-link', 'trie');
+    expect(sidebar).toHaveAttribute('data-active-link', 'state');
     expect(sidebar).toHaveAttribute('data-dark-mode-toggle', 'true');
     expect(sidebar).toHaveClass('h-full');
   });
@@ -152,7 +152,7 @@ describe('App', () => {
     expect(screen.getByText('Drag & drop your state JSON here')).toBeInTheDocument();
     expect(screen.getByText('JSON')).toBeInTheDocument();
   });
-
+  
   describe('Settings functionality', () => {
     it('renders settings button', () => {
       renderApp();

@@ -54,7 +54,7 @@ function App() {
       <div className="flex h-full">
         <div className="max-sm:hidden">
           <AppsSidebar
-            activeLink="trie"
+            activeLink="state"
             className="h-full"
             enableDarkModeToggle={true}
           />
