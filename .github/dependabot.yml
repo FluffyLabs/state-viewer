@@ -9,4 +9,4 @@ updates:
     directory: "/"
     auto-merge: true
     schedule:
-      interval: "daily"
+      interval: "weekly"
