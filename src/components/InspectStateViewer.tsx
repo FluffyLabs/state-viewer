@@ -123,7 +123,7 @@ const InspectStateViewer = ({
 
               const hasValue = preValue !== undefined || postValue !== undefined;
               const hasChanged = isDiffMode && (
-                serialize.key === stateSerialize.safrole.key
+                serialize?.key === stateSerialize.safrole.key
                 ? String(preValue) !== String(postValue)
                 :preRawValue !== postRawValue
               );

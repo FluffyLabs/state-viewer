@@ -96,8 +96,8 @@ export const STATE_FIELDS: StateField[] = [
   },
   {
     key: 'accumulationQueue',
-    notation: 'θ',
-    title: 'theta',
+    notation: 'Ω',
+    title: 'omega',
     description: 'Ready but not-yet-accumulated work-reports',
     serialize: stateSerialize.accumulationQueue
   },
@@ -107,6 +107,13 @@ export const STATE_FIELDS: StateField[] = [
     title: 'xi',
     description: 'History of what has been accumulated',
     serialize: stateSerialize.recentlyAccumulated
+  },
+  {
+    key: 'accumulationOutputLog',
+    notation: 'θ',
+    title: 'theta',
+    description: 'Services accumulation output',
+    serialize: stateSerialize.accumulationOutputLog,
   },
   {
     key: 'ticketsAccumulator',
@@ -145,7 +152,7 @@ export const createRawKeyToFieldMap = (): Map<string, StateField> => {
   const map = new Map<string, StateField>();
 
   STATE_FIELDS.forEach(field => {
-    const rawKey = field.serialize.key?.toString();
+    const rawKey = field.serialize?.key?.toString();
     if (rawKey) {
       map.set(rawKey, field);
       // Also add the key without the last two characters (for compatibility)

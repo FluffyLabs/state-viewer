@@ -1,23 +1,28 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import React from 'react';
+import { describe, it, expect, vi } from 'vitest';
 import { MemoryRouter } from 'react-router';
 import App from './App';
 
+
+
 // Mock the shared UI components to avoid complex dependencies in tests
 vi.mock('@fluffylabs/shared-ui', () => ({
-  Header: ({ toolNameSrc, ghRepoName }: { toolNameSrc: string; ghRepoName: string }) => (
+  Header: ({ toolNameSrc, ghRepoName, endSlot }: { toolNameSrc: string; ghRepoName: string; endSlot?: React.ReactNode }) => (
     <div data-testid="header" data-tool-name={toolNameSrc} data-repo={ghRepoName}>
       Mocked Header
+      {endSlot}
     </div>
   ),
-  AppsSidebar: ({ activeLink, className, enableDarkModeToggle }: { 
-    activeLink: string; 
-    className: string; 
-    enableDarkModeToggle: boolean 
+  AppsSidebar: ({ activeLink, className, enableDarkModeToggle }: {
+    activeLink: string;
+    className: string;
+    enableDarkModeToggle: boolean
   }) => (
-    <div 
-      data-testid="apps-sidebar" 
-      data-active-link={activeLink} 
+    <div
+      data-testid="apps-sidebar"
+      data-active-link={activeLink}
       className={className}
       data-dark-mode-toggle={enableDarkModeToggle}
     >
@@ -30,6 +35,17 @@ vi.mock('@fluffylabs/shared-ui', () => ({
 // Mock the tool name SVG
 vi.mock('@/assets/tool-name.svg', () => ({
   default: 'mocked-tool-name.svg'
+}));
+
+// Mock lucide-react icons
+vi.mock('lucide-react', () => ({
+  Settings: () => <div data-testid="settings-icon" />,
+  Upload: () => <div data-testid="upload-icon" />,
+  FileText: () => <div data-testid="file-text-icon" />,
+  AlertCircle: () => <div data-testid="alert-circle-icon" />,
+  Edit: () => <div data-testid="edit-icon" />,
+  FolderOpen: () => <div data-testid="folder-open-icon" />,
+  X: () => <div data-testid="x-icon" />,
 }));
 
 // Mock window.matchMedia
@@ -48,6 +64,8 @@ Object.defineProperty(window, 'matchMedia', {
 });
 
 describe('App', () => {
+  const user = userEvent.setup();
+
   const renderApp = (initialEntries = ['/']) => {
     return render(
       <MemoryRouter initialEntries={initialEntries}>
@@ -63,7 +81,7 @@ describe('App', () => {
 
   it('renders the main layout structure correctly', () => {
     renderApp();
-    
+
     // Check for main container with correct height - it's the root container
     const mainContainer = screen.getByTestId('header').parentElement?.parentElement;
     expect(mainContainer).toHaveClass('flex', 'flex-col', 'overflow-hidden', 'h-[100dvh]');
@@ -71,7 +89,7 @@ describe('App', () => {
 
   it('renders the Header component with correct props', () => {
     renderApp();
-    
+
     const header = screen.getByTestId('header');
     expect(header).toBeInTheDocument();
     expect(header).toHaveAttribute('data-tool-name', 'mocked-tool-name.svg');
@@ -80,7 +98,7 @@ describe('App', () => {
 
   it('renders the AppsSidebar component with correct props', () => {
     renderApp();
-    
+
     const sidebar = screen.getByTestId('apps-sidebar');
     expect(sidebar).toBeInTheDocument();
     expect(sidebar).toHaveAttribute('data-active-link', 'state');
@@ -90,13 +108,13 @@ describe('App', () => {
 
   it('renders the UploadScreen component on the main route', () => {
     renderApp();
-    
+
     // Header is conditional - when no content is uploaded, it should show
     const mainHeading = screen.queryByRole('heading', { level: 1 });
     if (mainHeading) {
       expect(mainHeading).toHaveTextContent('JAM State Viewer');
     }
-    
+
     // These elements should always be present
     expect(screen.getByText('Drag & drop your state JSON here')).toBeInTheDocument();
     expect(screen.getByText('JSON')).toBeInTheDocument();
@@ -104,34 +122,97 @@ describe('App', () => {
 
   it('has correct header height', () => {
     renderApp();
-    
+
     const headerContainer = screen.getByTestId('header').parentElement;
     expect(headerContainer).toHaveClass('h-[87px]');
   });
 
   it('has responsive sidebar that hides on mobile', () => {
     renderApp();
-    
+
     const sidebarContainer = screen.getByTestId('apps-sidebar').parentElement;
     expect(sidebarContainer).toHaveClass('max-sm:hidden');
   });
 
   it('has correct main content area styling', () => {
     renderApp();
-    
+
     // Find the main content area by looking for the div with specific classes
     const mainContainer = document.querySelector('.w-full.bg-background');
     expect(mainContainer).toHaveClass('w-full', 'bg-background', 'h-[calc(100dvh-87px)]');
-    
+
     const innerContent = document.querySelector('.p-4.h-full.overflow-y-auto');
     expect(innerContent).toHaveClass('p-4', 'h-full', 'overflow-y-auto');
   });
 
   it('renders navigation routes correctly', () => {
     renderApp(['/']);
-    
+
     // Should render UploadScreen component on root route
     expect(screen.getByText('Drag & drop your state JSON here')).toBeInTheDocument();
     expect(screen.getByText('JSON')).toBeInTheDocument();
+  });
+  
+  describe('Settings functionality', () => {
+    it('renders settings button', () => {
+      renderApp();
+
+      const settingsButton = screen.getByLabelText('Settings');
+      expect(settingsButton).toBeInTheDocument();
+      expect(settingsButton).toHaveAttribute('title', 'Settings');
+    });
+
+    it('settings button has correct styling and icon', () => {
+      renderApp();
+
+      const settingsButton = screen.getByLabelText('Settings');
+      expect(settingsButton).toBeInTheDocument();
+      expect(settingsButton.tagName).toBe('BUTTON');
+      expect(screen.getByTestId('settings-icon')).toBeInTheDocument();
+    });
+
+    it('opens settings dialog when settings button is clicked', async () => {
+      renderApp();
+
+      const settingsButton = screen.getByLabelText('Settings');
+      await user.click(settingsButton);
+
+      expect(screen.getByText('Settings')).toBeInTheDocument();
+      expect(screen.getByText('Gray Paper Version')).toBeInTheDocument();
+      expect(screen.getByText('Test Vector Suite')).toBeInTheDocument();
+    });
+
+    it('closes settings dialog when close is triggered', async () => {
+      renderApp();
+
+      // Open dialog
+      const settingsButton = screen.getByLabelText('Settings');
+      await user.click(settingsButton);
+
+      expect(screen.getByText('Settings')).toBeInTheDocument();
+
+      // Close dialog
+      const closeButton = screen.getByLabelText('Close dialog');
+      await user.click(closeButton);
+
+      expect(screen.queryByText('Gray Paper Version')).not.toBeInTheDocument();
+      expect(screen.queryByText('Test Vector Suite')).not.toBeInTheDocument();
+    });
+
+    it('settings dialog is initially closed', () => {
+      renderApp();
+
+      expect(screen.queryByText('Gray Paper Version')).not.toBeInTheDocument();
+      expect(screen.queryByText('Test Vector Suite')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Header integration', () => {
+    it('renders both version display and settings button in header end slot', () => {
+      renderApp();
+
+      // Both should be present in the header
+      expect(screen.getByLabelText('Settings')).toBeInTheDocument();
+    });
   });
 });

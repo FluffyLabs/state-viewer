@@ -5,7 +5,7 @@ describe('stateFields constants', () => {
   describe('STATE_FIELDS', () => {
     it('should contain expected number of fields', () => {
       expect(STATE_FIELDS.length).toBeGreaterThan(0);
-      expect(STATE_FIELDS.length).toBe(18); // Based on the fields defined
+      expect(STATE_FIELDS.length).toBe(19); // Based on the fields defined
     });
 
     it('should have all required properties for each field', () => {
