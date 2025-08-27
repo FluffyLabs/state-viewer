@@ -9,6 +9,7 @@ interface JsonEditorDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (content: string) => void;
+  onReset?: () => void;
   initialContent?: string;
   formatError?: string | null;
 }
@@ -17,6 +18,7 @@ const JsonEditorDialog = ({
   isOpen,
   onClose,
   onSave,
+  onReset,
   initialContent = '{\n  \n}',
   formatError = null,
 }: JsonEditorDialogProps) => {
@@ -91,6 +93,13 @@ const JsonEditorDialog = ({
     setEditorContent(initialContent); // Reset content
     setJsonError(null);
     setIsJsonValid(true);
+    onClose();
+  };
+
+  const handleReset = () => {
+    if (onReset) {
+      onReset();
+    }
     onClose();
   };
 
@@ -172,6 +181,14 @@ const JsonEditorDialog = ({
           )}
           <div className="flex-1"></div>
           <div className="flex justify-end space-x-3">
+            {onReset && (
+              <Button
+                onClick={handleReset}
+                variant="secondary"
+              >
+                Reset
+              </Button>
+            )}
             <Button
               onClick={handleCancel}
               variant="secondary"
