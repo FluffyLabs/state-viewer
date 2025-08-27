@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, AlertCircle, Edit, FolderOpen } from 'lucide-react';
 import JsonEditorDialog from './JsonEditorDialog';
@@ -10,6 +10,16 @@ import stfTestVectorFixture from '../utils/fixtures/00000001.json';
 import jip4ChainspecFixture from '../utils/fixtures/dev-tiny.json';
 import stfGenesisFixture from '../utils/fixtures/genesis.json';
 import typeberryConfigFixture from '../utils/fixtures/typeberry-dev.json';
+
+const SESSION_STORAGE_KEY = 'LAST_LOADED_FILE';
+
+interface StoredFileData {
+  content: string;
+  format: JsonFileFormat;
+  formatDescription: string;
+  availableStates?: StfStateType[];
+  selectedState?: StfStateType;
+}
 
 interface UploadState {
   file: File | null;
@@ -112,6 +122,7 @@ const UploadScreen = () => {
       format: 'unknown',
       formatDescription: '',
     });
+    sessionStorage.removeItem(SESSION_STORAGE_KEY);
   }, []);
 
   const handleFileDrop = useCallback(async (acceptedFiles: File[]) => {
@@ -121,7 +132,7 @@ const UploadScreen = () => {
 
     const validation = await validateJsonFile(file);
 
-    setUploadState({
+    const newUploadState = {
       file,
       content: validation.content,
       error: validation.error,
@@ -130,7 +141,20 @@ const UploadScreen = () => {
       formatDescription: validation.formatDescription,
       availableStates: validation.availableStates,
       selectedState: validation.availableStates?.includes('diff') ? 'diff' : validation.availableStates?.[0], // Default to diff for test vectors
-    });
+    };
+
+    setUploadState(newUploadState);
+
+    if (validation.isValid) {
+      const dataToStore: StoredFileData = {
+        content: validation.content,
+        format: validation.format,
+        formatDescription: validation.formatDescription,
+        availableStates: validation.availableStates,
+        selectedState: validation.availableStates?.includes('diff') ? 'diff' : validation.availableStates?.[0],
+      };
+      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(dataToStore));
+    }
   }, [clearUpload]);
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
@@ -172,6 +196,17 @@ const UploadScreen = () => {
         availableStates: validation.availableStates,
         selectedState: validation.availableStates?.includes('diff') ? 'diff' : validation.availableStates?.[0],
       }));
+
+      if (validation.isValid) {
+        const dataToStore: StoredFileData = {
+          content: validation.content,
+          format: validation.format,
+          formatDescription: validation.formatDescription,
+          availableStates: validation.availableStates,
+          selectedState: validation.availableStates?.includes('diff') ? 'diff' : validation.availableStates?.[0],
+        };
+        sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(dataToStore));
+      }
     };
 
     validateManualContent();
@@ -189,7 +224,7 @@ const UploadScreen = () => {
     
     const validation = validateJsonContent(exampleContent);
     
-    setUploadState({
+    const newUploadState = {
       file: null,
       content: validation.content,
       error: validation.error,
@@ -198,8 +233,51 @@ const UploadScreen = () => {
       formatDescription: validation.formatDescription,
       availableStates: validation.availableStates,
       selectedState: validation.availableStates?.includes('diff') ? 'diff' : validation.availableStates?.[0],
-    });
+    };
+
+    setUploadState(newUploadState);
+
+    if (validation.isValid) {
+      const dataToStore: StoredFileData = {
+        content: validation.content,
+        format: validation.format,
+        formatDescription: validation.formatDescription,
+        availableStates: validation.availableStates,
+        selectedState: validation.availableStates?.includes('diff') ? 'diff' : validation.availableStates?.[0],
+      };
+      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(dataToStore));
+    }
   }, [clearUpload]);
+
+  useEffect(() => {
+    const loadFromSessionStorage = () => {
+      try {
+        const stored = sessionStorage.getItem(SESSION_STORAGE_KEY);
+        if (stored) {
+          const data: StoredFileData = JSON.parse(stored);
+          const validation = validateJsonContent(data.content);
+          if (validation.isValid && validation.format === data.format) {
+            setUploadState({
+              file: null,
+              content: data.content,
+              error: null,
+              isValidJson: true,
+              format: data.format,
+              formatDescription: data.formatDescription,
+              availableStates: data.availableStates,
+              selectedState: data.selectedState,
+            });
+          } else {
+            sessionStorage.removeItem(SESSION_STORAGE_KEY);
+          }
+        }
+      } catch {
+        sessionStorage.removeItem(SESSION_STORAGE_KEY);
+      }
+    };
+    
+    loadFromSessionStorage();
+  }, []);
 
   const selectedState= useMemo(() => {
     if (extractedState === null) {
@@ -406,6 +484,7 @@ const UploadScreen = () => {
           setFormatError(null);
         }}
         onSave={handleSaveManualEdit}
+        onReset={clearUpload}
         initialContent={uploadState.content || '{\n  \n}'}
         formatError={formatError}
       />
