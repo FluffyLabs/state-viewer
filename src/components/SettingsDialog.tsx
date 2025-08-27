@@ -52,8 +52,9 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
 
         <div className="p-4 space-y-6 text-left">
           <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">Gray Paper Version</label>
+            <label htmlFor="gp-version-select" className="text-sm text-muted-foreground">Gray Paper Version</label>
             <select
+              id="gp-version-select"
               className="w-full bg-background border border-border rounded-md px-3 py-2 text-foreground"
               value={selectedGpVersion}
               onChange={(e) => setSelectedGpVersion(e.target.value)}
@@ -71,8 +72,9 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">Test Vector Suite</label>
+            <label htmlFor="test-suite-select" className="text-sm text-muted-foreground">Test Vector Suite</label>
             <select
+              id="test-suite-select"
               className="w-full bg-background border border-border rounded-md px-3 py-2 text-foreground"
               value={selectedSuite}
               onChange={(e) => setSelectedSuite(e.target.value)}

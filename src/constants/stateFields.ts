@@ -152,7 +152,7 @@ export const createRawKeyToFieldMap = (): Map<string, StateField> => {
   const map = new Map<string, StateField>();
 
   STATE_FIELDS.forEach(field => {
-    const rawKey = field.serialize.key?.toString();
+    const rawKey = field.serialize?.key?.toString();
     if (rawKey) {
       map.set(rawKey, field);
       // Also add the key without the last two characters (for compatibility)
