@@ -83,7 +83,7 @@ describe('App', () => {
     
     const sidebar = screen.getByTestId('apps-sidebar');
     expect(sidebar).toBeInTheDocument();
-    expect(sidebar).toHaveAttribute('data-active-link', 'trie');
+    expect(sidebar).toHaveAttribute('data-active-link', 'state');
     expect(sidebar).toHaveAttribute('data-dark-mode-toggle', 'true');
     expect(sidebar).toHaveClass('h-full');
   });
