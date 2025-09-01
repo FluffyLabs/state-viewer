@@ -1,37 +1,17 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, AlertCircle, Edit, FolderOpen } from 'lucide-react';
 import JsonEditorDialog from './JsonEditorDialog';
 import StateViewer from './StateViewer';
 import { Button } from './ui/Button';
-import { validateJsonFile, validateJsonContent, extractGenesisState, type JsonFileFormat, type StfStateType, type JsonValidationResult } from '../utils';
+import { validateJsonFile, validateJsonContent, type StfStateType, type JsonValidationResult } from '../utils';
 
 import stfTestVectorFixture from '../utils/fixtures/00000001.json';
 import jip4ChainspecFixture from '../utils/fixtures/dev-tiny.json';
 import stfGenesisFixture from '../utils/fixtures/genesis.json';
 import typeberryConfigFixture from '../utils/fixtures/typeberry-dev.json';
 import ExamplesModal from '@/trie/components/ExamplesModal';
-
-const SESSION_STORAGE_KEY = 'LAST_LOADED_FILE';
-
-interface StoredFileData {
-  content: string;
-  format: JsonFileFormat;
-  formatDescription: string;
-  availableStates?: StfStateType[];
-  selectedState?: StfStateType;
-}
-
-interface UploadState {
-  file: File | null;
-  content: string;
-  error: string | null;
-  isValidJson: boolean;
-  format: JsonFileFormat;
-  formatDescription: string;
-  availableStates?: StfStateType[];
-  selectedState?: StfStateType;
-}
+import type { UploadScreenProps, UploadState } from '@/types/shared';
 
 interface ExampleFile {
   name: string;
@@ -62,87 +42,23 @@ const EXAMPLE_FILES: ExampleFile[] = [
   }
 ];
 
-const UploadScreen = () => {
-  const [uploadState, setUploadState] = useState<UploadState>({
-    file: null,
-    content: '',
-    error: null,
-    isValidJson: false,
-    format: 'unknown',
-    formatDescription: '',
-  });
-
+const UploadScreen = ({ appState, onUpdateUploadState, onClearUpload }: UploadScreenProps) => {
+  const { uploadState, extractedState, stateTitle } = appState;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formatError, setFormatError] = useState<string | null>(null);
-
-  // Extract state data based on format and selected state
-  const extractedState = useMemo(() => {
-    if (!uploadState.isValidJson || !uploadState.content) {
-      return null;
-    }
-
-    try {
-      const state = extractGenesisState(
-        uploadState.content,
-        uploadState.format,
-      );
-      return state.state === null ? null : { state: state.state, preState: state.preState }
-    } catch (error) {
-      console.error('Failed to extract state:', error);
-      return null;
-    }
-  }, [uploadState.content, uploadState.format, uploadState.isValidJson]);
-
-  const stateTitle = useMemo(() => {
-    if (uploadState.format === 'stf-test-vector' && uploadState.selectedState) {
-      if (uploadState.selectedState === 'pre_state') {
-        return 'Pre-State Data';
-      } else if (uploadState.selectedState === 'post_state') {
-        return 'Post-State Data';
-      } else if (uploadState.selectedState === 'diff') {
-        return 'State Diff (Pre → Post)';
-      }
-    } else if (uploadState.format === 'jip4-chainspec') {
-      return 'JIP-4 Genesis State';
-    } else if (uploadState.format === 'typeberry-config') {
-      return 'Typeberry Genesis State';
-    } else if (uploadState.format === 'stf-genesis') {
-      return 'STF Genesis State';
-    }
-    return 'State Data';
-  }, [uploadState.format, uploadState.selectedState]);
 
 
 
   const clearUpload = useCallback(() => {
-    setUploadState({
-      file: null,
-      content: '',
-      error: null,
-      isValidJson: false,
-      format: 'unknown',
-      formatDescription: '',
-    });
-    sessionStorage.removeItem(SESSION_STORAGE_KEY);
-  }, []);
+    onClearUpload();
+  }, [onClearUpload]);
 
   const handleUploadStateWithStorage = useCallback((
     newState: UploadState | ((prev: UploadState) => UploadState),
     validation?: JsonValidationResult
   ) => {
-    setUploadState(newState);
-    
-    if (validation?.isValid) {
-      const dataToStore: StoredFileData = {
-        content: validation.content,
-        format: validation.format,
-        formatDescription: validation.formatDescription,
-        availableStates: validation.availableStates,
-        selectedState: validation.availableStates?.includes('diff') ? 'diff' : validation.availableStates?.[0],
-      };
-      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(dataToStore));
-    }
-  }, []);
+    onUpdateUploadState(newState, validation);
+  }, [onUpdateUploadState]);
 
   const handleFileDrop = useCallback(async (acceptedFiles: File[]) => {
     clearUpload();
@@ -206,17 +122,17 @@ const UploadScreen = () => {
   }, [handleUploadStateWithStorage]);
 
   const handleStateSelection = useCallback((stateType: StfStateType) => {
-    setUploadState(prev => ({
+    onUpdateUploadState((prev: UploadState) => ({
       ...prev,
       selectedState: stateType,
     }));
-  }, []);
+  }, [onUpdateUploadState]);
 
   const handleExampleLoad = useCallback((exampleContent: string) => {
     clearUpload();
-    
+
     const validation = validateJsonContent(exampleContent);
-    
+
     const newUploadState = {
       file: null,
       content: validation.content,
@@ -231,35 +147,7 @@ const UploadScreen = () => {
     handleUploadStateWithStorage(newUploadState, validation);
   }, [clearUpload, handleUploadStateWithStorage]);
 
-  useEffect(() => {
-    const loadFromSessionStorage = () => {
-      try {
-        const stored = sessionStorage.getItem(SESSION_STORAGE_KEY);
-        if (stored) {
-          const data: StoredFileData = JSON.parse(stored);
-          const validation = validateJsonContent(data.content);
-          if (validation.isValid && validation.format === data.format) {
-            setUploadState({
-              file: null,
-              content: data.content,
-              error: null,
-              isValidJson: true,
-              format: data.format,
-              formatDescription: data.formatDescription,
-              availableStates: data.availableStates,
-              selectedState: data.selectedState,
-            });
-          } else {
-            sessionStorage.removeItem(SESSION_STORAGE_KEY);
-          }
-        }
-      } catch {
-        sessionStorage.removeItem(SESSION_STORAGE_KEY);
-      }
-    };
-    
-    loadFromSessionStorage();
-  }, []);
+
 
   const selectedState = useMemo(() => {
     if (extractedState === null) {
@@ -274,7 +162,7 @@ const UploadScreen = () => {
     if (uploadState.selectedState === 'post_state') {
       return { state: extractedState.state, preState: undefined };
     }
-    return extractedState;
+    return { state: extractedState.state, preState: undefined };
   }, [uploadState.selectedState, extractedState]);
 
   return (
@@ -319,7 +207,7 @@ const UploadScreen = () => {
           </button>
         </p>
         <p className="text-muted-foreground">
-          Instead of loading full JAM state you can also try out
+          Instead of loading full JAM state you can also try out&nbsp;
           <ExamplesModal
             onSelect={(rows) => handleExampleLoad(JSON.stringify({
               state: rows

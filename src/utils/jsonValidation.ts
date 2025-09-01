@@ -10,8 +10,7 @@ export interface JsonValidationResult {
   error: string | null;
   format: JsonFileFormat;
   formatDescription: string;
-  // For STF test vectors, provide state options
-  availableStates?: StfStateType[];
+  availableStates: StfStateType[];
 }
 
 // Zod Schemas
@@ -175,7 +174,8 @@ export const validateJsonContent = (content: string): JsonValidationResult => {
 
     const { format, description } = detectJsonFormat(parsedJson);
 
-    let availableStates: StfStateType[] | undefined;
+    let availableStates: StfStateType[] = ['post_state'];
+
     if (format === 'stf-test-vector') {
       availableStates = ['pre_state', 'post_state', 'diff'];
     }
@@ -187,6 +187,7 @@ export const validateJsonContent = (content: string): JsonValidationResult => {
         error: `Unsupported JSON format. ${description}. Please upload a JIP-4 chainspec, Typeberry config, STF test vector, or STF genesis file.`,
         format,
         formatDescription: description,
+        availableStates: [],
       };
     } else {
       return {
@@ -205,6 +206,7 @@ export const validateJsonContent = (content: string): JsonValidationResult => {
       error: 'Invalid JSON format. Please check your content and try again.',
       format: 'unknown',
       formatDescription: 'Malformed JSON',
+      availableStates: [],
     };
   }
 };
@@ -218,6 +220,7 @@ export const validateJsonFile = (file: File): Promise<JsonValidationResult> => {
         error: 'Please upload a valid JSON file',
         format: 'unknown',
         formatDescription: 'File type not supported',
+        availableStates: [],
       });
       return;
     }
@@ -236,6 +239,7 @@ export const validateJsonFile = (file: File): Promise<JsonValidationResult> => {
           error: 'Invalid JSON format. Please check your content and try again.',
           format: 'unknown',
           formatDescription: 'Malformed JSON',
+          availableStates: [],
         });
       }
     };
@@ -246,6 +250,7 @@ export const validateJsonFile = (file: File): Promise<JsonValidationResult> => {
         error: 'Failed to read the file. Please try again.',
         format: 'unknown',
         formatDescription: 'File read error',
+        availableStates: [],
       });
     };
     reader.readAsText(file);
@@ -338,6 +343,16 @@ export const extractGenesisState = (
         }
         return {state: stateMap};
       }
+
+      case 'state':
+        const result = RawStateSchema.safeParse(parsedJson);
+        if (!result.success) return {state: null};
+
+        const stateMap: Record<string, string> = {};
+        for (const item of result.data.state) {
+          stateMap[item.key] = item.value;
+        }
+        return {state: addHexPrefix(stateMap)};
 
       default:
         return {state: null};

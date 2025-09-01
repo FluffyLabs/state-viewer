@@ -2,6 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
 import UploadScreen from './UploadScreen';
+import type { AppState, UploadState } from '@/types/shared';
 
 // Mock CodeMirror
 vi.mock('@uiw/react-codemirror', () => ({
@@ -43,8 +44,32 @@ Object.defineProperty(window, 'matchMedia', {
 describe('UploadScreen', () => {
   const user = userEvent.setup();
 
+  const mockUploadState: UploadState = {
+    file: null,
+    content: '',
+    error: null,
+    isValidJson: false,
+    format: 'unknown',
+    formatDescription: '',
+  };
+
+  const mockAppState: AppState = {
+    uploadState: mockUploadState,
+    extractedState: null,
+    stateTitle: 'State Data',
+  };
+
+  const mockOnUpdateUploadState = vi.fn();
+  const mockOnClearUpload = vi.fn();
+
+  const defaultProps = {
+    appState: mockAppState,
+    onUpdateUploadState: mockOnUpdateUploadState,
+    onClearUpload: mockOnClearUpload,
+  };
+
   it('renders upload screen with initial state', () => {
-    render(<UploadScreen />);
+    render(<UploadScreen {...defaultProps} />);
 
     expect(screen.getByText('JAM State Viewer')).toBeInTheDocument();
     expect(screen.getByText('Drag & drop your state JSON here')).toBeInTheDocument();
@@ -54,7 +79,7 @@ describe('UploadScreen', () => {
   });
 
   it('opens manual editor dialog when button is clicked', async () => {
-    render(<UploadScreen />);
+    render(<UploadScreen {...defaultProps} />);
 
     const editorButton = screen.getByText('JSON');
     await user.click(editorButton);
@@ -66,7 +91,7 @@ describe('UploadScreen', () => {
   });
 
   it('closes manual editor dialog when close button is clicked', async () => {
-    render(<UploadScreen />);
+    render(<UploadScreen {...defaultProps} />);
 
     // Open dialog
     const editorButton = screen.getByText('JSON');
@@ -82,7 +107,7 @@ describe('UploadScreen', () => {
   });
 
   it('closes manual editor dialog when cancel button is clicked', async () => {
-    render(<UploadScreen />);
+    render(<UploadScreen {...defaultProps} />);
 
     // Open dialog
     const editorButton = screen.getByText('JSON');
@@ -98,7 +123,7 @@ describe('UploadScreen', () => {
   });
 
   it('shows default JSON structure in editor when opened', async () => {
-    render(<UploadScreen />);
+    render(<UploadScreen {...defaultProps} />);
 
     const editorButton = screen.getByText('JSON');
     await user.click(editorButton);
@@ -108,7 +133,7 @@ describe('UploadScreen', () => {
   });
 
   it('allows editing content in the manual editor', async () => {
-    render(<UploadScreen />);
+    render(<UploadScreen {...defaultProps} />);
 
     const editorButton = screen.getByText('JSON');
     await user.click(editorButton);
@@ -121,7 +146,7 @@ describe('UploadScreen', () => {
   });
 
   it('saves valid JSON from manual editor and shows preview', async () => {
-    render(<UploadScreen />);
+    render(<UploadScreen {...defaultProps} />);
 
     const editorButton = screen.getByText('JSON');
     await user.click(editorButton);
@@ -138,7 +163,7 @@ describe('UploadScreen', () => {
   });
 
   it('displays upload area with proper styling and file input', () => {
-    render(<UploadScreen />);
+    render(<UploadScreen {...defaultProps} />);
 
     const uploadArea = screen.getByText('Drag & drop your state JSON here').closest('div');
     expect(uploadArea).toBeInTheDocument();
@@ -149,7 +174,7 @@ describe('UploadScreen', () => {
   });
 
   it('shows correct icons based on state', () => {
-    render(<UploadScreen />);
+    render(<UploadScreen {...defaultProps} />);
 
     // Initial state should show upload icon, edit icon, and folder-open icon
     expect(screen.getByTestId('upload-icon')).toBeInTheDocument();
@@ -158,7 +183,7 @@ describe('UploadScreen', () => {
   });
 
   it('has proper page structure and content', () => {
-    render(<UploadScreen />);
+    render(<UploadScreen {...defaultProps} />);
 
     // Check main heading
     expect(screen.getByRole('heading', { name: /jam state viewer/i })).toBeInTheDocument();
@@ -174,7 +199,7 @@ describe('UploadScreen', () => {
   });
 
   it('has Browse button that triggers file selection', async () => {
-    render(<UploadScreen />);
+    render(<UploadScreen {...defaultProps} />);
 
     const browseButton = screen.getByText('Upload');
     expect(browseButton).toBeInTheDocument();
@@ -185,7 +210,7 @@ describe('UploadScreen', () => {
       // The StateViewer integration is tested through the component's useMemo hook
       // which extracts state data. The actual format detection is thoroughly tested
       // in jsonValidation.test.ts
-      render(<UploadScreen />);
+      render(<UploadScreen {...defaultProps} />);
       
       // Verify the component renders without errors
       expect(screen.getByText('JAM State Viewer')).toBeInTheDocument();
@@ -195,7 +220,7 @@ describe('UploadScreen', () => {
     it('should handle state extraction errors gracefully', () => {
       // The useMemo hook in UploadScreen handles extraction errors by returning null
       // and logging errors to console, which prevents crashes
-      render(<UploadScreen />);
+      render(<UploadScreen {...defaultProps} />);
       
       // Component should still render normally even if state extraction fails
       expect(screen.getByText('Drag & drop your state JSON here')).toBeInTheDocument();
@@ -204,7 +229,7 @@ describe('UploadScreen', () => {
   });
 
   it('shows format error when valid JSON does not match known formats', async () => {
-    render(<UploadScreen />);
+    render(<UploadScreen {...defaultProps} />);
 
     // Open JSON editor
     const editorButton = screen.getByText('JSON');

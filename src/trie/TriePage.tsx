@@ -33,26 +33,30 @@ const findNodeByHash = (data: TreeNode[], hash: string): TreeNode | undefined =>
   return undefined;
 };
 
-export const TriePage = (rowsData: Row[]) => {
+interface TriePageProps {
+  rows: Row[];
+}
+
+export const TriePage = ({ rows }: TriePageProps) => {
   const [selectedNodeHash, setSelectedNodeHash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hideEmpty, setHideEmpty] = useState<boolean>(false);
 
   const trie = useMemo(() => {
-    if (rowsData.length === 0) {
+    if (rows.length === 0) {
       return;
     }
 
     setError(null);
     try {
-      return getTrie(rowsData);
+      return getTrie(rows);
     } catch (error: unknown) {
       if (error instanceof Error) {
         setError(error.message);
       }
       return null;
     }
-  }, [rowsData]);
+  }, [rows]);
 
   const uiTrie = useMemo(() => {
     if (!trie) {
