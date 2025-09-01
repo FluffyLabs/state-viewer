@@ -1,3 +1,5 @@
+import {truncateString} from "./utils";
+
 type Node = {
   label: string;
   value?: string;
@@ -7,23 +9,23 @@ type Node = {
 
 export const TooltipContent = ({ label, value, valueHash, nodeKey }: Node) => {
   return (
-    <div>
+    <div className="font-mono">
       <div>
-        <strong>Hash:</strong> {label}
+        <strong>Hash:</strong> {truncateString(label)}
       </div>
       {nodeKey && (
         <div>
-          <strong>Truncated key:</strong> {nodeKey}
+          <strong>Truncated key:</strong> {truncateString(nodeKey)}
         </div>
       )}
       {value && (
         <div>
-          <strong>Value:</strong> {value}
+          <strong>Value:</strong> {truncateString(value)}
         </div>
       )}
       {valueHash && (
         <div>
-          <strong>Value Hash:</strong> {valueHash}
+          <strong>Value Hash:</strong> {truncateString(valueHash)}
         </div>
       )}
     </div>

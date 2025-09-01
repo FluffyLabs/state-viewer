@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export type JsonFileFormat = 'jip4-chainspec' | 'typeberry-config' | 'stf-test-vector' | 'stf-genesis' | 'unknown';
+export type JsonFileFormat = 'jip4-chainspec' | 'typeberry-config' | 'stf-test-vector' | 'stf-genesis' | 'state' | 'unknown';
 
 export type StfStateType = 'pre_state' | 'post_state' | 'diff';
 
@@ -18,6 +18,10 @@ export interface JsonValidationResult {
 const KeyValueSchema = z.object({
   key: z.string(),
   value: z.string(),
+});
+
+const RawStateSchema = z.object({
+  state: z.array(KeyValueSchema),
 });
 
 const StateSchema = z.object({
@@ -69,6 +73,7 @@ export type StfTestVector = z.infer<typeof StfTestVectorSchema>;
 export type Jip4Chainspec = z.infer<typeof Jip4ChainspecSchema>;
 export type TypeberryConfig = z.infer<typeof TypeberryConfigSchema>;
 export type StfGenesis = z.infer<typeof StfGenesisSchema>;
+export type RawState = z.infer<typeof RawStateSchema>;
 
 export interface DiffEntry {
   key: string;
@@ -148,6 +153,16 @@ const detectJsonFormat = (parsedJson: unknown): FormatDetectionResult => {
       format: 'jip4-chainspec',
       description: 'JIP-4 Chainspec - contains genesis_state directly',
       data: jip4Result.data,
+    };
+  }
+
+  // Try raw state
+  const rawStateResult = RawStateSchema.safeParse(parsedJson);
+  if (rawStateResult.success) {
+    return {
+      format: 'state',
+      description: 'Raw state entries',
+      data: rawStateResult.data,
     };
   }
 

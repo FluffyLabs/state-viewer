@@ -10,6 +10,7 @@ import stfTestVectorFixture from '../utils/fixtures/00000001.json';
 import jip4ChainspecFixture from '../utils/fixtures/dev-tiny.json';
 import stfGenesisFixture from '../utils/fixtures/genesis.json';
 import typeberryConfigFixture from '../utils/fixtures/typeberry-dev.json';
+import ExamplesModal from '@/trie/components/ExamplesModal';
 
 const SESSION_STORAGE_KEY = 'LAST_LOADED_FILE';
 
@@ -260,7 +261,7 @@ const UploadScreen = () => {
     loadFromSessionStorage();
   }, []);
 
-  const selectedState= useMemo(() => {
+  const selectedState = useMemo(() => {
     if (extractedState === null) {
       return null;
     }
@@ -316,6 +317,23 @@ const UploadScreen = () => {
           >
             Typeberry config
           </button>
+        </p>
+        <p className="text-muted-foreground">
+          Instead of loading full JAM state you can also try out
+          <ExamplesModal
+            onSelect={(rows) => handleExampleLoad(JSON.stringify({
+              state: rows
+            }, null, 2))}
+            button={(open) => (
+              <button
+                onClick={open}
+                  className="text-primary hover:text-primary/80 hover:underline transition-colors"
+                title="open trie examples"
+                >
+                smaller trie examples from test vectors.
+                  </button>
+            )}
+          />
         </p>
       </div>
       )}

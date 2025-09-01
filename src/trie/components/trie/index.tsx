@@ -145,11 +145,11 @@ const Trie: React.FC<GraphComponentProps> = ({ treeData, onNodeSelect }) => {
         // spacingFactor: 1, // Increase spacing between nodes
         avoidOverlap: true, // Prevent nodes from overlapping
         animate: true, // Animate the layout changes
-        circle: false, // Disable circle layout
+        circle: true, // Disable circle layout
         // grid: true,
         // name: "dagre",
         // animate: true,
-        animationDuration: 1000,
+        animationDuration: 500,
         // name: "breadthfirst",
         acyclicer: "greedy",
         ranker: "tight-tree",
@@ -232,7 +232,7 @@ const Trie: React.FC<GraphComponentProps> = ({ treeData, onNodeSelect }) => {
 
         // setCyInstance(cy);
       }} // Reference to the Cytoscape instance
-      layout={{ name: "preset", zoom: 0.5, padding: 40 }} // Preset layout initially (layout controlled by effect)
+      layout={{ name: "preset", zoom: 0.5, padding: 150 }} // Preset layout initially (layout controlled by effect)
       // autoungrabify={true}
       stylesheet={[
         {
@@ -258,7 +258,7 @@ const Trie: React.FC<GraphComponentProps> = ({ treeData, onNodeSelect }) => {
             },
             color: "#fff",
             "font-family": "monospace",
-            "font-size": "26px",
+            "font-size": "18px",
             "border-width": 2,
             "border-color": "#333",
             shape: "roundrectangle",

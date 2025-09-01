@@ -1,7 +1,3 @@
-export const convertHexToBinary = (hexString: string) => {
-  return parseInt(hexString, 16).toString(2).padStart(8, "0");
-};
-
 export const getPrefixWithFirstDifference = (str1: string, str2: string) => {
   let prefix = "";
 

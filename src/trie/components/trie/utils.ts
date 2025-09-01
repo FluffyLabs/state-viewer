@@ -4,7 +4,7 @@ import { NodeType, TrieNodeHash, TrieNode, WriteableNodesDb } from "@typeberry/t
 export const HASH_BYTES = 32;
 
 export const truncateString = (str: string, maxLength: number = 20) =>
-  str.length >= maxLength ? str.substring(0, 4) + "..." + str.substring(str.length - 4) : str;
+  str.length >= maxLength ? str.substring(0, 6) + "..." + str.substring(str.length - 6) : str;
 
 const shouldRenderNode = (node: TrieNodeHash, hideEmpty: boolean) => {
   return hideEmpty ? !isEmptyHash(node) : true;

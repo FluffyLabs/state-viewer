@@ -2,8 +2,13 @@
 
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/trie/components/ui/dialog";
-import { Row } from ".";
 import {Button} from "@fluffylabs/shared-ui";
+
+// Define the type for a row
+export interface Row {
+  key: string;
+  value: string;
+}
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const examples: { name: string; rows: Row[] }[] = [
@@ -119,27 +124,21 @@ export const examples: { name: string; rows: Row[] }[] = [
 ];
 
 function asRows(data: Record<string, string>): Row[] {
-  return Object.entries(data).map(([key, value], idx) => {
+  return Object.entries(data).map(([key, value]) => {
     return {
-      id: `${idx + 1}`,
-      action: "insert",
       key,
       value,
-      isSubmitted: true,
-      isHidden: false,
-      isEditing: false,
     };
   });
 }
 
 interface ExampleModalProps {
   onSelect: (rows: Row[]) => void;
+  button: (open: () => void) => React.ReactNode;
 }
 
-function ExampleModal({ onSelect }: ExampleModalProps) {
+function ExamplesModal({ onSelect, button }: ExampleModalProps) {
   const [open, setOpen] = useState<boolean>(false);
-
-  // Define some example data
 
   const handleSelectExample = (rows: Row[]) => {
     onSelect(rows);
@@ -148,9 +147,7 @@ function ExampleModal({ onSelect }: ExampleModalProps) {
 
   return (
     <>
-      <Button variant="default" onClick={() => setOpen(true)}>
-        Open Examples
-      </Button>
+      {button(() => setOpen(true))}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
@@ -160,7 +157,7 @@ function ExampleModal({ onSelect }: ExampleModalProps) {
             {examples.map((example, index) => (
               <div key={index} className="flex justify-between items-center">
                 <span>{example.name}</span>
-                <Button variant="outline" onClick={() => handleSelectExample(example.rows)}>
+                <Button variant="outlineBrand" onClick={() => handleSelectExample(example.rows)}>
                   Select
                 </Button>
               </div>
@@ -172,4 +169,4 @@ function ExampleModal({ onSelect }: ExampleModalProps) {
   );
 }
 
-export default ExampleModal;
+export default ExamplesModal;

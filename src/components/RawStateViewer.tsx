@@ -147,8 +147,6 @@ const RawStateViewer = ({
     }
   };
 
-
-
   // Create inline diff visualization with grouped consecutive changes
   const createInlineDiff = (oldValue: string, newValue: string) => {
     const maxLength = Math.max(oldValue.length, newValue.length);
