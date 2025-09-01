@@ -5,6 +5,11 @@ import { describe, it, expect, vi } from 'vitest';
 import { MemoryRouter } from 'react-router';
 import App from './App';
 
+// Mock the TriePage component to avoid complex dependencies in tests
+vi.mock('@/trie/TriePage', () => ({
+  TriePage: () => <div data-testid="trie-page">Mocked TriePage</div>
+}));
+
 
 
 // Mock the shared UI components to avoid complex dependencies in tests
@@ -151,6 +156,22 @@ describe('App', () => {
     // Should render UploadScreen component on root route
     expect(screen.getByText('Drag & drop your state JSON here')).toBeInTheDocument();
     expect(screen.getByText('JSON')).toBeInTheDocument();
+  });
+
+  it('renders UploadScreen on /inspect route', () => {
+    renderApp(['/inspect']);
+
+    // Should render UploadScreen component on /inspect route
+    expect(screen.getByText('Drag & drop your state JSON here')).toBeInTheDocument();
+    expect(screen.getByText('JSON')).toBeInTheDocument();
+  });
+
+  it('renders TriePage on /trie route', () => {
+    renderApp(['/trie']);
+
+    // Should render TriePage component on /trie route
+    expect(screen.getByTestId('trie-page')).toBeInTheDocument();
+    expect(screen.getByText('Mocked TriePage')).toBeInTheDocument();
   });
   
   describe('Settings functionality', () => {

@@ -5,6 +5,7 @@ import { Settings } from "lucide-react";
 import ToolName from "@/assets/tool-name.svg";
 import { UploadScreen } from "@/components";
 import { Button } from "@/components/ui/Button";
+import { TriePage } from "@/trie/TriePage";
 import SettingsDialog from "@/components/SettingsDialog";
 import { utils } from "@typeberry/state-merkleization";
 
@@ -63,6 +64,8 @@ function App() {
         <div className="w-full bg-background h-[calc(100dvh-87px)]">
           <div className="p-4 h-full overflow-y-auto">
             <Routes>
+              <Route path="/inspect" element={<UploadScreen />} />
+              <Route path="/trie" element={<TriePage />} />
               <Route index element={<UploadScreen />} />
             </Routes>
           </div>
