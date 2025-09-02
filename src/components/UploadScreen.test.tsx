@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
-import UploadScreen from './UploadScreen';
+import { UploadScreen } from './UploadScreen';
 import type { AppState, UploadState } from '@/types/shared';
 
 // Mock CodeMirror
@@ -57,15 +57,18 @@ describe('UploadScreen', () => {
     uploadState: mockUploadState,
     extractedState: null,
     stateTitle: 'State Data',
+    selectedState: 'post_state',
   };
 
   const mockOnUpdateUploadState = vi.fn();
   const mockOnClearUpload = vi.fn();
+  const mockChangeStateType = vi.fn();
 
   const defaultProps = {
     appState: mockAppState,
     onUpdateUploadState: mockOnUpdateUploadState,
     onClearUpload: mockOnClearUpload,
+    changeStateType: mockChangeStateType,
   };
 
   it('renders upload screen with initial state', () => {
@@ -244,9 +247,17 @@ describe('UploadScreen', () => {
     const saveButton = screen.getByText('Save JSON');
     await user.click(saveButton);
 
-    // Dialog should close and error should appear in main interface
+    // Dialog should close when validation fails
     expect(screen.queryByText('JSON Editor')).not.toBeInTheDocument();
-    expect(screen.getByText(/Unsupported JSON format/)).toBeInTheDocument();
-    expect(screen.getByText(/does not match any supported schema/)).toBeInTheDocument();
+    
+    // Verify that onUpdateUploadState was called with the error
+    expect(mockOnUpdateUploadState).toHaveBeenCalled();
+    const lastCall = mockOnUpdateUploadState.mock.calls[mockOnUpdateUploadState.mock.calls.length - 1];
+    const updaterFn = lastCall[0];
+    const newState = typeof updaterFn === 'function' ? updaterFn(mockUploadState) : updaterFn;
+    
+    expect(newState.error).toMatch(/Unsupported JSON format/);
+    expect(newState.format).toBe('unknown');
+    expect(newState.isValidJson).toBe(false);
   });
 });

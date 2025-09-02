@@ -1,16 +1,18 @@
 import { TreeNode } from ".";
-import { NodeType, TrieNodeHash, TrieNode, WriteableNodesDb } from "@typeberry/trie";
+import { trie } from "@typeberry/state-merkleization";
+
+const { NodeType } = trie;
 
 export const HASH_BYTES = 32;
 
 export const truncateString = (str: string, maxLength: number = 20) =>
   str.length >= maxLength ? str.substring(0, 6) + "..." + str.substring(str.length - 6) : str;
 
-const shouldRenderNode = (node: TrieNodeHash, hideEmpty: boolean) => {
+const shouldRenderNode = (node: trie.TrieNodeHash, hideEmpty: boolean) => {
   return hideEmpty ? !isEmptyHash(node) : true;
 };
 
-export function isEmptyHash(node: TrieNodeHash) {
+export function isEmptyHash(node: trie.TrieNodeHash) {
   return isEmptyNodeName(node.toString());
 }
 
@@ -18,9 +20,9 @@ export function isEmptyNodeName(name: string) {
   return name === "0x0000000000000000000000000000000000000000000000000000000000000000";
 }
 export function trieToTreeUI(
-  root: TrieNode | null,
-  hash: TrieNodeHash,
-  nodes: WriteableNodesDb,
+  root: trie.TrieNode | null,
+  hash: trie.TrieNodeHash,
+  nodes: trie.WriteableNodesDb,
   hideEmpty: boolean,
   prefix: string = "",
 ): TreeNode | undefined {

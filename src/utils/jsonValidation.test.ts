@@ -85,7 +85,7 @@ describe('validateJsonFile', () => {
         error: null,
         format: 'jip4-chainspec',
         formatDescription: 'JIP-4 Chainspec - contains genesis_state directly',
-        availableStates: undefined,
+        availableStates: ['post_state'],
       });
 
       restore();
@@ -121,7 +121,7 @@ describe('validateJsonFile', () => {
         error: null,
         format: 'typeberry-config',
         formatDescription: 'Typeberry Config - contains JIP-4 chainspec in chain_spec field',
-        availableStates: undefined,
+        availableStates: ['post_state'],
       });
 
       restore();
@@ -201,7 +201,7 @@ describe('validateJsonFile', () => {
         error: null,
         format: 'stf-genesis',
         formatDescription: 'STF Genesis - contains initial state with header',
-        availableStates: undefined,
+        availableStates: ['post_state'],
       });
 
       restore();
@@ -226,7 +226,7 @@ describe('validateJsonFile', () => {
         error: 'Unsupported JSON format. Unknown format - does not match any supported schema. Please upload a JIP-4 chainspec, Typeberry config, STF test vector, or STF genesis file.',
         format: 'unknown',
         formatDescription: 'Unknown format - does not match any supported schema',
-        availableStates: undefined,
+        availableStates: [],
       });
 
       restore();
@@ -260,6 +260,7 @@ describe('validateJsonFile', () => {
         error: 'Please upload a valid JSON file',
         format: 'unknown',
         formatDescription: 'File type not supported',
+        availableStates: [],
       });
     });
 
@@ -276,6 +277,7 @@ describe('validateJsonFile', () => {
         error: 'Invalid JSON format. Please check your content and try again.',
         format: 'unknown',
         formatDescription: 'Malformed JSON',
+        availableStates: [],
       });
 
       restore();
@@ -299,6 +301,7 @@ describe('validateJsonFile', () => {
         error: 'Failed to read the file. Please try again.',
         format: 'unknown',
         formatDescription: 'File read error',
+        availableStates: [],
       });
 
       global.FileReader = originalFileReader;
@@ -622,7 +625,7 @@ describe('Integration tests with fixture files', () => {
     expect(result.isValid).toBe(true);
     expect(result.format).toBe('jip4-chainspec');
     expect(result.formatDescription).toBe('JIP-4 Chainspec - contains genesis_state directly');
-    expect(result.availableStates).toBeUndefined();
+    expect(result.availableStates).toEqual(['post_state']);
 
     // Test extracting genesis state
     const genesisState = extractGenesisState(jip4Content, 'jip4-chainspec');
@@ -661,7 +664,7 @@ describe('Integration tests with fixture files', () => {
     expect(result.isValid).toBe(true);
     expect(result.format).toBe('typeberry-config');
     expect(result.formatDescription).toBe('Typeberry Config - contains JIP-4 chainspec in chain_spec field');
-    expect(result.availableStates).toBeUndefined();
+    expect(result.availableStates).toEqual(['post_state']);
 
     // Test extracting genesis state from embedded chain_spec
     const genesisState = extractGenesisState(typeberryContent, 'typeberry-config');
@@ -812,7 +815,7 @@ describe('Integration tests with fixture files', () => {
     expect(result.isValid).toBe(true);
     expect(result.format).toBe('stf-genesis');
     expect(result.formatDescription).toBe('STF Genesis - contains initial state with header');
-    expect(result.availableStates).toBeUndefined();
+    expect(result.availableStates).toEqual(['post_state']);
 
     // Test extracting genesis state
     const genesisState = extractGenesisState(stfGenesisContent, 'stf-genesis');
@@ -890,7 +893,7 @@ describe('validateJsonContent', () => {
         error: null,
         format: 'jip4-chainspec',
         formatDescription: 'JIP-4 Chainspec - contains genesis_state directly',
-        availableStates: undefined,
+        availableStates: ['post_state'],
       });
     });
   });
@@ -905,7 +908,7 @@ describe('validateJsonContent', () => {
         error: null,
         format: 'typeberry-config',
         formatDescription: 'Typeberry Config - contains JIP-4 chainspec in chain_spec field',
-        availableStates: undefined,
+        availableStates: ['post_state'],
       });
     });
   });
@@ -935,7 +938,7 @@ describe('validateJsonContent', () => {
         error: null,
         format: 'stf-genesis',
         formatDescription: 'STF Genesis - contains initial state with header',
-        availableStates: undefined,
+        availableStates: ['post_state'],
       });
     });
   });
@@ -978,6 +981,7 @@ describe('validateJsonContent', () => {
         error: 'Invalid JSON format. Please check your content and try again.',
         format: 'unknown',
         formatDescription: 'Malformed JSON',
+        availableStates: [],
       });
     });
 

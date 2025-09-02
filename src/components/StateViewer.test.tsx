@@ -1,513 +1,272 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
 import StateViewer from './StateViewer';
 
-// Mock clipboard API
-const mockClipboard = {
-  writeText: vi.fn(),
+// Mock the child components
+vi.mock('./RawStateViewer', () => ({
+  default: ({ title, searchTerm }: { title?: string; searchTerm?: string }) => (
+    <div data-testid="raw-state-viewer">
+      RawStateViewer - {title} - {searchTerm}
+    </div>
+  ),
+}));
+
+vi.mock('./InspectStateViewer', () => ({
+  default: ({ chainSpec, searchTerm }: { chainSpec?: string; searchTerm?: string }) => (
+    <div data-testid="inspect-state-viewer">
+      InspectStateViewer - {chainSpec} - {searchTerm}
+    </div>
+  ),
+}));
+
+const mockState = {
+  'key1': 'value1',
+  'key2': 'value2',
 };
 
-Object.assign(navigator, {
-  clipboard: mockClipboard,
-});
-
-// Mock scrollIntoView
-const mockScrollIntoView = vi.fn();
-HTMLElement.prototype.scrollIntoView = mockScrollIntoView;
+const mockPreState = {
+  'key1': 'oldvalue1',
+  'key3': 'value3',
+};
 
 describe('StateViewer', () => {
+  const mockChangeView = vi.fn();
+
   beforeEach(() => {
     vi.clearAllMocks();
-    mockClipboard.writeText.mockResolvedValue(undefined);
-    mockScrollIntoView.mockClear();
   });
-
-  afterEach(() => {
-    vi.clearAllTimers();
-  });
-
-  const mockState = {
-    '0x01': '0x123456',
-    '0x02': '0x789abc',
-    '0x03': '0xdeadbeef',
-    '0x04': '0x1234567890abcdef1234567890abcdef1234567890abcdef',
-  };
 
   it('should render state data correctly', () => {
-    render(<StateViewer state={mockState} />);
+    render(
+      <StateViewer 
+        state={mockState} 
+        tab="decoded-tiny"
+        stateType="post_state"
+        changeView={mockChangeView}
+      />
+    );
     
-    // Switch to raw tab to test raw data display
-    fireEvent.click(screen.getByText('Encoded'));
+    // Check that the search input is present
+    expect(screen.getByPlaceholderText('Search state fields, or raw keys and values...')).toBeInTheDocument();
     
-    // Check if keys are displayed
-    expect(screen.getByText('0x01')).toBeInTheDocument();
-    expect(screen.getByText('0x02')).toBeInTheDocument();
-    
-    // Check if values are displayed
-    expect(screen.getByText('0x123456')).toBeInTheDocument();
-    expect(screen.getByText('0x789abc')).toBeInTheDocument();
-  });
-
-  it('should render with custom title', () => {
-    render(<StateViewer state={mockState} title="Custom Title" />);
-    
-    // Switch to raw tab to test raw data display
-    fireEvent.click(screen.getByText('Encoded'));
-    
-    // Custom title is no longer displayed in header, but component should still render
-    expect(screen.getByText('0x01')).toBeInTheDocument();
-  });
-
-  it('should handle empty state on raw tab', () => {
-    render(<StateViewer state={{}} />);
-    
-    // Component should render without throwing errors
+    // Check that tabs are rendered
+    expect(screen.getByText('Trie')).toBeInTheDocument();
     expect(screen.getByText('Encoded')).toBeInTheDocument();
     expect(screen.getByText('Decoded Tiny')).toBeInTheDocument();
     expect(screen.getByText('Decoded Full')).toBeInTheDocument();
+    
+    // Check that the correct viewer is shown
+    expect(screen.getByTestId('inspect-state-viewer')).toBeInTheDocument();
   });
 
-  it('should default to inspect tab', () => {
-    render(<StateViewer state={mockState} />);
+  it('should render with custom title', () => {
+    render(
+      <StateViewer 
+        state={mockState}
+        title="Custom Title"
+        tab="encoded"
+        stateType="post_state"
+        changeView={mockChangeView}
+      />
+    );
     
-    // Verify that inspect/decoded tab is active by default
-    // The inspect tab should show decoded content, not raw keys like 0x01
-    expect(screen.queryByText('0x01')).not.toBeInTheDocument();
-    
-    // Switch to raw tab and verify we can see the raw data
-    fireEvent.click(screen.getByText('Encoded'));
-    expect(screen.getByText('0x01')).toBeInTheDocument();
+    expect(screen.getByText(/RawStateViewer - Custom Title/)).toBeInTheDocument();
   });
 
-  it('should search through keys and values', () => {
-    render(<StateViewer state={mockState} />);
+  it('should call changeView when tab is clicked', () => {
+    render(
+      <StateViewer 
+        state={mockState}
+        tab="decoded-tiny"
+        stateType="post_state"
+        changeView={mockChangeView}
+      />
+    );
     
-    // Switch to raw tab to test raw search functionality
     fireEvent.click(screen.getByText('Encoded'));
+    expect(mockChangeView).toHaveBeenCalledWith('encoded', 'post_state');
+  });
+
+  it('should disable Trie tab when stateType is diff', () => {
+    render(
+      <StateViewer 
+        state={mockState}
+        preState={mockPreState}
+        tab="encoded"
+        stateType="diff"
+        changeView={mockChangeView}
+      />
+    );
+    
+    const trieTab = screen.getByText('Trie');
+    expect(trieTab.closest('button')).toBeDisabled();
+  });
+
+  it('should pass search term to child components', () => {
+    render(
+      <StateViewer 
+        state={mockState}
+        tab="encoded"
+        stateType="post_state"
+        changeView={mockChangeView}
+      />
+    );
     
     const searchInput = screen.getByPlaceholderText('Search state fields, or raw keys and values...');
+    fireEvent.change(searchInput, { target: { value: 'test search' } });
     
-    // Search for a key
-    fireEvent.change(searchInput, { target: { value: '0x01' } });
-    
-    expect(screen.getByText('0x01')).toBeInTheDocument();
-    expect(screen.queryByText('0x02')).not.toBeInTheDocument();
+    expect(screen.getByText(/RawStateViewer.*test search/)).toBeInTheDocument();
   });
 
-  it('should search through values', () => {
-    render(<StateViewer state={mockState} />);
+  it('should render RawStateViewer for encoded tab', () => {
+    render(
+      <StateViewer 
+        state={mockState}
+        tab="encoded"
+        stateType="post_state"
+        changeView={mockChangeView}
+      />
+    );
     
-    // Switch to raw tab to test raw search functionality
+    expect(screen.getByTestId('raw-state-viewer')).toBeInTheDocument();
+    expect(screen.queryByTestId('inspect-state-viewer')).not.toBeInTheDocument();
+  });
+
+  it('should render InspectStateViewer for decoded-tiny tab', () => {
+    render(
+      <StateViewer 
+        state={mockState}
+        tab="decoded-tiny"
+        stateType="post_state"
+        changeView={mockChangeView}
+      />
+    );
+    
+    expect(screen.getByTestId('inspect-state-viewer')).toBeInTheDocument();
+    expect(screen.queryByTestId('raw-state-viewer')).not.toBeInTheDocument();
+  });
+
+  it('should render InspectStateViewer for decoded-full tab', () => {
+    render(
+      <StateViewer 
+        state={mockState}
+        tab="decoded-full"
+        stateType="post_state"
+        changeView={mockChangeView}
+      />
+    );
+    
+    expect(screen.getByTestId('inspect-state-viewer')).toBeInTheDocument();
+    expect(screen.queryByTestId('raw-state-viewer')).not.toBeInTheDocument();
+  });
+
+  it('should pass correct chainSpec to InspectStateViewer', () => {
+    render(
+      <StateViewer 
+        state={mockState}
+        tab="decoded-full"
+        stateType="post_state"
+        changeView={mockChangeView}
+      />
+    );
+    
+    expect(screen.getByText(/InspectStateViewer - full/)).toBeInTheDocument();
+  });
+
+  it('should pass preState to child components when provided', () => {
+    render(
+      <StateViewer 
+        state={mockState}
+        preState={mockPreState}
+        tab="encoded"
+        stateType="post_state"
+        changeView={mockChangeView}
+      />
+    );
+    
+    const rawStateViewer = screen.getByTestId('raw-state-viewer');
+    expect(rawStateViewer).toBeInTheDocument();
+  });
+
+  it('should handle all valid tab changes correctly', () => {
+    render(
+      <StateViewer 
+        state={mockState}
+        tab="encoded"
+        stateType="post_state"
+        changeView={mockChangeView}
+      />
+    );
+    
+    // Test all valid tab changes
+    fireEvent.click(screen.getByText('Trie'));
+    expect(mockChangeView).toHaveBeenCalledWith('trie', 'post_state');
+    
+    vi.clearAllMocks();
+    
+    fireEvent.click(screen.getByText('Decoded Tiny'));
+    expect(mockChangeView).toHaveBeenCalledWith('decoded-tiny', 'post_state');
+    
+    vi.clearAllMocks();
+    
+    fireEvent.click(screen.getByText('Decoded Full'));
+    expect(mockChangeView).toHaveBeenCalledWith('decoded-full', 'post_state');
+    
+    vi.clearAllMocks();
+    
     fireEvent.click(screen.getByText('Encoded'));
+    expect(mockChangeView).toHaveBeenCalledWith('encoded', 'post_state');
+  });
+
+  it('should update search term when input changes', () => {
+    render(
+      <StateViewer 
+        state={mockState}
+        tab="decoded-tiny"
+        stateType="post_state"
+        changeView={mockChangeView}
+      />
+    );
     
     const searchInput = screen.getByPlaceholderText('Search state fields, or raw keys and values...');
+    fireEvent.change(searchInput, { target: { value: 'new search' } });
     
-    // Search for a value
-    fireEvent.change(searchInput, { target: { value: 'dead' } });
-    
-    expect(screen.getByText('0x03')).toBeInTheDocument();
-    // The text is now highlighted, so we need to look for the highlighted part
-    expect(screen.getByText('dead')).toBeInTheDocument();
-    expect(screen.queryByText('0x01')).not.toBeInTheDocument();
+    expect(screen.getByText(/InspectStateViewer.*new search/)).toBeInTheDocument();
   });
 
-  it('should show "no results" when search has no matches', () => {
-    render(<StateViewer state={mockState} />);
-    
-    // Switch to raw tab to test raw search functionality
-    fireEvent.click(screen.getByText('Encoded'));
+  it('should maintain tab state when search term changes', () => {
+    render(
+      <StateViewer 
+        state={mockState}
+        tab="decoded-full"
+        stateType="post_state"
+        changeView={mockChangeView}
+      />
+    );
     
     const searchInput = screen.getByPlaceholderText('Search state fields, or raw keys and values...');
-    fireEvent.change(searchInput, { target: { value: 'nonexistent' } });
+    fireEvent.change(searchInput, { target: { value: 'search term' } });
     
-    expect(screen.getByText('No entries match your search')).toBeInTheDocument();
+    // Should still show the decoded-full tab content
+    expect(screen.getByText(/InspectStateViewer - full/)).toBeInTheDocument();
   });
 
-  it('should format long hex values', () => {
-    render(<StateViewer state={mockState} />);
+  it('should call changeView with correct parameters when switching tabs', () => {
+    render(
+      <StateViewer 
+        state={mockState}
+        tab="encoded"
+        stateType="pre_state"
+        changeView={mockChangeView}
+      />
+    );
     
-    // Switch to raw tab to test raw data formatting
-    fireEvent.click(screen.getByText('Encoded'));
+    fireEvent.click(screen.getByText('Decoded Tiny'));
+    expect(mockChangeView).toHaveBeenCalledWith('decoded-tiny', 'pre_state');
     
-    // Check if long hex value is formatted
-    expect(screen.getByText('0x12345678...abcdef')).toBeInTheDocument();
-  });
-
-  it('should copy key to clipboard', async () => {
-    render(<StateViewer state={mockState} />);
+    vi.clearAllMocks();
     
-    // Switch to raw tab to test raw functionality
-    fireEvent.click(screen.getByText('Encoded'));
-    
-    const copyButtons = screen.getAllByLabelText('Copy key');
-    const firstKeyCopyButton = copyButtons[0]; // First copy button should be for the first key
-    
-    fireEvent.click(firstKeyCopyButton);
-    
-    await waitFor(() => {
-      expect(mockClipboard.writeText).toHaveBeenCalledWith('0x01');
-    });
-    
-    expect(screen.getByText('Copied!')).toBeInTheDocument();
-  });
-
-  it('should open dialog when view button is clicked and copy value from dialog', async () => {
-    render(<StateViewer state={mockState} />);
-    
-    // Switch to raw tab to test raw functionality
-    fireEvent.click(screen.getByText('Encoded'));
-    
-    const viewButtons = screen.getAllByLabelText('View full value');
-    const firstValueViewButton = viewButtons[0]; // First value view button
-    
-    fireEvent.click(firstValueViewButton);
-    
-    // Dialog should open
-    expect(screen.getByText('Full Value')).toBeInTheDocument();
-    // Look for the value in the dialog specifically
-    expect(screen.getByText('Key: 0x01 • Size: 3 bytes')).toBeInTheDocument();
-    
-    // Copy from dialog
-    const copyButton = screen.getByText('Copy');
-    fireEvent.click(copyButton);
-    
-    await waitFor(() => {
-      expect(mockClipboard.writeText).toHaveBeenCalledWith('0x123456');
-    });
-  });
-
-  it('should handle clipboard copy failure gracefully', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    mockClipboard.writeText.mockRejectedValueOnce(new Error('Clipboard error'));
-    
-    render(<StateViewer state={mockState} />);
-    
-    // Switch to raw tab to test raw functionality
-    fireEvent.click(screen.getByText('Encoded'));
-    
-    const copyButtons = screen.getAllByLabelText('Copy key');
-    fireEvent.click(copyButtons[0]);
-    
-    // Should handle the error gracefully without throwing
-    await waitFor(() => {
-      expect(mockClipboard.writeText).toHaveBeenCalled();
-    });
-    
-    consoleSpy.mockRestore();
-  });
-
-  it('should display all entries without pagination', () => {
-    const largeState: Record<string, string> = {};
-    for (let i = 0; i < 25; i++) {
-      largeState[`0x${i.toString(16).padStart(2, '0')}`] = `0x${(i * 123).toString(16)}`;
-    }
-    
-    render(<StateViewer state={largeState} />);
-    
-    // Switch to raw tab to test raw functionality
-    fireEvent.click(screen.getByText('Encoded'));
-    
-    // Entry count is no longer displayed in header
-    
-    // Should show first and last entries (no pagination)
-    expect(screen.getByText('0x00')).toBeInTheDocument();
-    expect(screen.getByText('0x18')).toBeInTheDocument(); // 24 in hex is 18
-    
-    // Should not show pagination controls
-    expect(screen.queryByLabelText('Next page')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Previous page')).not.toBeInTheDocument();
-    expect(screen.queryByText(/Page \d+ of \d+/)).not.toBeInTheDocument();
-  });
-
-
-
-  it('should handle special characters in search', () => {
-    const specialState = {
-      '0xabcd': '0x1234',
-      '0xEFGH': '0x5678', // Mixed case
-      '0x!@#$': '0x9abc',
-    };
-    
-    render(<StateViewer state={specialState} />);
-    
-    // Switch to raw tab to test raw search functionality
-    fireEvent.click(screen.getByText('Encoded'));
-    
-    const searchInput = screen.getByPlaceholderText('Search state fields, or raw keys and values...');
-    
-    // Search should be case insensitive
-    fireEvent.change(searchInput, { target: { value: 'efgh' } });
-    
-    // The text is now highlighted, so look for the highlighted part
-    expect(screen.getByText('EFGH')).toBeInTheDocument();
-    expect(screen.queryByText('0xabcd')).not.toBeInTheDocument();
-  });
-
-  it('should re-render when title changes', () => {
-    const { rerender } = render(<StateViewer state={mockState} title="Initial Title" />);
-    
-    // Switch to raw tab to test raw data display
-    fireEvent.click(screen.getByText('Encoded'));
-    
-    // Change the title
-    rerender(<StateViewer state={mockState} title="New Title" />);
-    
-    // Switch to raw tab again after rerender
-    fireEvent.click(screen.getByText('Encoded'));
-    
-    // Component should still be rendered and functional
-    expect(screen.getByText('0x01')).toBeInTheDocument();
-  });
-
-  it('should display inline diff highlighting for changed values', () => {
-    const stateWithDiff = {
-      '0x01': '[CHANGED] 0x123456 → 0x789abc',
-      '0x02': '[ADDED] 0xnewvalue',
-      '0x03': '[REMOVED] 0xoldvalue',
-    };
-    
-    render(<StateViewer state={stateWithDiff} />);
-    
-    // Switch to raw tab to test raw functionality
-    fireEvent.click(screen.getByText('Encoded'));
-    
-    // Check that CHANGED, ADDED, REMOVED badges are displayed
-    expect(screen.getByText('CHANGED')).toBeInTheDocument();
-    expect(screen.getByText('ADDED')).toBeInTheDocument();
-    expect(screen.getByText('REMOVED')).toBeInTheDocument();
-  });
-
-  it('should highlight search matches in keys and values', () => {
-    render(<StateViewer state={mockState} />);
-    
-    // Switch to raw tab to test raw search functionality
-    fireEvent.click(screen.getByText('Encoded'));
-    
-    const searchInput = screen.getByPlaceholderText('Search state fields, or raw keys and values...');
-    
-    // Search for "01" which should match in key
-    fireEvent.change(searchInput, { target: { value: '01' } });
-    
-    // Should highlight the match
-    const highlightedText = screen.getByText('01');
-    expect(highlightedText.tagName.toLowerCase()).toBe('mark');
-  });
-
-  it('should show value dialog with size information', () => {
-    render(<StateViewer state={mockState} />);
-    
-    // Switch to raw tab to test raw functionality
-    fireEvent.click(screen.getByText('Encoded'));
-    
-    const viewButtons = screen.getAllByLabelText('View full value');
-    fireEvent.click(viewButtons[0]);
-    
-    expect(screen.getByText('Full Value')).toBeInTheDocument();
-    // Dialog should be open and functional
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-  });
-
-  it('should show diff dialog for changed values', () => {
-    const stateWithDiff = {
-      '0x01': '[CHANGED] 0x123456 → 0x789abc',
-    };
-    
-    render(<StateViewer state={stateWithDiff} />);
-    
-    // Switch to raw tab to test raw functionality
-    fireEvent.click(screen.getByText('Encoded'));
-    
-    const viewButtons = screen.getAllByLabelText('View full value');
-    fireEvent.click(viewButtons[0]);
-    
-    // Dialog should be open
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-  });
-
-  it('should close dialog when close button is clicked', () => {
-    render(<StateViewer state={mockState} />);
-    
-    // Switch to raw tab to test raw functionality
-    fireEvent.click(screen.getByText('Encoded'));
-    
-    const viewButtons = screen.getAllByLabelText('View full value');
-    fireEvent.click(viewButtons[0]);
-    
-    expect(screen.getByText('Full Value')).toBeInTheDocument();
-    
-    const closeButton = screen.getByLabelText('Close dialog');
-    fireEvent.click(closeButton);
-    
-    expect(screen.queryByText('Full Value')).not.toBeInTheDocument();
-  });
-
-  it('should show diff indicators for changed values', () => {
-    const stateWithConsecutiveDiff = {
-      '0x01': '[CHANGED] 0xabcd1234 → 0xefgh5678',
-      '0x02': '[CHANGED] 0x123456789 → 0x987654321',
-      '0x03': '[CHANGED] 0xabc → 0xdef',
-    };
-    
-    render(<StateViewer state={stateWithConsecutiveDiff} />);
-    
-    // Switch to raw tab to test raw functionality
-    fireEvent.click(screen.getByText('Encoded'));
-    
-    // Should show the CHANGED indicators
-    const changedElements = screen.getAllByText('CHANGED');
-    expect(changedElements.length).toBe(3);
-  });
-
-  describe('Diff Mode', () => {
-    const preState = {
-      '0x01': '0x123456',
-      '0x02': '0x789abc',
-      '0x03': '0xdeadbeef',
-    };
-
-    const postState = {
-      '0x01': '0x654321', // changed
-      '0x02': '0x789abc', // same
-      '0x04': '0xnewvalue', // added
-      // 0x03 removed
-    };
-
-    it('should render diff mode correctly', () => {
-      render(<StateViewer preState={preState} state={postState} title="Diff View" />);
-      
-      // Switch to raw tab to test raw diff functionality
-      fireEvent.click(screen.getByText('Encoded'));
-      
-      // Should show diff badges
-      expect(screen.getByText('CHANGED')).toBeInTheDocument();
-      expect(screen.getByText('ADDED')).toBeInTheDocument();
-      expect(screen.getByText('REMOVED')).toBeInTheDocument();
-      
-      // Should show the diff keys
-      expect(screen.getByText('0x01')).toBeInTheDocument(); // changed key
-      expect(screen.getByText('0x04')).toBeInTheDocument(); // added key  
-      expect(screen.getByText('0x03')).toBeInTheDocument(); // removed key
-      
-      // Should NOT show unchanged key 0x02
-      expect(screen.queryByText('0x02')).not.toBeInTheDocument();
-    });
-
-    it('should work with both Raw and Decoded tabs in diff mode', () => {
-      render(<StateViewer preState={preState} state={postState} />);
-      
-      // Start with raw tab
-      fireEvent.click(screen.getByText('Encoded'));
-      
-      // Should be on Raw tab by default
-      expect(screen.getByText('CHANGED')).toBeInTheDocument();
-      
-      // Switch to Decoded Tiny tab
-      const decodedTinyTab = screen.getByText('Decoded Tiny');
-      fireEvent.click(decodedTinyTab);
-      
-      // Note: The decoded view might show errors due to mock limitations
-      // but the component should still render without crashing
-      expect(decodedTinyTab).toBeInTheDocument();
-      
-      // Switch to Decoded Full tab
-      const decodedFullTab = screen.getByText('Decoded Full');
-      fireEvent.click(decodedFullTab);
-      
-      // Note: The decoded view might show errors due to mock limitations
-      // but the component should still render without crashing
-      expect(decodedFullTab).toBeInTheDocument();
-    });
-
-    it('should maintain backward compatibility with single state prop', () => {
-      render(<StateViewer state={postState} />);
-      
-      // Switch to raw tab to test raw functionality
-      fireEvent.click(screen.getByText('Encoded'));
-      
-      // Should render normally without diff mode
-      expect(screen.getByText('0x01')).toBeInTheDocument();
-      expect(screen.getByText('0x04')).toBeInTheDocument();
-    });
-
-    it('should handle diff mode without changes', () => {
-      const unchangedState = {
-        '0x01': '0x123456',
-        '0x02': '0x789abc',
-      };
-      
-      render(<StateViewer preState={unchangedState} state={unchangedState} />);
-      
-      // Switch to raw tab to test raw diff functionality
-      fireEvent.click(screen.getByText('Encoded'));
-      
-      // When states are identical, should show normal state or empty message
-      const content = document.body.textContent || '';
-      expect(content.includes('No state data') || content.includes('0x01')).toBe(true);
-      expect(screen.queryByText('CHANGED')).not.toBeInTheDocument();
-      expect(screen.queryByText('ADDED')).not.toBeInTheDocument();
-      expect(screen.queryByText('REMOVED')).not.toBeInTheDocument();
-    });
-
-    it('should handle missing pre or post state gracefully', () => {
-      render(<StateViewer state={postState} />);
-      
-      // Switch to raw tab to test raw functionality
-      fireEvent.click(screen.getByText('Encoded'));
-      
-      // Should render without error even without preState
-      const content = document.body.textContent || '';
-      expect(content.includes('0x01') || content.includes('No state data')).toBe(true);
-    });
-
-    it('should search through diff entries', () => {
-      render(<StateViewer preState={preState} state={postState} />);
-      
-      // Switch to raw tab to test raw diff functionality
-      fireEvent.click(screen.getByText('Encoded'));
-      
-      const searchInput = screen.getByPlaceholderText('Search state fields, or raw keys and values...');
-      
-      // Search for added entry
-      fireEvent.change(searchInput, { target: { value: 'newvalue' } });
-      
-      expect(screen.getByText('0x04')).toBeInTheDocument();
-      expect(screen.getByText('newvalue')).toBeInTheDocument();
-      expect(screen.queryByText('0x01')).not.toBeInTheDocument();
-    });
-
-    it('should open diff dialog for changed values', async () => {
-      render(<StateViewer preState={preState} state={postState} />);
-      
-      // Switch to raw tab to test raw diff functionality
-      fireEvent.click(screen.getByText('Encoded'));
-      
-      // Find the view button for the changed entry
-      const viewButtons = screen.getAllByLabelText('View full value');
-      fireEvent.click(viewButtons[0]); // First entry should be the changed one
-      
-      // Dialog should show diff format
-      expect(screen.getByText('Value Diff')).toBeInTheDocument();
-      expect(screen.getByText('Before:')).toBeInTheDocument();
-      expect(screen.getByText('After:')).toBeInTheDocument();
-      expect(screen.getByText('0x123456')).toBeInTheDocument();
-      expect(screen.getByText('0x654321')).toBeInTheDocument();
-    });
-
-    it('should copy diff values correctly from dialog', async () => {
-      render(<StateViewer preState={preState} state={postState} />);
-      
-      // Switch to raw tab to test raw diff functionality
-      fireEvent.click(screen.getByText('Encoded'));
-      
-      const viewButtons = screen.getAllByLabelText('View full value');
-      fireEvent.click(viewButtons[0]);
-      
-      const copyButton = screen.getByText('Copy');
-      fireEvent.click(copyButton);
-      
-      await waitFor(() => {
-        expect(mockClipboard.writeText).toHaveBeenCalledWith('Before: 0x123456\nAfter: 0x654321');
-      });
-    });
+    fireEvent.click(screen.getByText('Decoded Full'));
+    expect(mockChangeView).toHaveBeenCalledWith('decoded-full', 'pre_state');
   });
 });

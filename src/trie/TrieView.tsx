@@ -2,10 +2,11 @@ import { Row } from "@/trie/components/ExamplesModal";
 import { blake2bTrieHasher } from "@/trie/components/Trie/blake2b.node";
 import Trie, { TreeNode } from "@/trie/components/Trie";
 import { trieToTreeUI } from "@/trie/components/Trie/utils";
-import { InMemoryTrie, BytesBlob, parseInputKey } from "@typeberry/trie";
+import { trie } from "@typeberry/state-merkleization";
 import { useCallback, useMemo, useState } from "react";
 import { NodeDetails } from "@/trie/components/NodeDetails";
 
+const { InMemoryTrie, BytesBlob, parseInputKey } = trie;
 
 const getTrie = (data: { key: string; value: string; }[]) => {
   const defaultTrie = InMemoryTrie.empty(blake2bTrieHasher);

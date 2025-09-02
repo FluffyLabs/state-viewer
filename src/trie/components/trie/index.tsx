@@ -1,7 +1,6 @@
 import React, { ReactElement, useEffect, useState } from "react";
 import CytoscapeComponent from "react-cytoscapejs";
 import cytoscape, { BaseLayoutOptions } from "cytoscape";
-import dagre from "cytoscape-dagre";
 import elk from "cytoscape-elk";
 import { isEmptyNodeName, trimEdgePrefix, truncateString } from "./utils";
 import cytoscapePopper from "cytoscape-popper";
@@ -14,7 +13,6 @@ import { TooltipContent } from "./tooltip";
 import { createRoot } from "react-dom/client";
 import * as d3 from "d3";
 
-cytoscape.use(dagre);
 cytoscape.use(elk);
 
 const createContentFromComponent = (component: ReactElement) => {
