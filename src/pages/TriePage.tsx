@@ -1,33 +1,36 @@
 import {useFileContext} from "@/contexts/FileContext";
-import {TrieView} from "@/trie/TrieView";
 import {isValidStateType} from "@/utils/jsonValidation";
 import {Navigate, useNavigate, useParams} from "react-router-dom";
 import {selectState} from "./utils";
-import {useMemo} from "react";
+import {lazy, Suspense, useMemo} from "react";
 import {Button} from "@fluffylabs/shared-ui";
 import {X} from "lucide-react";
+
+const TrieView = lazy(async () => ({ default: (await import('@/trie/TrieView')).TrieView }));
 
 export function TriePage() {
   const { extractedState } = useFileContext();
   const navigate = useNavigate();
   const { stateType } = useParams<{ tab: string; stateType: string }>();
-  if (!isValidStateType(stateType)) {
-    return <Navigate to="/" />;
-  }
 
-  const { currentState } = selectState(stateType, extractedState);
-  console.log(currentState, stateType, extractedState);
-  if (!currentState) {
-    return <Navigate to="/" />;
-  }
+
+  const { currentState } = isValidStateType(stateType) ? selectState(stateType, extractedState) : {};
 
   // Convert state to Row[] format for trie
   const stateRows = useMemo(() => {
+    if (!currentState) {
+      return null;
+    }
+
     return Object.entries(currentState).map(([key, value]) => ({
       key: key.substring(2),
       value: value.substring(2),
     }));
   }, [currentState]);
+
+  if (!stateRows) {
+    return <Navigate to="/" />;
+  }
 
   return (
     <div className="p-2 h-full flex">
@@ -39,8 +42,9 @@ export function TriePage() {
         >
           <X />
         </Button>
-
-        <TrieView rows={stateRows} />
+        <Suspense fallback={<div className="font-mono p-4">Loading...</div>}>
+          <TrieView rows={stateRows} />
+        </Suspense>
       </div>
     </div>
   );

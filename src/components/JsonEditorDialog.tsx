@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
-import CodeMirror from '@uiw/react-codemirror';
-import { json } from '@codemirror/lang-json';
-import { oneDark } from '@codemirror/theme-one-dark';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { X, AlertCircle } from 'lucide-react';
 import {Button} from '@fluffylabs/shared-ui';
+
+const JsonEditor = lazy(() => import('./JsonEditor'));
 
 interface JsonEditorDialogProps {
   isOpen: boolean;
@@ -144,25 +143,13 @@ const JsonEditorDialog = ({
         {/* Editor */}
         <div className="flex-1 p-6 overflow-hidden min-h-0">
           <div className="h-full border border-border rounded-lg overflow-hidden">
-            <CodeMirror
-              value={editorContent}
-              onChange={handleContentChange}
-              extensions={[json()]}
-              theme={isDark ? oneDark : undefined}
-              height="500px"
-              style={{
-                fontSize: '14px',
-                textAlign: 'left',
-              }}
-              basicSetup={{
-                lineNumbers: true,
-                foldGutter: true,
-                dropCursor: false,
-                allowMultipleSelections: false,
-                searchKeymap: true,
-                tabSize: 2,
-              }}
-            />
+            <Suspense fallback={<div className="font-mono p-4">Loading...</div>}>
+              <JsonEditor
+                editorContent={editorContent}
+                onContentChange={handleContentChange}
+                isDark={isDark}
+              />
+            </Suspense>
           </div>
         </div>
 
