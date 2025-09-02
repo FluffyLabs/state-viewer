@@ -2,7 +2,7 @@ import { useState } from 'react';
 import ArrayViewer from './ArrayViewer';
 import ObjectViewer from './ObjectViewer';
 import ToStringViewer from './ToStringViewer';
-import { Button } from '../ui';
+import {Button} from '@fluffylabs/shared-ui';
 
 type DisplayMode = 'decoded' | 'raw' | 'string';
 

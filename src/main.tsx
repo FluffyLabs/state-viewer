@@ -2,7 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.tsx";
-import { HashRouter } from "react-router";
+import { HashRouter } from "react-router-dom";
 
 document.documentElement.classList.toggle("dark", true);
 

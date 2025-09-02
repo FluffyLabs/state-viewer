@@ -1,8 +1,12 @@
 import { z } from 'zod';
 
-export type JsonFileFormat = 'jip4-chainspec' | 'typeberry-config' | 'stf-test-vector' | 'stf-genesis' | 'unknown';
+export type JsonFileFormat = 'jip4-chainspec' | 'typeberry-config' | 'stf-test-vector' | 'stf-genesis' | 'state' | 'unknown';
 
 export type StfStateType = 'pre_state' | 'post_state' | 'diff';
+
+export function isValidStateType(state?: string): state is StfStateType {
+  return state === 'pre_state' || state === 'post_state' || state === 'diff';
+}
 
 export interface JsonValidationResult {
   content: string;
@@ -10,14 +14,17 @@ export interface JsonValidationResult {
   error: string | null;
   format: JsonFileFormat;
   formatDescription: string;
-  // For STF test vectors, provide state options
-  availableStates?: StfStateType[];
+  availableStates: StfStateType[];
 }
 
 // Zod Schemas
 const KeyValueSchema = z.object({
   key: z.string(),
   value: z.string(),
+});
+
+const RawStateFileSchema = z.object({
+  state: z.array(KeyValueSchema),
 });
 
 const StateSchema = z.object({
@@ -69,6 +76,7 @@ export type StfTestVector = z.infer<typeof StfTestVectorSchema>;
 export type Jip4Chainspec = z.infer<typeof Jip4ChainspecSchema>;
 export type TypeberryConfig = z.infer<typeof TypeberryConfigSchema>;
 export type StfGenesis = z.infer<typeof StfGenesisSchema>;
+export type RawStateFile = z.infer<typeof RawStateFileSchema>;
 
 export interface DiffEntry {
   key: string;
@@ -151,6 +159,16 @@ const detectJsonFormat = (parsedJson: unknown): FormatDetectionResult => {
     };
   }
 
+  // Try raw state
+  const rawStateResult = RawStateFileSchema.safeParse(parsedJson);
+  if (rawStateResult.success) {
+    return {
+      format: 'state',
+      description: 'Raw state entries',
+      data: rawStateResult.data,
+    };
+  }
+
   return { format: 'unknown', description: 'Unknown format - does not match any supported schema' };
 };
 
@@ -160,7 +178,8 @@ export const validateJsonContent = (content: string): JsonValidationResult => {
 
     const { format, description } = detectJsonFormat(parsedJson);
 
-    let availableStates: StfStateType[] | undefined;
+    let availableStates: StfStateType[] = ['post_state'];
+
     if (format === 'stf-test-vector') {
       availableStates = ['pre_state', 'post_state', 'diff'];
     }
@@ -172,6 +191,7 @@ export const validateJsonContent = (content: string): JsonValidationResult => {
         error: `Unsupported JSON format. ${description}. Please upload a JIP-4 chainspec, Typeberry config, STF test vector, or STF genesis file.`,
         format,
         formatDescription: description,
+        availableStates: [],
       };
     } else {
       return {
@@ -190,6 +210,7 @@ export const validateJsonContent = (content: string): JsonValidationResult => {
       error: 'Invalid JSON format. Please check your content and try again.',
       format: 'unknown',
       formatDescription: 'Malformed JSON',
+      availableStates: [],
     };
   }
 };
@@ -203,6 +224,7 @@ export const validateJsonFile = (file: File): Promise<JsonValidationResult> => {
         error: 'Please upload a valid JSON file',
         format: 'unknown',
         formatDescription: 'File type not supported',
+        availableStates: [],
       });
       return;
     }
@@ -221,6 +243,7 @@ export const validateJsonFile = (file: File): Promise<JsonValidationResult> => {
           error: 'Invalid JSON format. Please check your content and try again.',
           format: 'unknown',
           formatDescription: 'Malformed JSON',
+          availableStates: [],
         });
       }
     };
@@ -231,6 +254,7 @@ export const validateJsonFile = (file: File): Promise<JsonValidationResult> => {
         error: 'Failed to read the file. Please try again.',
         format: 'unknown',
         formatDescription: 'File read error',
+        availableStates: [],
       });
     };
     reader.readAsText(file);
@@ -322,6 +346,17 @@ export const extractGenesisState = (
           stateMap[item.key] = item.value;
         }
         return {state: stateMap};
+      }
+
+      case 'state': {
+        const result = RawStateFileSchema.safeParse(parsedJson);
+        if (!result.success) return {state: null};
+
+        const stateMap: Record<string, string> = {};
+        for (const item of result.data.state) {
+          stateMap[item.key] = item.value;
+        }
+        return {state: addHexPrefix(stateMap)};
       }
 
       default:

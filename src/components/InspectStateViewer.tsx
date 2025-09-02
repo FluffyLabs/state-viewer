@@ -6,8 +6,6 @@ import type { StateAccess } from '../types/service';
 
 import { filterStateFieldsWithRawKeysAndValues, highlightSearchMatchesWithContext } from '@/utils/searchUtils';
 
-
-
 interface InspectStateViewerProps {
   preState?: Record<string, string>;
   state: Record<string, string>;
@@ -15,9 +13,6 @@ interface InspectStateViewerProps {
   searchTerm?: string;
   chainSpec?: 'tiny' | 'full';
 }
-
-
-
 
 const useLoadState = (
   state: Record<string, string> | undefined,

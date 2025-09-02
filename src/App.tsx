@@ -1,17 +1,18 @@
 import { useState } from "react";
-import { Route, Routes } from "react-router";
-import { Header, AppsSidebar } from "@fluffylabs/shared-ui";
+import { Route, Routes } from "react-router-dom";
+import { Header, AppsSidebar, Button } from "@fluffylabs/shared-ui";
 import { Settings } from "lucide-react";
 import ToolName from "@/assets/tool-name.svg";
-import { UploadScreen } from "@/components";
-import { Button } from "@/components/ui/Button";
 import SettingsDialog from "@/components/SettingsDialog";
 import { utils } from "@typeberry/state-merkleization";
+import { FileProvider } from "@/contexts/FileContext";
+import {MainPage} from "./pages/MainPage";
+import {TriePage} from "./pages/TriePage";
 
 const VersionDisplay = () => {
   const currentVersion = utils.CURRENT_VERSION as string;
   const currentSuite = utils.CURRENT_SUITE as string;
-  
+
   return (
     <span className="text-sm text-muted-foreground mr-2">
       GP: {currentVersion}, Suite: {currentSuite}
@@ -30,10 +31,10 @@ const AppHeader = ({ onOpenSettings }: { onOpenSettings: () => void }) => {
           <VersionDisplay />
           <Button
             onClick={onOpenSettings}
-            variant="secondary"
             size="sm"
             aria-label="Settings"
             title="Settings"
+            forcedColorScheme="dark"
           >
             <Settings className="h-4 w-4" />
           </Button>
@@ -43,7 +44,7 @@ const AppHeader = ({ onOpenSettings }: { onOpenSettings: () => void }) => {
   );
 };
 
-function App() {
+const AppContent = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   return (
@@ -60,12 +61,22 @@ function App() {
           />
         </div>
 
-        <div className="w-full bg-background h-[calc(100dvh-87px)]">
-          <div className="p-4 h-full overflow-y-auto">
-            <Routes>
-              <Route index element={<UploadScreen />} />
-            </Routes>
-          </div>
+        <div className="w-full bg-background h-[calc(100dvh-87px)] overflow-y-auto">
+          <Routes>
+            <Route
+              path=""
+              index
+              element={ <MainPage /> }
+            />
+            <Route
+              path="/view/:tab/:stateType"
+              element={ <MainPage /> }
+            />
+            <Route
+              path="/trie/:tab/:stateType"
+              element={ <TriePage /> }
+            />
+          </Routes>
         </div>
       </div>
 
@@ -75,6 +86,15 @@ function App() {
       />
     </div>
   );
+};
+
+function App() {
+  return (
+    <FileProvider>
+      <AppContent />
+    </FileProvider>
+  );
 }
 
 export default App;
+
