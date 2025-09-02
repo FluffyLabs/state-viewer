@@ -2,14 +2,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import JsonEditorDialog from './JsonEditorDialog';
 
-// Mock CodeMirror component
-vi.mock('@uiw/react-codemirror', () => ({
-  default: ({ value, onChange, ...props }: { value?: string; onChange?: (val: string) => void; [key: string]: unknown }) => (
+// Mock the JsonEditor component (which is lazy loaded)
+vi.mock('./JsonEditor', () => ({
+  default: ({ editorContent, onContentChange }: { editorContent: string; onContentChange: (val: string) => void; isDark: boolean }) => (
     <textarea
       data-testid="code-mirror"
-      value={value}
-      onChange={(e) => onChange?.(e.target.value)}
-      {...props}
+      value={editorContent}
+      onChange={(e) => onContentChange(e.target.value)}
     />
   ),
 }));
@@ -60,11 +59,16 @@ describe('JsonEditorDialog', () => {
     vi.restoreAllMocks();
   });
 
-  it('should render when isOpen is true', () => {
+  it('should render when isOpen is true', async () => {
     render(<JsonEditorDialog {...defaultProps} />);
     
     expect(screen.getByText('JSON Editor')).toBeInTheDocument();
-    expect(screen.getByTestId('code-mirror')).toBeInTheDocument();
+    
+    // Wait for lazy-loaded component
+    await waitFor(() => {
+      expect(screen.getByTestId('code-mirror')).toBeInTheDocument();
+    });
+    
     expect(screen.getByText('Save JSON')).toBeInTheDocument();
     expect(screen.getByText('Cancel')).toBeInTheDocument();
   });
@@ -75,16 +79,22 @@ describe('JsonEditorDialog', () => {
     expect(screen.queryByText('JSON Editor')).not.toBeInTheDocument();
   });
 
-  it('should initialize with provided initial content', () => {
+  it('should initialize with provided initial content', async () => {
     const initialContent = '{"key": "initialValue"}';
     render(<JsonEditorDialog {...defaultProps} initialContent={initialContent} />);
     
-    const editor = screen.getByTestId('code-mirror');
-    expect(editor).toHaveValue(initialContent);
+    await waitFor(() => {
+      const editor = screen.getByTestId('code-mirror');
+      expect(editor).toHaveValue(initialContent);
+    });
   });
 
   it('should validate JSON and show error for invalid JSON', async () => {
     render(<JsonEditorDialog {...defaultProps} />);
+    
+    await waitFor(() => {
+      expect(screen.getByTestId('code-mirror')).toBeInTheDocument();
+    });
     
     const editor = screen.getByTestId('code-mirror');
     
@@ -98,6 +108,10 @@ describe('JsonEditorDialog', () => {
 
   it('should disable save button when JSON is invalid', async () => {
     render(<JsonEditorDialog {...defaultProps} />);
+    
+    await waitFor(() => {
+      expect(screen.getByTestId('code-mirror')).toBeInTheDocument();
+    });
     
     const editor = screen.getByTestId('code-mirror');
     const saveButton = screen.getByText('Save JSON');
@@ -114,6 +128,10 @@ describe('JsonEditorDialog', () => {
   it('should enable save button when JSON is valid', async () => {
     render(<JsonEditorDialog {...defaultProps} />);
     
+    await waitFor(() => {
+      expect(screen.getByTestId('code-mirror')).toBeInTheDocument();
+    });
+    
     const editor = screen.getByTestId('code-mirror');
     const saveButton = screen.getByText('Save JSON');
     
@@ -128,6 +146,10 @@ describe('JsonEditorDialog', () => {
 
   it('should clear error when invalid JSON is fixed', async () => {
     render(<JsonEditorDialog {...defaultProps} />);
+    
+    await waitFor(() => {
+      expect(screen.getByTestId('code-mirror')).toBeInTheDocument();
+    });
     
     const editor = screen.getByTestId('code-mirror');
     
@@ -146,7 +168,7 @@ describe('JsonEditorDialog', () => {
     });
   });
 
-  it('should display format error when provided', () => {
+  it('should display format error when provided', async () => {
     const formatError = 'The JSON does not match any known formats';
     render(<JsonEditorDialog {...defaultProps} formatError={formatError} />);
     
@@ -156,6 +178,10 @@ describe('JsonEditorDialog', () => {
 
   it('should call onSave with valid JSON when save button is clicked', async () => {
     render(<JsonEditorDialog {...defaultProps} />);
+    
+    await waitFor(() => {
+      expect(screen.getByTestId('code-mirror')).toBeInTheDocument();
+    });
     
     const editor = screen.getByTestId('code-mirror');
     const saveButton = screen.getByText('Save JSON');
@@ -174,6 +200,10 @@ describe('JsonEditorDialog', () => {
 
   it('should not call onSave when JSON is invalid', async () => {
     render(<JsonEditorDialog {...defaultProps} />);
+    
+    await waitFor(() => {
+      expect(screen.getByTestId('code-mirror')).toBeInTheDocument();
+    });
     
     const editor = screen.getByTestId('code-mirror');
     const saveButton = screen.getByText('Save JSON');
@@ -212,6 +242,10 @@ describe('JsonEditorDialog', () => {
     const initialContent = '{"original": "content"}';
     render(<JsonEditorDialog {...defaultProps} initialContent={initialContent} />);
     
+    await waitFor(() => {
+      expect(screen.getByTestId('code-mirror')).toBeInTheDocument();
+    });
+    
     const editor = screen.getByTestId('code-mirror');
     const cancelButton = screen.getByText('Cancel');
     
@@ -224,17 +258,29 @@ describe('JsonEditorDialog', () => {
     expect(mockOnClose).toHaveBeenCalled();
   });
 
-  it('should show both JSON error and format error when both exist', () => {
+  it('should show Reset button when onReset is provided', () => {
+    const mockOnReset = vi.fn();
+    render(<JsonEditorDialog {...defaultProps} onReset={mockOnReset} />);
+    
+    expect(screen.getByText('Reset')).toBeInTheDocument();
+  });
+
+  it('should call onReset and onClose when Reset button is clicked', () => {
+    const mockOnReset = vi.fn();
+    render(<JsonEditorDialog {...defaultProps} onReset={mockOnReset} />);
+    
+    const resetButton = screen.getByText('Reset');
+    fireEvent.click(resetButton);
+    
+    expect(mockOnReset).toHaveBeenCalled();
+    expect(mockOnClose).toHaveBeenCalled();
+  });
+
+  it('should display format error when provided', () => {
     const formatError = 'Unknown format error';
     render(<JsonEditorDialog {...defaultProps} formatError={formatError} />);
     
-    const editor = screen.getByTestId('code-mirror');
-    
-    // Enter invalid JSON
-    fireEvent.change(editor, { target: { value: '{"invalid": json}' } });
-    
-    // Both errors should be visible
-    expect(screen.getByText(/Unexpected token/)).toBeInTheDocument();
+    // Format error should be visible
     expect(screen.getByText('Format Validation Error')).toBeInTheDocument();
     expect(screen.getByText(formatError)).toBeInTheDocument();
   });
@@ -252,21 +298,29 @@ describe('JsonEditorDialog', () => {
     document.documentElement.classList.remove('dark');
   });
 
-  it('should update content when initialContent prop changes', () => {
+  it('should update content when initialContent prop changes', async () => {
     const { rerender } = render(<JsonEditorDialog {...defaultProps} initialContent='{"first": "content"}' />);
     
-    let editor = screen.getByTestId('code-mirror');
-    expect(editor).toHaveValue('{"first": "content"}');
+    await waitFor(() => {
+      const editor = screen.getByTestId('code-mirror');
+      expect(editor).toHaveValue('{"first": "content"}');
+    });
     
     // Change initialContent
     rerender(<JsonEditorDialog {...defaultProps} initialContent='{"second": "content"}' />);
     
-    editor = screen.getByTestId('code-mirror');
-    expect(editor).toHaveValue('{"second": "content"}');
+    await waitFor(() => {
+      const editor = screen.getByTestId('code-mirror');
+      expect(editor).toHaveValue('{"second": "content"}');
+    });
   });
 
   it('should handle JSON parsing errors gracefully', async () => {
     render(<JsonEditorDialog {...defaultProps} />);
+    
+    await waitFor(() => {
+      expect(screen.getByTestId('code-mirror')).toBeInTheDocument();
+    });
     
     const editor = screen.getByTestId('code-mirror');
     

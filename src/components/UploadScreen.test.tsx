@@ -4,14 +4,13 @@ import { describe, it, expect, vi } from 'vitest';
 import { UploadScreen } from './UploadScreen';
 import type { AppState, UploadState } from '@/types/shared';
 
-// Mock CodeMirror
-vi.mock('@uiw/react-codemirror', () => ({
-  default: ({ value, onChange, editable }: { value?: string; onChange?: (val: string) => void; editable?: boolean }) => (
+// Mock the JsonEditor component (which is lazy loaded)
+vi.mock('./JsonEditor', () => ({
+  default: ({ editorContent, onContentChange }: { editorContent: string; onContentChange: (val: string) => void; isDark: boolean }) => (
     <textarea
       data-testid="codemirror"
-      value={value}
-      onChange={(e) => onChange?.(e.target.value)}
-      readOnly={editable === false}
+      value={editorContent}
+      onChange={(e) => onContentChange(e.target.value)}
     />
   ),
 }));
@@ -88,7 +87,12 @@ describe('UploadScreen', () => {
     await user.click(editorButton);
 
     expect(screen.getByText('JSON Editor')).toBeInTheDocument();
-    expect(screen.getByTestId('codemirror')).toBeInTheDocument();
+    
+    // Wait for lazy-loaded component
+    await vi.waitFor(() => {
+      expect(screen.getByTestId('codemirror')).toBeInTheDocument();
+    });
+    
     expect(screen.getByText('Save JSON')).toBeInTheDocument();
     expect(screen.getByText('Cancel')).toBeInTheDocument();
   });
@@ -131,8 +135,11 @@ describe('UploadScreen', () => {
     const editorButton = screen.getByText('JSON');
     await user.click(editorButton);
 
-    const textarea = screen.getByTestId('codemirror');
-    expect(textarea).toHaveValue('{\n  \n}');
+    // Wait for lazy-loaded component
+    await vi.waitFor(() => {
+      const textarea = screen.getByTestId('codemirror');
+      expect(textarea).toHaveValue('{\n  \n}');
+    });
   });
 
   it('allows editing content in the manual editor', async () => {
@@ -141,6 +148,11 @@ describe('UploadScreen', () => {
     const editorButton = screen.getByText('JSON');
     await user.click(editorButton);
 
+    // Wait for lazy-loaded component
+    await vi.waitFor(() => {
+      expect(screen.getByTestId('codemirror')).toBeInTheDocument();
+    });
+    
     const textarea = screen.getByTestId('codemirror');
     await user.clear(textarea);
     fireEvent.change(textarea, { target: { value: '{"test": "value"}' } });
@@ -154,6 +166,11 @@ describe('UploadScreen', () => {
     const editorButton = screen.getByText('JSON');
     await user.click(editorButton);
 
+    // Wait for lazy-loaded component
+    await vi.waitFor(() => {
+      expect(screen.getByTestId('codemirror')).toBeInTheDocument();
+    });
+    
     const textarea = screen.getByTestId('codemirror');
     await user.clear(textarea);
     fireEvent.change(textarea, { target: { value: '{"manual": "edit"}' } });
@@ -238,6 +255,11 @@ describe('UploadScreen', () => {
     const editorButton = screen.getByText('JSON');
     await user.click(editorButton);
 
+    // Wait for lazy-loaded component
+    await vi.waitFor(() => {
+      expect(screen.getByTestId('codemirror')).toBeInTheDocument();
+    });
+    
     // Enter valid JSON that doesn't match known formats
     const textarea = screen.getByTestId('codemirror');
     await user.clear(textarea);
