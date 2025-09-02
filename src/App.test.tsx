@@ -34,7 +34,15 @@ vi.mock('@fluffylabs/shared-ui', () => ({
       Mocked AppsSidebar
     </div>
   ),
-  Button: ({ children, onClick, size, variant, 'aria-label': ariaLabel, title, ...props }: any) => (
+  Button: ({ children, onClick, size, variant, 'aria-label': ariaLabel, title, ...props }: {
+    children?: React.ReactNode;
+    onClick?: () => void;
+    size?: string;
+    variant?: string;
+    'aria-label'?: string;
+    title?: string;
+    [key: string]: unknown;
+  }) => (
     <button
       onClick={onClick}
       data-size={size}

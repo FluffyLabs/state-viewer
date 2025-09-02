@@ -2,7 +2,8 @@ import {useFileContext} from "@/contexts/FileContext";
 import {AppState} from "@/types/shared";
 import {useNavigate, useParams} from "react-router-dom";
 import { UploadScreen } from "../components/UploadScreen";
-import { StateViewer, isValidTab, Tabs} from "../components/StateViewer";
+import { StateViewer } from "../components/StateViewer";
+import { Tabs, isValidTab } from "@/utils/stateViewerUtils";
 import {StfStateType} from "@/utils";
 import {isValidStateType} from "@/utils/jsonValidation";
 import {useCallback} from "react";
@@ -29,7 +30,7 @@ export function MainPage() {
     } else {
       navigate(`/view/${newTab}/${stateType}`);
     }
-  }, []);
+  }, [navigate]);
 
   const changeStateType = useCallback((state: StfStateType) => {
     handleChangeView(validTab, state);

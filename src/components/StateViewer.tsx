@@ -4,20 +4,15 @@ import { SearchInput } from './ui/SearchInput';
 import RawStateViewer from './RawStateViewer';
 import InspectStateViewer from './InspectStateViewer';
 import {StfStateType} from '@/utils';
-
-export type Tabs ='encoded' | 'decoded-tiny' | 'decoded-full' | 'trie'; 
-
-export function isValidTab(tab?: string): tab is Tabs {
-  return (tab === 'encoded' || tab === 'decoded-tiny' || tab === 'decoded-full' || tab === 'trie');
-}
+import { Tabs as TabsType, isValidTab } from '@/utils/stateViewerUtils';
 
 export interface StateViewerProps {
   preState?: Record<string, string>;
   state: Record<string, string>;
   title?: string;
-  tab: Tabs;
+  tab: TabsType;
   stateType: StfStateType;
-  changeView: (tab: Tabs, stateType: StfStateType) => void;
+  changeView: (tab: TabsType, stateType: StfStateType) => void;
 }
 
 export const StateViewer = ({
@@ -36,7 +31,7 @@ export const StateViewer = ({
     } else {
       console.error(`Invalid tab: ${newTab}`);
     }
-  }, [tab, stateType, changeView]);
+  }, [stateType, changeView]);
 
   return (
     <div>
