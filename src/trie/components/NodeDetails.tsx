@@ -1,7 +1,6 @@
 import React from "react";
-import { TreeNode } from "@/trie/components/Trie";
 import { XIcon } from "lucide-react";
-import { getNodeType, getNodeTypeColor } from "@/trie/components/Trie/utils";
+import { getNodeType, getNodeTypeColor, TreeNode } from "@/trie/components/trie/utils";
 import {InfoTooltip} from "@/components/InfoTooltip";
 
 // Define the component props

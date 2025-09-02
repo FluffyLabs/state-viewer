@@ -1,7 +1,7 @@
 import { Row } from "@/trie/components/ExamplesModal";
-import { blake2bTrieHasher } from "@/trie/components/Trie/blake2b.node";
-import Trie, { TreeNode } from "@/trie/components/Trie";
-import { trieToTreeUI } from "@/trie/components/Trie/utils";
+import { blake2bTrieHasher } from "@/trie/components/trie/blake2b.node";
+import Trie from "@/trie/components/trie";
+import { TreeNode, trieToTreeUI } from "@/trie/components/trie/utils";
 import { trie } from "@typeberry/state-merkleization";
 import { useCallback, useMemo, useState } from "react";
 import { NodeDetails } from "@/trie/components/NodeDetails";

@@ -2,7 +2,7 @@ import React, { ReactElement, useEffect, useState } from "react";
 import CytoscapeComponent from "react-cytoscapejs";
 import cytoscape, { BaseLayoutOptions } from "cytoscape";
 import elk from "cytoscape-elk";
-import { isEmptyNodeName, trimEdgePrefix, truncateString } from "./utils";
+import { isEmptyNodeName, TreeNode, trimEdgePrefix, truncateString } from "./utils";
 import cytoscapePopper from "cytoscape-popper";
 import tippy, { GetReferenceClientRect } from "tippy.js";
 import "tippy.js/dist/tippy.css"; // For styling
@@ -49,17 +49,6 @@ function tippyFactory(ref: { getBoundingClientRect: GetReferenceClientRect }, co
 }
 
 cytoscape.use(cytoscapePopper(tippyFactory));
-export interface TreeNode {
-  name: string;
-  children?: TreeNode[];
-  attributes: {
-    prefix?: string;
-    nodeKey?: string;
-    value?: string;
-    valueLength?: number;
-    valueHash?: string;
-  };
-}
 
 interface GraphComponentProps {
   treeData: TreeNode;

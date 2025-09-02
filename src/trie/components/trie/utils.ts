@@ -1,7 +1,17 @@
-import { TreeNode } from ".";
 import { trie } from "@typeberry/state-merkleization";
-
 const { NodeType } = trie;
+
+export interface TreeNode {
+  name: string;
+  children?: TreeNode[];
+  attributes: {
+    prefix?: string;
+    nodeKey?: string;
+    value?: string;
+    valueLength?: number;
+    valueHash?: string;
+  };
+}
 
 export const HASH_BYTES = 32;
 
