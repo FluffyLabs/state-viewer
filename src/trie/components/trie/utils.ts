@@ -90,10 +90,11 @@ export const trimEdgePrefix = (prefix: string) => {
     return `0b${prefix}`;
   }
 
-  const prefixLength = Math.floor((prefix.length - 1) / 4) * 4;
+  const hexPartLength = Math.floor((prefix.length - 1) / 4);
+  const hexLengthAsBinary = hexPartLength * 4;
 
-  const hexPart = parseInt(prefix.slice(0, prefixLength), 2).toString(16);
-  const binaryPart = prefix.slice(prefixLength);
+  const hexPart = parseInt(prefix.slice(0, hexLengthAsBinary), 2).toString(16).padStart(hexPartLength, "0");
+  const binaryPart = prefix.slice(hexLengthAsBinary);
 
   return `0x${hexPart} ++ b${binaryPart}`;
-};
+}

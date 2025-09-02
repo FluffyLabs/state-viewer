@@ -33,14 +33,14 @@ const findNodeByHash = (data: TreeNode[], hash: string): TreeNode | undefined =>
   return undefined;
 };
 
-interface TriePageProps {
+interface TrieViewProps {
   rows: Row[];
 }
 
-export const TriePage = ({ rows }: TriePageProps) => {
+export const TrieView = ({ rows }: TrieViewProps) => {
   const [selectedNodeHash, setSelectedNodeHash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [hideEmpty, setHideEmpty] = useState<boolean>(false);
+  const [hideEmpty, setHideEmpty] = useState<boolean>(true);
 
   const trie = useMemo(() => {
     if (rows.length === 0) {
@@ -78,10 +78,14 @@ export const TriePage = ({ rows }: TriePageProps) => {
   }, [uiTrie, selectedNodeHash]);
 
   return (
-    <div className="flex flex-col h-full w-full">
+    <>
       <div className="flex flex-row">
         <label className="flex font-mono text-xs gap-2 cursor-pointer">
-          <input type="checkbox" onChange={(ev) => setHideEmpty(ev.target.checked)} />
+          <input
+            type="checkbox"
+            checked={hideEmpty}
+            onChange={(ev) => setHideEmpty(ev.target.checked)}
+          />
           Hide empty nodes
         </label>
       </div>
@@ -95,6 +99,6 @@ export const TriePage = ({ rows }: TriePageProps) => {
       {selectedNode && (
         <NodeDetails node={selectedNode} onClose={closeNodeDetails} />
       )}
-    </div>
+    </>
   );
 }

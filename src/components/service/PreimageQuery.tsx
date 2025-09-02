@@ -1,13 +1,12 @@
 import { useMemo, useState } from 'react';
 
-import { Button } from '../ui';
 import { getPreimageValue, parsePreimageInput, discoverPreimageKeysForService } from './serviceUtils';
 import PreimageHashDisplay from './PreimageHashDisplay';
 import PreimageDiffSection from './PreimageDiffSection';
 import { Service } from '@/types/service';
 import { RawState } from './types';
 import { servicePreimages } from '@/constants/serviceFields';
-import { cn } from '@fluffylabs/shared-ui';
+import { Button, cn } from '@fluffylabs/shared-ui';
 
 export interface PreimageQueryProps {
   preState?: RawState;

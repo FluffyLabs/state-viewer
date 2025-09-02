@@ -1,21 +1,42 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/Tabs';
 import { SearchInput } from './ui/SearchInput';
 import RawStateViewer from './RawStateViewer';
 import InspectStateViewer from './InspectStateViewer';
+import {StfStateType} from '@/utils';
 
-interface StateViewerProps {
+export type Tabs ='encoded' | 'decoded-tiny' | 'decoded-full' | 'trie'; 
+
+export function isValidTab(tab?: string): tab is Tabs {
+  return (tab === 'encoded' || tab === 'decoded-tiny' || tab === 'decoded-full' || tab === 'trie');
+}
+
+export interface StateViewerProps {
   preState?: Record<string, string>;
   state: Record<string, string>;
   title?: string;
+  tab: Tabs;
+  stateType: StfStateType;
+  changeView: (tab: Tabs, stateType: StfStateType) => void;
 }
 
-const StateViewer = ({
+export const StateViewer = ({
   preState,
   state,
   title = "State Data",
+  tab,
+  stateType,
+  changeView,
 }: StateViewerProps) => {
   const [searchTerm, setSearchTerm] = useState('');
+
+  const handleTabChange = useCallback((newTab: string) => {
+    if (isValidTab(newTab)) {
+      changeView(newTab, stateType);
+    } else {
+      console.error(`Invalid tab: ${newTab}`);
+    }
+  }, [tab, stateType, changeView]);
 
   return (
     <div>
@@ -26,14 +47,15 @@ const StateViewer = ({
         className="pb-2"
       />
 
-      <Tabs defaultValue="inspect-tiny" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 pb-2">
-          <TabsTrigger value="raw">Encoded</TabsTrigger>
-          <TabsTrigger value="inspect-tiny">Decoded Tiny</TabsTrigger>
-          <TabsTrigger value="inspect-full">Decoded Full</TabsTrigger>
+      <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
+        <TabsList className="grid w-full grid-cols-4 pb-2">
+          <TabsTrigger value="trie" disabled={stateType === 'diff'}>Trie</TabsTrigger>
+          <TabsTrigger value="encoded">Encoded</TabsTrigger>
+          <TabsTrigger value="decoded-tiny">Decoded Tiny</TabsTrigger>
+          <TabsTrigger value="decoded-full">Decoded Full</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="raw" className="mt-0 border rounded-lg">
+        <TabsContent value="encoded" className="mt-0">
           <RawStateViewer
             preState={preState}
             state={state}
@@ -42,7 +64,7 @@ const StateViewer = ({
           />
         </TabsContent>
 
-        <TabsContent value="inspect-tiny" className="mt-0">
+        <TabsContent value="decoded-tiny" className="mt-0">
           <InspectStateViewer
             preState={preState}
             state={state}
@@ -51,7 +73,7 @@ const StateViewer = ({
           />
         </TabsContent>
 
-        <TabsContent value="inspect-full" className="mt-0">
+        <TabsContent value="decoded-full" className="mt-0">
           <InspectStateViewer
             preState={preState}
             state={state}

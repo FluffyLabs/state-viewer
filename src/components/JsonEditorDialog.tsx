@@ -3,7 +3,7 @@ import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { X, AlertCircle } from 'lucide-react';
-import { Button } from './ui/Button';
+import {Button} from '@fluffylabs/shared-ui';
 
 interface JsonEditorDialogProps {
   isOpen: boolean;
@@ -184,20 +184,20 @@ const JsonEditorDialog = ({
             {onReset && (
               <Button
                 onClick={handleReset}
-                variant="secondary"
+                variant="outline"
               >
                 Reset
               </Button>
             )}
             <Button
               onClick={handleCancel}
-              variant="secondary"
+              variant="outline"
             >
               Cancel
             </Button>
             <Button
               onClick={handleSave}
-              variant="primary"
+              variant="default"
               disabled={!isJsonValid}
               className={!isJsonValid ? 'opacity-50 cursor-not-allowed' : ''}
             >

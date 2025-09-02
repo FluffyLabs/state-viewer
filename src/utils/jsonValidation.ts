@@ -4,6 +4,10 @@ export type JsonFileFormat = 'jip4-chainspec' | 'typeberry-config' | 'stf-test-v
 
 export type StfStateType = 'pre_state' | 'post_state' | 'diff';
 
+export function isValidStateType(state?: string): state is StfStateType {
+  return state === 'pre_state' || state === 'post_state' || state === 'diff';
+}
+
 export interface JsonValidationResult {
   content: string;
   isValid: boolean;
@@ -19,7 +23,7 @@ const KeyValueSchema = z.object({
   value: z.string(),
 });
 
-const RawStateSchema = z.object({
+const RawStateFileSchema = z.object({
   state: z.array(KeyValueSchema),
 });
 
@@ -72,7 +76,7 @@ export type StfTestVector = z.infer<typeof StfTestVectorSchema>;
 export type Jip4Chainspec = z.infer<typeof Jip4ChainspecSchema>;
 export type TypeberryConfig = z.infer<typeof TypeberryConfigSchema>;
 export type StfGenesis = z.infer<typeof StfGenesisSchema>;
-export type RawState = z.infer<typeof RawStateSchema>;
+export type RawStateFile = z.infer<typeof RawStateFileSchema>;
 
 export interface DiffEntry {
   key: string;
@@ -156,7 +160,7 @@ const detectJsonFormat = (parsedJson: unknown): FormatDetectionResult => {
   }
 
   // Try raw state
-  const rawStateResult = RawStateSchema.safeParse(parsedJson);
+  const rawStateResult = RawStateFileSchema.safeParse(parsedJson);
   if (rawStateResult.success) {
     return {
       format: 'state',
@@ -344,8 +348,8 @@ export const extractGenesisState = (
         return {state: stateMap};
       }
 
-      case 'state':
-        const result = RawStateSchema.safeParse(parsedJson);
+      case 'state': {
+        const result = RawStateFileSchema.safeParse(parsedJson);
         if (!result.success) return {state: null};
 
         const stateMap: Record<string, string> = {};
@@ -353,6 +357,7 @@ export const extractGenesisState = (
           stateMap[item.key] = item.value;
         }
         return {state: addHexPrefix(stateMap)};
+      }
 
       default:
         return {state: null};

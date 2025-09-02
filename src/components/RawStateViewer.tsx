@@ -1,12 +1,9 @@
 import { useState, useMemo } from 'react';
-import { Copy, Eye, X, Info } from 'lucide-react';
-import { Button } from './ui/Button';
-import { Popover } from './ui/Popover';
+import { Copy, Eye, X } from 'lucide-react';
 import { calculateStateDiff } from '@/utils';
 import { filterEntriesWithFieldNames, highlightSearchMatchesWithContext } from '@/utils/searchUtils';
-import { createRawKeyToFieldMap } from '@/constants/stateFields';
-import { detectServiceKeyType } from './service/serviceUtils';
-import {generateServiceTooltipContent} from './service/EncodedServiceTooltip';
+import {Button} from '@fluffylabs/shared-ui';
+import {InfoTooltip} from './InfoTooltip';
 
 interface DiffEntry {
   type: 'added' | 'removed' | 'changed' | 'normal';
@@ -34,8 +31,6 @@ interface StateEntryProps {
     value: string;
     diffEntry: DiffEntry | null;
   }) => void;
-  getFieldInfo: (rawKey: string) => { key: string; notation: string; title: string; description: string } | undefined;
-  getServiceInfo: (rawKey: string) => React.ReactNode;
   parseDiffValue: (value: string) => DiffEntry;
   formatHexValue: (hex: string) => string;
   getDiffLabel: (diffType: DiffEntry['type']) => string;
@@ -70,22 +65,6 @@ const RawStateViewer = ({
     return filterEntriesWithFieldNames(stateEntries, externalSearchTerm || '');
   }, [stateEntries, externalSearchTerm]);
 
-  // Create mapping for known state field keys
-  const rawKeyToFieldMap = useMemo(() => createRawKeyToFieldMap(), []);
-
-  // Function to get field info for a raw key
-  const getFieldInfo = (rawKey: string) => {
-    return rawKeyToFieldMap.get(rawKey) || rawKeyToFieldMap.get(rawKey.substring(0, rawKey.length - 2));
-  };
-
-  // Function to get service info for a raw key
-  const getServiceInfo = (rawKey: string) => {
-    const serviceKeyInfo = detectServiceKeyType(rawKey);
-    if (serviceKeyInfo.type) {
-      return generateServiceTooltipContent(serviceKeyInfo);
-    }
-    return null;
-  };
 
   const handleCopy = async (text: string, key: string) => {
     try {
@@ -214,17 +193,12 @@ const StateEntry = ({
   copiedKey,
   handleCopy,
   setDialogState,
-  getFieldInfo,
-  getServiceInfo,
   parseDiffValue,
   formatHexValue,
   getDiffLabel,
   createInlineDiff,
 }: StateEntryProps) => {
-  const fieldInfo = useMemo(() => getFieldInfo(entryKey), [entryKey, getFieldInfo]);
-  const serviceInfo = useMemo(() => getServiceInfo(entryKey), [entryKey, getServiceInfo]);
-  const hasTooltip = fieldInfo || serviceInfo;
-
+  
   const diffEntry = parseDiffValue(value);
   const diffLabel = getDiffLabel(diffEntry.type);
 
@@ -235,30 +209,7 @@ const StateEntry = ({
         <div className="flex items-center gap-4">
           <label className="items-center text-xs font-medium text-muted-foreground w-16 flex-shrink-0 hidden md:flex">
             <span className="uppercase tracking-wide mr-2">Key</span>
-            {hasTooltip && (
-              <Popover
-              trigger={
-                <div className="flex-shrink-0">
-                  <Info className="h-4 w-4 text-blue-500 hover:text-blue-600 cursor-help" />
-                </div>
-              }
-              content={
-                fieldInfo ? (
-                  <div className="space-y-1">
-                    <div className="font-semibold">{fieldInfo.key}</div>
-                    <div className="text-xs opacity-75">
-                      {fieldInfo.notation} ({fieldInfo.title})
-                    </div>
-                    <div className="text-xs">{fieldInfo.description}</div>
-                  </div>
-                ) : (
-                  serviceInfo
-                )
-              }
-              position="right"
-              triggerOn="hover"
-              />
-            )}
+            <InfoTooltip entryKey={entryKey} />
           </label>
           <div className="flex items-center space-x-2 flex-1 min-w-0">
             <code className="text-sm font-mono text-foreground break-all bg-muted px-2 py-1 rounded flex-1">
@@ -375,8 +326,8 @@ const StateEntry = ({
     );
   }
 
-  return (
-    <div>
+  return (<>
+    <div className="border rounded-lg">
       {/* State Entries */}
       <div className="divide-y divide-border text-left">
         {filteredEntries.length > 0 ? (
@@ -389,8 +340,6 @@ const StateEntry = ({
               copiedKey={copiedKey}
               handleCopy={handleCopy}
               setDialogState={setDialogState}
-              getFieldInfo={getFieldInfo}
-              getServiceInfo={getServiceInfo}
               parseDiffValue={parseDiffValue}
               formatHexValue={formatHexValue}
               getDiffLabel={getDiffLabel}
@@ -489,7 +438,7 @@ const StateEntry = ({
                       : dialogState.value;
                     handleCopy(textToCopy, 'dialog');
                   }}
-                  variant="secondary"
+                  variant="outline"
                   className="flex items-center gap-2"
                 >
                   <Copy className="h-4 w-4" />
@@ -497,7 +446,7 @@ const StateEntry = ({
                 </Button>
                 <Button
                   onClick={() => setDialogState(prev => ({ ...prev, isOpen: false }))}
-                  variant="primary"
+                  variant="default"
                 >
                   Close
                 </Button>
@@ -507,6 +456,7 @@ const StateEntry = ({
         </div>
       )}
     </div>
+                    </>
   );
 };
 

@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useMemo, useCallback, ReactNode } from "react";
-import { extractGenesisState, JsonValidationResult, JsonFileFormat } from "@/utils";
-import { Row } from "@/trie/components/ExamplesModal";
+import { extractGenesisState, JsonValidationResult, JsonFileFormat, StfStateType } from "@/utils";
 import type { UploadState, StoredFileData } from "@/types/shared";
+import {RawState} from "@/components/service";
 
 const SESSION_STORAGE_KEY = 'state-view-file-data';
 
@@ -10,9 +10,8 @@ const SESSION_STORAGE_KEY = 'state-view-file-data';
 interface FileContextType {
   // State
   uploadState: UploadState;
-  extractedState: { state: Record<string, string>; preState?: Record<string, string> } | null;
-  stateTitle: string;
-  stateRows: Row[];
+  extractedState: { state: RawState; preState?: RawState } | null;
+  stateTitle: (selectedState: StfStateType) => string;
   
   // Actions
   updateUploadState: (
@@ -43,7 +42,6 @@ export const FileProvider = ({ children }: FileProviderProps) => {
           format: data.format as JsonFileFormat,
           formatDescription: data.formatDescription,
           availableStates: data.availableStates,
-          selectedState: data.selectedState,
         };
       } catch {
         sessionStorage.removeItem(SESSION_STORAGE_KEY);
@@ -78,13 +76,13 @@ export const FileProvider = ({ children }: FileProviderProps) => {
     }
   }, [uploadState.content, uploadState.format, uploadState.isValidJson]);
 
-  const stateTitle = useMemo(() => {
-    if (uploadState.format === 'stf-test-vector' && uploadState.selectedState) {
-      if (uploadState.selectedState === 'pre_state') {
+  const stateTitle = useCallback((selectedState: StfStateType) => {
+    if (uploadState.format === 'stf-test-vector' && selectedState) {
+      if (selectedState === 'pre_state') {
         return 'Pre-State Data';
-      } else if (uploadState.selectedState === 'post_state') {
+      } else if (selectedState === 'post_state') {
         return 'Post-State Data';
-      } else if (uploadState.selectedState === 'diff') {
+      } else if (selectedState === 'diff') {
         return 'State Diff (Pre → Post)';
       }
     } else if (uploadState.format === 'jip4-chainspec') {
@@ -95,19 +93,7 @@ export const FileProvider = ({ children }: FileProviderProps) => {
       return 'STF Genesis State';
     }
     return 'State Data';
-  }, [uploadState.format, uploadState.selectedState]);
-
-  // Convert state to Row[] format for trie
-  const stateRows = useMemo((): Row[] => {
-    if (!extractedState?.state) {
-      return [];
-    }
-
-    return Object.entries(extractedState.state).map(([key, value]) => ({
-      key,
-      value
-    }));
-  }, [extractedState]);
+  }, [uploadState.format]);
 
   const updateUploadState = useCallback((
     newState: UploadState | ((prev: UploadState) => UploadState),
@@ -121,7 +107,6 @@ export const FileProvider = ({ children }: FileProviderProps) => {
         format: validation.format,
         formatDescription: validation.formatDescription,
         availableStates: validation.availableStates,
-        selectedState: validation.availableStates?.includes('diff') ? 'diff' : validation.availableStates?.[0],
       };
       sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(dataToStore));
     }
@@ -143,7 +128,6 @@ export const FileProvider = ({ children }: FileProviderProps) => {
     uploadState,
     extractedState,
     stateTitle,
-    stateRows,
     updateUploadState,
     clearUpload,
   };

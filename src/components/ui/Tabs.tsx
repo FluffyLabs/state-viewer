@@ -1,6 +1,5 @@
 import * as React from "react";
-import { cn } from "@fluffylabs/shared-ui";
-import { Button } from "./Button";
+import { Button, cn } from "@fluffylabs/shared-ui";
 
 interface TabsContextValue {
   value?: string;
@@ -70,7 +69,7 @@ const TabsTrigger = React.forwardRef<
       role="tab"
       aria-selected={isActive}
       data-state={isActive ? "active" : "inactive"}
-      variant={isActive ? "secondary" : "ghost"}
+      variant={isActive ? "default" : "outline"}
       size="sm"
       className={cn(
         "rounded-md data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm",

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
-import { Button } from './ui/Button';
 import { utils } from '@typeberry/state-merkleization';
+import {Button} from '@fluffylabs/shared-ui';
 
 interface SettingsDialogProps {
   isOpen: boolean;
@@ -93,7 +93,7 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
         </div>
 
         <div className="p-4 border-t border-border flex justify-start space-x-2">
-          <Button onClick={handleApply} variant="secondary">
+          <Button onClick={handleApply}>
             Reload
           </Button>
         </div>

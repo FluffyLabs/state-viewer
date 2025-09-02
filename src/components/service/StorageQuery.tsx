@@ -1,12 +1,11 @@
 import { useMemo, useState } from 'react';
-import { Button } from '../ui';
 import { getStorageValue, parseStorageKey, discoverStorageKeysForService } from './serviceUtils';
 import ValueDisplay from './ValueDisplay';
 import ValueDiffSection from './ValueDiffSection';
 import { Service } from '@/types/service';
 import { RawState } from './types';
 import { serviceStorage } from '@/constants/serviceFields';
-import { cn } from '@fluffylabs/shared-ui';
+import { Button, cn } from '@fluffylabs/shared-ui';
 
 export interface StorageQueryProps {
   preState?: RawState;

@@ -1,17 +1,17 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, AlertCircle, Edit, FolderOpen } from 'lucide-react';
 import JsonEditorDialog from './JsonEditorDialog';
-import StateViewer from './StateViewer';
-import { Button } from './ui/Button';
-import { validateJsonFile, validateJsonContent, type StfStateType, type JsonValidationResult } from '../utils';
+import { validateJsonFile, validateJsonContent, type JsonValidationResult, StfStateType } from '../utils';
 
 import stfTestVectorFixture from '../utils/fixtures/00000001.json';
 import jip4ChainspecFixture from '../utils/fixtures/dev-tiny.json';
 import stfGenesisFixture from '../utils/fixtures/genesis.json';
 import typeberryConfigFixture from '../utils/fixtures/typeberry-dev.json';
 import ExamplesModal from '@/trie/components/ExamplesModal';
-import type { UploadScreenProps, UploadState } from '@/types/shared';
+import type { AppState, UploadState } from '@/types/shared';
+import {StateKindSelector} from './StateKindSelector';
+import {Button} from '@fluffylabs/shared-ui';
 
 interface ExampleFile {
   name: string;
@@ -42,12 +42,25 @@ const EXAMPLE_FILES: ExampleFile[] = [
   }
 ];
 
-const UploadScreen = ({ appState, onUpdateUploadState, onClearUpload }: UploadScreenProps) => {
-  const { uploadState, extractedState, stateTitle } = appState;
+export interface UploadScreenProps {
+  appState: AppState;
+  onUpdateUploadState: (
+    newState: UploadState | ((prev: UploadState) => UploadState),
+    validation?: JsonValidationResult
+  ) => void;
+  onClearUpload: () => void;
+  changeStateType: (type: StfStateType) => void;
+}
+
+export const UploadScreen = ({
+  appState,
+  onUpdateUploadState,
+  onClearUpload,
+  changeStateType,
+}: UploadScreenProps) => {
+  const { uploadState, selectedState } = appState;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formatError, setFormatError] = useState<string | null>(null);
-
-
 
   const clearUpload = useCallback(() => {
     onClearUpload();
@@ -121,13 +134,6 @@ const UploadScreen = ({ appState, onUpdateUploadState, onClearUpload }: UploadSc
     validateManualContent();
   }, [handleUploadStateWithStorage]);
 
-  const handleStateSelection = useCallback((stateType: StfStateType) => {
-    onUpdateUploadState((prev: UploadState) => ({
-      ...prev,
-      selectedState: stateType,
-    }));
-  }, [onUpdateUploadState]);
-
   const handleExampleLoad = useCallback((exampleContent: string) => {
     clearUpload();
 
@@ -147,26 +153,8 @@ const UploadScreen = ({ appState, onUpdateUploadState, onClearUpload }: UploadSc
     handleUploadStateWithStorage(newUploadState, validation);
   }, [clearUpload, handleUploadStateWithStorage]);
 
-
-
-  const selectedState = useMemo(() => {
-    if (extractedState === null) {
-      return null;
-    }
-    if (uploadState.selectedState === 'diff') {
-      return extractedState;
-    }
-    if (uploadState.selectedState === 'pre_state' && extractedState.preState !== undefined) {
-      return { state: extractedState.preState, preState: undefined };
-    }
-    if (uploadState.selectedState === 'post_state') {
-      return { state: extractedState.state, preState: undefined };
-    }
-    return { state: extractedState.state, preState: undefined };
-  }, [uploadState.selectedState, extractedState]);
-
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <>
       {uploadState.content === '' && (
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">
@@ -282,7 +270,7 @@ const UploadScreen = ({ appState, onUpdateUploadState, onClearUpload }: UploadSc
               {/* Browse Button (if no file uploaded) */}
                 <Button
                   onClick={open}
-                  variant="primary"
+                  variant="default"
                   size="lg"
                 >
                   <FolderOpen className="h-4 w-4" />
@@ -291,7 +279,7 @@ const UploadScreen = ({ appState, onUpdateUploadState, onClearUpload }: UploadSc
 
               <Button
                 onClick={handleManualEdit}
-                variant="secondary"
+                variant="outline"
                 size="lg"
               >
                 <Edit className="h-4 w-4" />
@@ -329,39 +317,16 @@ const UploadScreen = ({ appState, onUpdateUploadState, onClearUpload }: UploadSc
                 </div>
 
                 {/* State Selection for STF Test Vectors */}
-                {uploadState.availableStates && uploadState.availableStates.length > 0 && (
-                  <div className="ml-4">
-                    <div className="flex gap-2 flex-wrap">
-                      {uploadState.availableStates.map((stateType) => (
-                        <Button
-                          key={stateType}
-                          onClick={() => handleStateSelection(stateType)}
-                          variant={uploadState.selectedState === stateType ? "primary" : "secondary"}
-                          size="sm"
-                        >
-                          {stateType === 'pre_state' ? 'Pre-State' :
-                           stateType === 'post_state' ? 'Post-State' : 'Diff'}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <StateKindSelector
+                  availableStates={uploadState.availableStates}
+                  selectedState={selectedState}
+                  changeStateType={changeStateType}
+                />
               </div>
             </div>
           </div>
         )}
       </div>
-
-      {/* State Viewer */}
-      {selectedState !== null && Object.keys(selectedState.state).length > 0 && (
-        <div className="mb-6">
-          <StateViewer
-            state={selectedState.state}
-            preState={selectedState.preState}
-            title={stateTitle}
-          />
-        </div>
-      )}
 
       {/* JSON Editor Dialog */}
       <JsonEditorDialog
@@ -375,8 +340,6 @@ const UploadScreen = ({ appState, onUpdateUploadState, onClearUpload }: UploadSc
         initialContent={uploadState.content || '{\n  \n}'}
         formatError={formatError}
       />
-    </div>
+    </>
   );
 };
-
-export default UploadScreen;

@@ -1,18 +1,13 @@
 import { useState } from "react";
-import { Route, Routes, useNavigate } from "react-router-dom";
-import { Header, AppsSidebar } from "@fluffylabs/shared-ui";
+import { Route, Routes } from "react-router-dom";
+import { Header, AppsSidebar, Button } from "@fluffylabs/shared-ui";
 import { Settings } from "lucide-react";
 import ToolName from "@/assets/tool-name.svg";
-import { UploadScreen, StateViewer } from "@/components";
-import { Button } from "@/components/ui/Button";
 import SettingsDialog from "@/components/SettingsDialog";
-import { TriePage } from "@/trie/TriePage";
 import { utils } from "@typeberry/state-merkleization";
-import { FileProvider, useFileContext } from "@/contexts";
-import type { AppState } from "@/types/shared";
-
-
-
+import { FileProvider } from "@/contexts/FileContext";
+import {MainPage} from "./pages/MainPage";
+import {TriePage} from "./pages/TriePage";
 
 const VersionDisplay = () => {
   const currentVersion = utils.CURRENT_VERSION as string;
@@ -36,10 +31,10 @@ const AppHeader = ({ onOpenSettings }: { onOpenSettings: () => void }) => {
           <VersionDisplay />
           <Button
             onClick={onOpenSettings}
-            variant="secondary"
             size="sm"
             aria-label="Settings"
             title="Settings"
+            forcedColorScheme="dark"
           >
             <Settings className="h-4 w-4" />
           </Button>
@@ -51,14 +46,6 @@ const AppHeader = ({ onOpenSettings }: { onOpenSettings: () => void }) => {
 
 const AppContent = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const navigate = useNavigate();
-  const { uploadState, extractedState, stateTitle, stateRows, updateUploadState, clearUpload } = useFileContext();
-
-  const appState: AppState = {
-    uploadState,
-    extractedState,
-    stateTitle,
-  };
 
   return (
     <div className="flex flex-col overflow-hidden h-[100dvh]">
@@ -74,108 +61,20 @@ const AppContent = () => {
           />
         </div>
 
-        <div className="w-full bg-background h-[calc(100dvh-87px)]">
+        <div className="w-full bg-background h-[calc(100dvh-87px)] overflow-y-auto">
           <Routes>
             <Route
+              path=""
               index
-              element={
-                <div className="p-4 h-full overflow-y-auto">
-                  <UploadScreen
-                    appState={appState}
-                    onUpdateUploadState={updateUploadState}
-                    onClearUpload={clearUpload}
-                  />
-                </div>
-              }
+              element={ <MainPage /> }
             />
             <Route
-              path="/encoded"
-              element={
-                <div className="p-4 h-full overflow-y-auto">
-                  {extractedState ? (
-                    <StateViewer
-                      state={extractedState.state}
-                      preState={extractedState.preState}
-                      title={stateTitle}
-                    />
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-muted-foreground mb-4">No state data available</p>
-                      <Button onClick={() => navigate('/')}>
-                        Go back to upload
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              }
+              path="/view/:tab/:stateType"
+              element={ <MainPage /> }
             />
             <Route
-              path="/decoded-tiny"
-              element={
-                <div className="p-4 h-full overflow-y-auto">
-                  {extractedState ? (
-                    <StateViewer
-                      state={extractedState.state}
-                      preState={extractedState.preState}
-                      title={stateTitle}
-                    />
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-muted-foreground mb-4">No state data available</p>
-                      <Button onClick={() => navigate('/')}>
-                        Go back to upload
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              }
-            />
-            <Route
-              path="/decoded-full"
-              element={
-                <div className="p-4 h-full overflow-y-auto">
-                  {extractedState ? (
-                    <StateViewer
-                      state={extractedState.state}
-                      preState={extractedState.preState}
-                      title={stateTitle}
-                    />
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-muted-foreground mb-4">No state data available</p>
-                      <Button onClick={() => navigate('/')}>
-                        Go back to upload
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              }
-            />
-            <Route
-              path="/trie"
-              element={
-                <div className="p-4 h-full overflow-hidden">
-                  {stateRows.length > 0 ? (
-                    <div className="h-full flex flex-col">
-                      <div className="mb-4">
-                        <Button onClick={() => navigate(-1)} variant="secondary">
-                          ← Back
-                        </Button>
-                      </div>
-                      <div className="flex-1 overflow-hidden">
-                        <TriePage rows={stateRows} />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-muted-foreground mb-4">No state data available for trie view</p>
-                      <Button onClick={() => navigate('/')}>
-                        Go back to upload
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              }
+              path="/trie/:tab/:stateType"
+              element={ <TriePage /> }
             />
           </Routes>
         </div>
@@ -198,3 +97,4 @@ function App() {
 }
 
 export default App;
+
