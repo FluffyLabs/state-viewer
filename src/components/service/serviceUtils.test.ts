@@ -8,7 +8,8 @@ import {
   extractServiceIdsFromState,
   discoverPreimageKeysForService,
   discoverStorageKeysForService,
-  getServiceChangeType
+  getServiceChangeType,
+  formatServiceIdUnsigned
 } from './serviceUtils';
 import type { Service, ServiceAccountInfo } from '@/types/service';
 
@@ -314,6 +315,22 @@ describe('serviceUtils', () => {
       const result = getServiceChangeType(serviceData);
       
       expect(result).toBe('normal');
+    });
+  });
+
+  describe('formatServiceIdUnsigned', () => {
+    it('returns positive ids unchanged as decimal strings', () => {
+      expect(formatServiceIdUnsigned(0)).toBe('0');
+      expect(formatServiceIdUnsigned(1)).toBe('1');
+      expect(formatServiceIdUnsigned(42)).toBe('42');
+      expect(formatServiceIdUnsigned(4294967295 >>> 0)).toBe('4294967295');
+    });
+
+    it('converts negative ids to unsigned 32-bit', () => {
+      expect(formatServiceIdUnsigned(-1)).toBe('4294967295');
+      expect(formatServiceIdUnsigned(-2)).toBe('4294967294');
+      expect(formatServiceIdUnsigned(-123)).toBe((4294967296 - 123).toString());
+      expect(formatServiceIdUnsigned(-2147483648)).toBe('2147483648');
     });
   });
 });

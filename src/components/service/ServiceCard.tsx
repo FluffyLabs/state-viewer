@@ -5,7 +5,7 @@ import ServiceInfo from './ServiceInfo';
 import StorageQuery from './StorageQuery';
 import PreimageQuery from './PreimageQuery';
 import LookupHistoryQuery from './LookupHistoryQuery';
-import { getServiceChangeType, discoverStorageKeysForService, discoverPreimageKeysForService, discoverLookupHistoryKeysForService, getComprehensiveServiceChangeType } from './serviceUtils';
+import { getServiceChangeType, discoverStorageKeysForService, discoverPreimageKeysForService, discoverLookupHistoryKeysForService, getComprehensiveServiceChangeType, formatServiceIdUnsigned } from './serviceUtils';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui';
 import type { RawState, ServiceData } from './types';
 
@@ -20,6 +20,7 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
   const [activeTab, setActiveTab] = useState('storage');
   const { serviceId, preService, postService, preError, postError } = serviceData;
   const activeService = postService || preService;
+  const formattedId = formatServiceIdUnsigned(serviceId);
 
   const changeType = isDiffMode ? getServiceChangeType(serviceData) : 'normal';
   const changeInfo = isDiffMode ? getComprehensiveServiceChangeType(serviceData, state, preState) : null;
@@ -56,9 +57,9 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
         <div className="flex items-center gap-2 mb-3">
           <h5 className="font-semibold text-lg flex items-center gap-2">
             <code className="px-1 py-0.5 rounded text-xs font-mono bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200">
-              δ[{serviceId}]
+              δ[{formattedId}]
             </code>
-            Service <span className="font-mono">{serviceId}</span>
+            Service <span className="font-mono">{formattedId}</span>
           </h5>
         </div>
 
@@ -81,9 +82,9 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
       <div className="flex items-center gap-2 mb-3">
         <h5 className="font-semibold text-lg flex items-center gap-2">
           <code className="px-1 py-0.5 rounded text-xs font-mono bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200">
-            δ[{serviceId}]
+            δ[{formattedId}]
           </code>
-          Service <span className="font-mono">{serviceId}</span>
+          Service <span className="font-mono">{formattedId}</span>
         </h5>
         {isDiffMode && changeType !== 'normal' && (
           <span className={`px-2 py-1 rounded text-xs font-semibold ${
