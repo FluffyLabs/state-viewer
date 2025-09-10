@@ -27,16 +27,16 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // Keep @typeberry/state-merkleization in its own chunk
-          if (id.includes('@typeberry/state-merkleization')) {
-            return 'typeberry-state-merkleization';
+          // Keep @typeberry/lib in its own chunk
+          if (id.includes('@typeberry/lib')) {
+            return 'typeberry-lib';
           }
         },
       },
     },
   },
   optimizeDeps: {
-    include: ['@typeberry/state-merkleization'],
+    include: ['@typeberry/lib'],
     esbuildOptions: {
       // Preserve class names during dependency pre-bundling
       keepNames: true,

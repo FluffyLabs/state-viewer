@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
-import { utils } from '@typeberry/state-merkleization';
+import { utils } from '@typeberry/lib';
 import {Button} from '@fluffylabs/shared-ui';
 
 interface SettingsDialogProps {

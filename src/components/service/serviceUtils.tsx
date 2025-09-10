@@ -1,6 +1,6 @@
 import blake2b from "blake2b";
 import type { Service, StorageKey, PreimageHash, U32 } from '../../types/service';
-import { bytes, StateKey } from '@typeberry/state-merkleization';
+import { bytes, state_merkleization } from '@typeberry/lib';
 import {RawState} from "./types";
 
 // Helper function to ensure serviceId is included in service info
@@ -11,7 +11,7 @@ export const getServiceInfoWithId = (service: Service | null, serviceId: number)
 };
 
 export const parseStorageKey = (input: string): {
-  type: 'storage', key: StorageKey } | { type: 'raw', key: StateKey } => {
+  type: 'storage', key: StorageKey } | { type: 'raw', key: state_merkleization.StateKey } => {
   if (input.startsWith('0x')) {
     if (input.length === 66) {
       return { type: 'storage', key: bytes.Bytes.parseBytes(input, 32) }
@@ -29,7 +29,7 @@ export const parseStorageKey = (input: string): {
   return { type: 'storage', key: bytes.Bytes.fromBlob(hasher.digest(), 32) };
 };
 
-export const parsePreimageInput = (input: string): { type: 'preimage', hash: PreimageHash } | { type: 'raw', key: StateKey } => {
+export const parsePreimageInput = (input: string): { type: 'preimage', hash: PreimageHash } | { type: 'raw', key: state_merkleization.StateKey } => {
   if (input.startsWith('0x') && input.length === 64) {
     return { type: 'raw', key: bytes.Bytes.parseBytes(input, 31).asOpaque() };
   }

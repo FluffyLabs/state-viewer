@@ -1,4 +1,4 @@
-import { StateCodec, serialize as stateSerialize } from "@typeberry/state-merkleization";
+import { state_merkleization as lib } from "@typeberry/lib";
 
 export interface StateField {
   key: string;
@@ -6,7 +6,7 @@ export interface StateField {
   title: string;
   description: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  serialize: StateCodec<any>;
+  serialize: lib.StateCodec<any>;
 }
 
 export const STATE_FIELDS: StateField[] = [
@@ -15,133 +15,133 @@ export const STATE_FIELDS: StateField[] = [
     notation: 'ρ',
     title: 'rho',
     description: 'Work-reports which have been reported but are not yet known to be available to a super-majority of validators',
-    serialize: stateSerialize.availabilityAssignment
+    serialize: lib.serialize.availabilityAssignment
   },
   {
     key: 'designatedValidatorData',
     notation: 'ι',
     title: 'iota',
     description: 'The validator keys and metadata to be drawn from next',
-    serialize: stateSerialize.designatedValidators
+    serialize: lib.serialize.designatedValidators
   },
   {
     key: 'nextValidatorData',
     notation: 'γₖ',
     title: 'gamma_k',
     description: 'The keys for the validators of the next epoch',
-    serialize: stateSerialize.safrole
+    serialize: lib.serialize.safrole
   },
   {
     key: 'currentValidatorData',
     notation: 'κ',
     title: 'kappa',
     description: 'Current validators, who are the set of economic actors uniquely privileged to help build and maintain the Jam chain',
-    serialize: stateSerialize.currentValidators
+    serialize: lib.serialize.currentValidators
   },
   {
     key: 'previousValidatorData',
     notation: 'λ',
     title: 'lambda',
     description: 'Previous validators data archived from past epochs',
-    serialize: stateSerialize.previousValidators
+    serialize: lib.serialize.previousValidators
   },
   {
     key: 'disputesRecords',
     notation: 'ψ',
     title: 'psi',
     description: 'Judgements',
-    serialize: stateSerialize.disputesRecords
+    serialize: lib.serialize.disputesRecords
   },
   {
     key: 'timeslot',
     notation: 'τ',
     title: 'tau',
     description: 'The current time slot',
-    serialize: stateSerialize.timeslot
+    serialize: lib.serialize.timeslot
   },
   {
     key: 'entropy',
     notation: 'η',
     title: 'eta',
     description: 'An on-chain entropy pool',
-    serialize: stateSerialize.entropy
+    serialize: lib.serialize.entropy
   },
   {
     key: 'authPools',
     notation: 'α',
     title: 'alpha',
     description: 'Authorizers available for each core (authorizer pool)',
-    serialize: stateSerialize.authPools
+    serialize: lib.serialize.authPools
   },
   {
     key: 'authQueues',
     notation: 'φ',
     title: 'phi',
     description: 'A queue of authorizers for each core used to fill up the pool',
-    serialize: stateSerialize.authQueues
+    serialize: lib.serialize.authQueues
   },
   {
     key: 'recentBlocks',
     notation: 'β',
     title: 'beta',
     description: 'State of the blocks from recent history',
-    serialize: stateSerialize.recentBlocks
+    serialize: lib.serialize.recentBlocks
   },
   {
     key: 'statistics',
     notation: 'π',
     title: 'pi',
     description: 'Previous and current statistics of each validator, cores statistics and services statistics',
-    serialize: stateSerialize.statistics
+    serialize: lib.serialize.statistics
   },
   {
     key: 'accumulationQueue',
     notation: 'Ω',
     title: 'omega',
     description: 'Ready but not-yet-accumulated work-reports',
-    serialize: stateSerialize.accumulationQueue
+    serialize: lib.serialize.accumulationQueue
   },
   {
     key: 'recentlyAccumulated',
     notation: 'ξ',
     title: 'xi',
     description: 'History of what has been accumulated',
-    serialize: stateSerialize.recentlyAccumulated
+    serialize: lib.serialize.recentlyAccumulated
   },
   {
     key: 'accumulationOutputLog',
     notation: 'θ',
     title: 'theta',
     description: 'Services accumulation output',
-    serialize: stateSerialize.accumulationOutputLog,
+    serialize: lib.serialize.accumulationOutputLog,
   },
   {
     key: 'ticketsAccumulator',
     notation: 'γₐ',
     title: 'gamma_a',
     description: 'The ticket accumulator - a series of highest-scoring ticket identifiers for the next epoch',
-    serialize: stateSerialize.safrole
+    serialize: lib.serialize.safrole
   },
   {
     key: 'sealingKeySeries',
     notation: 'γₛ',
     title: 'gamma_s',
     description: 'Current epoch\'s slot-sealer series',
-    serialize: stateSerialize.safrole
+    serialize: lib.serialize.safrole
   },
   {
     key: 'epochRoot',
     notation: 'γᵤ',
     title: 'gamma_z',
     description: 'The epoch\'s root, a Bandersnatch ring root composed with the one Bandersnatch key of each of the next epoch\'s validators',
-    serialize: stateSerialize.safrole
+    serialize: lib.serialize.safrole
   },
   {
     key: 'privilegedServices',
     notation: 'χ',
     title: 'chi',
     description: 'Up to three services recognized as privileged',
-    serialize: stateSerialize.privilegedServices
+    serialize: lib.serialize.privilegedServices
   },
 ];
 
