@@ -9,9 +9,6 @@
   <body>
     <div id="root"></div>
     <script>
-      window.os = {
-        hostname: () => 'browser',
-      };
       window.process = {
         env: {
           GP_VERSION: sessionStorage.getItem('GP_VERSION') ?? '0.7.0-preview',
