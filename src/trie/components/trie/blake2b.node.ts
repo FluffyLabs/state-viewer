@@ -1,5 +1,5 @@
 import blake2b from "blake2b";
-import { trie, bytes } from "@typeberry/state-merkleization";
+import { trie, bytes } from "@typeberry/lib";
 import { HASH_BYTES } from "./utils";
 
 export const blake2bTrieHasher: trie.TrieHasher = {

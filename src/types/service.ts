@@ -1,4 +1,4 @@
-import { bytes } from "@typeberry/state-merkleization";
+import { bytes } from "@typeberry/lib";
 
 /** Service id type. */
 export type ServiceId = number;

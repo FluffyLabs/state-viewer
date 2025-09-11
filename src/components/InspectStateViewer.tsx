@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { loadState, config, bytes, serialize as stateSerialize } from "@typeberry/state-merkleization";
+import { config, bytes, state_merkleization as lib } from "@typeberry/lib";
 import { CompositeViewer } from './viewer';
 import ServiceViewer from './ServiceViewer';
 import type { StateAccess } from '../types/service';
@@ -26,7 +26,7 @@ const useLoadState = (
     try {
       setError(null);
       const spec = chainSpec === 'tiny' ? config.tinyChainSpec : config.fullChainSpec;
-      return loadState(spec, Object.entries(state).map(([key, value]) => {
+      return lib.loadState(spec, Object.entries(state).map(([key, value]) => {
         return [
           bytes.Bytes.parseBytes(key, 31),
           bytes.BytesBlob.parseBlob(value),
@@ -118,7 +118,7 @@ const InspectStateViewer = ({
 
               const hasValue = preValue !== undefined || postValue !== undefined;
               const hasChanged = isDiffMode && (
-                serialize?.key === stateSerialize.safrole.key
+                serialize?.key === lib.serialize.safrole.key
                 ? String(preValue) !== String(postValue)
                 :preRawValue !== postRawValue
               );

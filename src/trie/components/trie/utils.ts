@@ -1,4 +1,4 @@
-import { trie } from "@typeberry/state-merkleization";
+import { trie } from "@typeberry/lib";
 const { NodeType } = trie;
 
 export interface TreeNode {
