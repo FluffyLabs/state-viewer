@@ -80,7 +80,7 @@ describe('SettingsDialog', () => {
   it('should populate test suite dropdown with available options', () => {
     render(<SettingsDialog isOpen={true} onClose={mockOnClose} />);
 
-    const suiteSelect = screen.getByDisplayValue('w3f');
+    const suiteSelect = screen.getByDisplayValue('w3f-davxy');
     expect(suiteSelect).toBeInTheDocument();
   });
 
