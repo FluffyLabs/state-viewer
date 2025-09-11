@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import ServiceIdsInput from './service/ServiceIdsInput';
 import ServiceCard from './service/ServiceCard';
-import { parseServiceIds, extractServiceIdsFromState, getComprehensiveServiceChangeType } from './service/serviceUtils';
+import { parseServiceIds, extractServiceIdsFromState, getComprehensiveServiceChangeType, formatServiceIdUnsigned } from './service/serviceUtils';
 import type { ServiceData } from './service/types';
 import { StateAccess } from '@/types/service';
 
@@ -18,12 +18,12 @@ const ServiceViewer = ({ preStateAccess, stateAccess, preState, state }: Service
   }, [state]);
 
   const [serviceIdsInput, setServiceIdsInput] = useState(() => {
-    return discoveredServiceIds.length > 0 ? discoveredServiceIds.join(', ') : '0';
+    return discoveredServiceIds.length > 0 ? discoveredServiceIds.map(formatServiceIdUnsigned).join(', ') : '0';
   });
 
   useEffect(() => {
     if (discoveredServiceIds.length > 0) {
-      setServiceIdsInput(discoveredServiceIds.join(', '));
+      setServiceIdsInput(discoveredServiceIds.map(formatServiceIdUnsigned).join(', '));
     }
   }, [discoveredServiceIds]);
 

@@ -96,6 +96,11 @@ export const calculatePreimageHash = (rawValue: string): string => {
   }
 };
 
+export const formatServiceIdUnsigned = (serviceId: number): string => {
+  const bn = BigInt(serviceId);
+  return bn >= 0n ? bn.toString() : (2n ** 32n + bn).toString();
+};
+
 export const parseServiceIds = (input: string): number[] => {
   return input
     .split(',')
