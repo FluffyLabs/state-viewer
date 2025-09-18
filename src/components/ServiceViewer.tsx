@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import ServiceIdsInput from './service/ServiceIdsInput';
 import ServiceCard from './service/ServiceCard';
-import { parseServiceIds, extractServiceIdsFromState, getComprehensiveServiceChangeType, formatServiceIdUnsigned } from './service/serviceUtils';
+import { parseServiceIds, extractServiceIdsFromState, getComprehensiveServiceChangeType, formatServiceIdUnsigned, serviceMatchesSearch } from './service/serviceUtils';
 import type { ServiceData } from './service/types';
 import { StateAccess } from '@/types/service';
 
@@ -10,9 +10,10 @@ export interface ServiceViewerProps {
   state: Record<string, string>;
   preStateAccess?: StateAccess;
   stateAccess: StateAccess;
+  searchTerm?: string;
 }
 
-const ServiceViewer = ({ preStateAccess, stateAccess, preState, state }: ServiceViewerProps) => {
+const ServiceViewer = ({ preStateAccess, stateAccess, preState, state, searchTerm = '' }: ServiceViewerProps) => {
   const discoveredServiceIds = useMemo(() => {
     return extractServiceIdsFromState(state);
   }, [state]);
@@ -61,15 +62,19 @@ const ServiceViewer = ({ preStateAccess, stateAccess, preState, state }: Service
       };
     });
 
+    const searchFilteredServices = allServices.filter(serviceData => 
+      serviceMatchesSearch(serviceData, searchTerm, state, preState)
+    );
+
     if (isDiffMode && preState) {
-      return allServices.filter(serviceData => {
+      return searchFilteredServices.filter(serviceData => {
         const changeInfo = getComprehensiveServiceChangeType(serviceData, state, preState);
         return changeInfo.hasAnyChanges;
       });
     }
 
-    return allServices;
-  }, [serviceIds, preStateAccess, stateAccess, isDiffMode, preState, state]);
+    return searchFilteredServices;
+  }, [serviceIds, preStateAccess, stateAccess, isDiffMode, preState, state, searchTerm]);
 
   return (
     <div className="space-y-4 mb-4">
@@ -92,7 +97,10 @@ const ServiceViewer = ({ preStateAccess, stateAccess, preState, state }: Service
 
         {services.length === 0 && serviceIdsInput.trim() && (
           <div className="text-center py-4 text-gray-500">
-            Didn't find any {isDiffMode && 'changed'} services with given ids.
+            {isDiffMode 
+              ? `No services found with changes matching the given criteria${searchTerm ? ` and search term "${searchTerm}"` : ''}. Services may exist but have no changes.`
+              : `No services found matching the given criteria${searchTerm ? ` and search term "${searchTerm}"` : ''}.`
+            }
           </div>
         )}
       </div>

@@ -2,6 +2,7 @@ import blake2b from "blake2b";
 import type { Service, StorageKey, PreimageHash, U32 } from '../../types/service';
 import { bytes, state_merkleization } from '@typeberry/lib';
 import {RawState} from "./types";
+import { serviceData as serviceDataSerializer } from '../../constants/serviceFields';
 
 // Helper function to ensure serviceId is included in service info
 export const getServiceInfoWithId = (service: Service | null, serviceId: number) => {
@@ -360,4 +361,110 @@ const extractServiceIdFromKey = (key: string): number | null => {
   } catch {
     return null;
   }
+};
+
+export const serviceMatchesSearch = (
+  serviceData: import('./types').ServiceData,
+  searchTerm: string,
+  state: Record<string, string>,
+  preState?: Record<string, string>
+): boolean => {
+  if (!searchTerm.trim()) return true;
+  
+  const { serviceId, preService, postService } = serviceData;
+  const searchLower = searchTerm.toLowerCase();
+  
+  const formattedId = formatServiceIdUnsigned(serviceId);
+  if (formattedId.includes(searchLower) || serviceId.toString().includes(searchLower)) {
+    return true;
+  }
+  
+  // Search by service raw key
+  try {
+    const rawKey = serviceDataSerializer(serviceId as never).key.toString().substring(0, 64);
+    if (rawKey.toLowerCase().includes(searchLower)) {
+      return true;
+    }
+  } catch {
+    // Ignore service raw key errors for search (important-comment)
+  }
+  
+  // Search by service info with enhanced field handling
+  const activeService = postService || preService;
+  if (activeService) {
+    try {
+      const info = activeService.getInfo();
+      
+      // Search individual fields for better matching
+      if (info.balance !== undefined && info.balance.toString().toLowerCase().includes(searchLower)) {
+        return true;
+      }
+      
+      if (info.nonce !== undefined && info.nonce.toString().toLowerCase().includes(searchLower)) {
+        return true;
+      }
+      
+      if (info.codeHash && info.codeHash instanceof Uint8Array) {
+        const codeHashHex = Array.from(info.codeHash)
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('');
+        if (codeHashHex.toLowerCase().includes(searchLower)) {
+          return true;
+        }
+        if (('0x' + codeHashHex).toLowerCase().includes(searchLower)) {
+          return true;
+        }
+      }
+      
+      // Search other fields in service info
+      for (const [key, value] of Object.entries(info)) {
+        if (key === 'codeHash') continue; // Already handled above
+        if (value !== undefined && value !== null) {
+          const valueStr = value.toString().toLowerCase();
+          if (valueStr.includes(searchLower)) {
+            return true;
+          }
+        }
+      }
+      
+      const infoStr = JSON.stringify(info).toLowerCase();
+      if (infoStr.includes(searchLower)) {
+        return true;
+      }
+    } catch {
+      // Ignore service info errors for search
+    }
+  }
+  
+  const storageKeys = discoverStorageKeysForService(state, serviceId);
+  const preStorageKeys = preState ? discoverStorageKeysForService(preState, serviceId) : [];
+  const allStorageKeys = Array.from(new Set([...storageKeys, ...preStorageKeys]));
+  
+  for (const key of allStorageKeys) {
+    if (key.toLowerCase().includes(searchLower)) return true;
+    const value = state[key] || (preState && preState[key]);
+    if (value && value.toLowerCase().includes(searchLower)) return true;
+  }
+  
+  const preimageKeys = discoverPreimageKeysForService(state, serviceId);
+  const prePreimageKeys = preState ? discoverPreimageKeysForService(preState, serviceId) : [];
+  const allPreimageKeys = Array.from(new Set([...preimageKeys, ...prePreimageKeys]));
+  
+  for (const key of allPreimageKeys) {
+    if (key.toLowerCase().includes(searchLower)) return true;
+    const value = state[key] || (preState && preState[key]);
+    if (value && value.toLowerCase().includes(searchLower)) return true;
+  }
+  
+  const lookupKeys = discoverLookupHistoryKeysForService(state, serviceId);
+  const preLookupKeys = preState ? discoverLookupHistoryKeysForService(preState, serviceId) : [];
+  const allLookupKeys = Array.from(new Set([...lookupKeys, ...preLookupKeys]));
+  
+  for (const key of allLookupKeys) {
+    if (key.toLowerCase().includes(searchLower)) return true;
+    const value = state[key] || (preState && preState[key]);
+    if (value && value.toLowerCase().includes(searchLower)) return true;
+  }
+  
+  return false;
 };
