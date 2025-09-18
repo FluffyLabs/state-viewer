@@ -674,7 +674,7 @@ describe('Integration tests with fixture files', () => {
     restore();
   });
 
-  it('should detect STF test vector from 00000001.json fixture', async () => {
+  it('should detect STF test vector from 00000041.json fixture', async () => {
     const stfContent = `{
     "pre_state": {
         "state_root": "0x3e2f03c8e9f44101d4945260f81a0c5a400c18fe7a0fbdb4413e8b9163239836",
@@ -706,7 +706,7 @@ describe('Integration tests with fixture files', () => {
     }
 }`;
 
-    const file = new File([stfContent], '00000001.json', { type: 'application/json' });
+    const file = new File([stfContent], '00000041.json', { type: 'application/json' });
     const restore = mockFileReaderWithContent(stfContent);
 
     const result = await validateJsonFile(file);
