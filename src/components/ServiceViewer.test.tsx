@@ -31,10 +31,11 @@ vi.mock('./service/ServiceCard', () => ({
 // Mock parseServiceIds and extractServiceIdsFromState
 vi.mock('./service/serviceUtils', () => ({
   parseServiceIds: vi.fn(),
-  extractServiceIdsFromState: vi.fn()
+  extractServiceIdsFromState: vi.fn(),
+  serviceMatchesSearch: vi.fn()
 }));
 
-import { parseServiceIds, extractServiceIdsFromState } from './service/serviceUtils';
+import { parseServiceIds, extractServiceIdsFromState, serviceMatchesSearch } from './service/serviceUtils';
 
 describe('ServiceViewer', () => {
   const mockServiceInfo: ServiceAccountInfo = {
@@ -66,6 +67,7 @@ describe('ServiceViewer', () => {
     vi.clearAllMocks();
     (parseServiceIds as ReturnType<typeof vi.fn>).mockReturnValue([0]);
     (extractServiceIdsFromState as ReturnType<typeof vi.fn>).mockReturnValue([]);
+    (serviceMatchesSearch as ReturnType<typeof vi.fn>).mockReturnValue(true);
   });
 
   it('should render with required props', () => {
@@ -168,7 +170,7 @@ describe('ServiceViewer', () => {
     const input = screen.getByTestId('service-ids-input');
     fireEvent.change(input, { target: { value: 'invalid' } });
     
-    expect(screen.getByText('Didn\'t find any services with given ids.')).toBeInTheDocument();
+    expect(screen.getByText('No services found matching the given criteria.')).toBeInTheDocument();
   });
 
   it('should not show no valid service IDs message when input is empty', () => {
@@ -211,5 +213,44 @@ describe('ServiceViewer', () => {
     fireEvent.change(input, { target: { value: '5,6' } });
     
     expect(parseServiceIds).toHaveBeenCalledWith('5,6');
+  });
+
+  it('should filter services based on search term', () => {
+    const mockService = createMockService(1);
+    const stateAccess = createMockStateAccess({ 1: mockService, 2: createMockService(2) });
+    (parseServiceIds as ReturnType<typeof vi.fn>).mockReturnValue([1, 2]);
+    (serviceMatchesSearch as ReturnType<typeof vi.fn>).mockImplementation((serviceData, searchTerm) => {
+      return serviceData.serviceId === 1 && searchTerm === '1';
+    });
+    
+    render(<ServiceViewer {...defaultProps} stateAccess={stateAccess} searchTerm="1" />);
+    
+    expect(screen.getByText('Service 1')).toBeInTheDocument();
+    expect(screen.queryByText('Service 2')).not.toBeInTheDocument();
+  });
+
+  it('should show improved message in diff mode when no changed services match search', () => {
+    const preStateAccess = createMockStateAccess({});
+    (parseServiceIds as ReturnType<typeof vi.fn>).mockReturnValue([]);
+    (serviceMatchesSearch as ReturnType<typeof vi.fn>).mockReturnValue(false);
+    
+    render(<ServiceViewer {...defaultProps} preStateAccess={preStateAccess} searchTerm="test" />);
+    
+    const input = screen.getByTestId('service-ids-input');
+    fireEvent.change(input, { target: { value: 'invalid' } });
+    
+    expect(screen.getByText(/No services found with changes matching the given criteria and search term "test". Services may exist but have no changes./)).toBeInTheDocument();
+  });
+
+  it('should show improved message in normal mode when no services match search', () => {
+    (parseServiceIds as ReturnType<typeof vi.fn>).mockReturnValue([]);
+    (serviceMatchesSearch as ReturnType<typeof vi.fn>).mockReturnValue(false);
+    
+    render(<ServiceViewer {...defaultProps} searchTerm="test" />);
+    
+    const input = screen.getByTestId('service-ids-input');
+    fireEvent.change(input, { target: { value: 'invalid' } });
+    
+    expect(screen.getByText(/No services found matching the given criteria and search term "test"./)).toBeInTheDocument();
   });
 });

@@ -92,6 +92,7 @@ const InspectStateViewer = ({
         state={state}
         preStateAccess={(preStateAccess ?? undefined) as StateAccess | undefined}
         stateAccess={stateAccess as unknown as StateAccess}
+        searchTerm={searchTerm}
       />)}
 
       {(preStateAccess || stateAccess) && (
