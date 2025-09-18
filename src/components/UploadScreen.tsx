@@ -4,7 +4,7 @@ import { Upload, FileText, AlertCircle, Edit, FolderOpen } from 'lucide-react';
 import JsonEditorDialog from './JsonEditorDialog';
 import { validateJsonFile, validateJsonContent, type JsonValidationResult, StfStateType } from '../utils';
 
-import stfTestVectorFixture from '../utils/fixtures/00000001.json';
+import stfTestVectorFixture from '../utils/fixtures/00000041.json';
 import jip4ChainspecFixture from '../utils/fixtures/dev-tiny.json';
 import stfGenesisFixture from '../utils/fixtures/genesis.json';
 import typeberryConfigFixture from '../utils/fixtures/typeberry-dev.json';
