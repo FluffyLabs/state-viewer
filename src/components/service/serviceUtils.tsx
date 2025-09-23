@@ -1,8 +1,14 @@
 import blake2b from "blake2b";
 import type { Service, StorageKey, PreimageHash, U32 } from '../../types/service';
-import { bytes, state_merkleization } from '@typeberry/lib';
-import {RawState} from "./types";
+import { bytes, numbers, state_merkleization } from '@typeberry/lib';
+import {RawState, ServiceData} from "./types";
 import { serviceData as serviceDataSerializer } from '../../constants/serviceFields';
+
+const hashBytes = (b: bytes.BytesBlob): bytes.Bytes<32> => {
+  const hasher = blake2b(32);
+  hasher.update(b.raw);
+  return bytes.Bytes.fromBlob(hasher.digest(), 32);
+};
 
 // Helper function to ensure serviceId is included in service info
 export const getServiceInfoWithId = (service: Service | null, serviceId: number) => {
@@ -25,9 +31,9 @@ export const parseStorageKey = (input: string): {
       return { type: 'storage', key: bytes.Bytes.parseBytes(paddedInput, 32) };
     }
   }
-  const hasher = blake2b(32);
-  hasher.update(bytes.BytesBlob.blobFromString(input).raw);
-  return { type: 'storage', key: bytes.Bytes.fromBlob(hasher.digest(), 32) };
+  
+  const hash = hashBytes(bytes.BytesBlob.blobFromString(input));
+  return { type: 'storage', key: hash };
 };
 
 export const parsePreimageInput = (input: string): { type: 'preimage', hash: PreimageHash } | { type: 'raw', key: state_merkleization.StateKey } => {
@@ -88,10 +94,7 @@ export const getLookupHistoryValue = (service: Service, hash: string, length: st
 
 export const calculatePreimageHash = (rawValue: string): string => {
   try {
-    const blob = bytes.BytesBlob.parseBlob(rawValue);
-    const hasher = blake2b(32);
-    hasher.update(blob.raw);
-    return bytes.BytesBlob.blobFrom(hasher.digest()).toString();
+    return hashBytes(bytes.BytesBlob.parseBlob(rawValue)).toString();
   } catch (err) {
     return `Error: ${err instanceof Error ? err.message : 'Unknown error'}`;
   }
@@ -112,40 +115,13 @@ export const parseServiceIds = (input: string): number[] => {
 };
 
 export const extractServiceIdsFromState = (state: Record<string, string>): number[] => {
-  const serviceIds = new Set<number>();
+  const serviceIds = new Set(Object.keys(state)
+    .map(key => detectServiceId(key))
+    .filter(v => v !== null));
 
-  for (const key of Object.keys(state)) {
-    if (key.startsWith('0xff') && key.length >= 10) {
-      try {
-        const hexPart = key.slice(4);
-
-        const serviceIdBytes: number[] = [];
-        for (let i = 0; i < hexPart.length && serviceIdBytes.length < 4; i += 4) {
-          const hexByte = hexPart.slice(i, i + 2);
-          const zeroByte = hexPart.slice(i + 2, i + 4);
-
-          if (zeroByte === '00' || i + 2 >= hexPart.length) {
-            serviceIdBytes.push(parseInt(hexByte, 16));
-          } else {
-            break;
-          }
-        }
-
-        if (serviceIdBytes.length === 4) {
-          const serviceId = serviceIdBytes[0] |
-                           (serviceIdBytes[1] << 8) |
-                           (serviceIdBytes[2] << 16) |
-                           (serviceIdBytes[3] << 24);
-          serviceIds.add(serviceId);
-        }
-      } catch {
-        continue;
-      }
-    }
-  }
-
-  return Array.from(serviceIds).sort((a, b) => a - b);
+    return Array.from(serviceIds).sort((a, b) => a - b);
 };
+
 export const getServiceIdBytesLE = (serviceId: number): [string, string, string, string] => {
   const b0 = (serviceId & 0xff).toString(16).padStart(2, '0');
   const b1 = ((serviceId >>> 8) & 0xff).toString(16).padStart(2, '0');
@@ -154,58 +130,102 @@ export const getServiceIdBytesLE = (serviceId: number): [string, string, string,
   return [b0, b1, b2, b3];
 };
 
-export const discoverStorageKeysForService = (state: Record<string, string>, serviceId: number): string[] => {
-  const [b0, b1, b2, b3] = getServiceIdBytesLE(serviceId);
-  const prefix = `0x${b0}ff${b1}ff${b2}ff${b3}ff`;
-  const results: string[] = [];
-  for (const key of Object.keys(state)) {
-    if (key.startsWith(prefix)) {
-      results.push(key);
-    }
-  }
-  return results;
+export type ServiceEntryType = {
+  kind: 'service-info',
+  key: string,
+  value: string,
+} | {
+  kind: 'preimage',
+  key: string,
+  value: string,
+  length: number,
+  hash: bytes.Bytes<32>,
+} | {
+  kind: 'storage-or-lookup',
+  key: string,
+  value: string,
+} | {
+  kind: 'lookup',
+  key: string,
+  value: string,
 };
 
-export const discoverPreimageKeysForService = (state: Record<string, string>, serviceId: number): string[] => {
-  const [b0, b1, b2, b3] = getServiceIdBytesLE(serviceId);
-  const prefix = `0x${b0}fe${b1}ff${b2}ff${b3}ff`;
-  const results: string[] = [];
-  for (const key of Object.keys(state)) {
-    if (key.startsWith(prefix)) {
-      results.push(key);
+function detectServiceEntryType(serviceId: number, key: string, value: string): ServiceEntryType | null {
+    if (isServiceInfoKey(serviceId, key)) {
+      return {
+        kind: 'service-info',
+        key,
+        value,
+      };
+    }
+
+    if (!isForServiceButNotInfo(serviceId, key)) {
+      return null;
+    }
+
+    const data = bytes.BytesBlob.parseBlob(value);
+    const hash = hashBytes(data);
+    const computedKey = state_merkleization.stateKeys.servicePreimage(
+      serviceId as never,
+      hash.asOpaque()
+    ).toString();
+
+    if (computedKey.startsWith(key)) {
+      return {
+        kind: 'preimage',
+        key,
+        value,
+        length: data.length,
+        hash,
+      }
+    }
+
+    return {
+      kind: 'storage-or-lookup',
+      key,
+      value,
+    };
+}
+
+export const discoverServiceEntries = (state: RawState, serviceId: number) => {
+  // detect service info & preimages
+  const initialEntries = Object.entries(state)
+    .map(([key, value]) => detectServiceEntryType(serviceId, key, value))
+    .filter(v => v !== null);
+
+  const detectedLookups = new Set<string>();
+  const allEntries: ServiceEntryType[] = [];
+
+  // now, given we have all preimages we can compute lookup history items
+  for (const val of initialEntries) {
+    allEntries.push(val);
+
+    if (val.kind === 'preimage') {
+      const serviceLookupKey = state_merkleization.stateKeys.serviceLookupHistory(
+        serviceId as never,
+        val.hash.asOpaque(),
+        numbers.tryAsU32(val.length)
+      ).toString().substring(0, 64);
+
+      detectedLookups.add(serviceLookupKey);
+      allEntries.push({
+        kind: 'lookup',
+        key: serviceLookupKey,
+        value: state[serviceLookupKey] ?? '',
+      });
     }
   }
-  return results;
-};
 
-export const discoverLookupHistoryKeysForService = (state: Record<string, string>, serviceId: number): string[] => {
-  const [b0, b1, b2, b3] = getServiceIdBytesLE(serviceId);
-  const storagePrefix = `0x${b0}ff${b1}ff${b2}ff${b3}ff`;
-  const preimagePrefix = `0x${b0}fe${b1}ff${b2}ff${b3}ff`;
-  const results: string[] = [];
-  for (const key of Object.keys(state)) {
-    if (!key.startsWith('0x') || key.length < 2 + 16) {
-      continue;
+  // filter out storage-or-lookups that are now duplicated
+  return allEntries.filter(v => {
+    if (v.kind === 'storage-or-lookup' && detectedLookups.has(v.key)) {
+      return false;
     }
-    if (key.startsWith(storagePrefix) || key.startsWith(preimagePrefix)) {
-      continue;
-    }
-    const hex = key.slice(2);
-    const match =
-      hex.slice(0, 2) === b0 &&
-      hex.length >= 16 &&
-      hex.slice(4, 6) === b1 &&
-      hex.slice(8, 10) === b2 &&
-      hex.slice(12, 14) === b3;
-    if (match) {
-      results.push(key);
-    }
-  }
-  return results;
-};
+    return true;
+  });
+}
 
-
-export const getServiceChangeType = (serviceData: import('./types').ServiceData): 'added' | 'removed' | 'changed' | 'normal' => {
+export const getServiceChangeType = (serviceData: ServiceData): 'added' | 'removed' | 'changed' | 'normal' => {
   const { preService, postService, preError, postError } = serviceData;
 
   if (preError && postError) return 'normal';
@@ -218,7 +238,7 @@ export const getServiceChangeType = (serviceData: import('./types').ServiceData)
     try {
       const preInfo = preService.getInfo();
       const postInfo = postService.getInfo();
-      
+
       const preInfoStr = `${preInfo}`;
       const postInfoStr = `${postInfo}`;
       return preInfoStr !== postInfoStr ? 'changed' : 'normal';
@@ -230,112 +250,110 @@ export const getServiceChangeType = (serviceData: import('./types').ServiceData)
   return 'normal';
 };
 
+export type ChangeSet = {
+  hasAnyChanges: boolean;
+  totalCount: number;
+  preCount: number;
+  postCount: number;
+  added: number;
+  removed:number;
+  changed: number;
+};
+
 export const getComprehensiveServiceChangeType = (
-  serviceData: import('./types').ServiceData,
+  serviceData: ServiceData,
   state: Record<string, string>,
   preState?: Record<string, string>
 ): {
   hasAnyChanges: boolean;
   hasServiceInfoChanges: boolean;
-  hasStorageChanges: boolean;
-  hasPreimageChanges: boolean;
-  hasLookupHistoryChanges: boolean;
+  storage: ChangeSet;
+  preimages: ChangeSet;
+  lookup: ChangeSet;
 } => {
   const { serviceId } = serviceData;
   const serviceInfoChangeType = getServiceChangeType(serviceData);
   const hasServiceInfoChanges = serviceInfoChangeType !== 'normal';
-  
-  if (!preState) {
-    return {
-      hasAnyChanges: hasServiceInfoChanges,
-      hasServiceInfoChanges,
-      hasStorageChanges: false,
-      hasPreimageChanges: false,
-      hasLookupHistoryChanges: false,
-    };
-  }
-  
+
+  const compareWith = preState ? preState : state;
   const calc = (discoverFn: (s: Record<string, string>, id: number) => string[]) => {
     const post = discoverFn(state, serviceId);
-    const pre = discoverFn(preState, serviceId);
+    const pre = discoverFn(compareWith, serviceId);
     const preSet = new Set(pre);
     const postSet = new Set(post);
     const total = Array.from(new Set([...pre, ...post]));
-    const changed = total.filter((k) => preSet.has(k) && postSet.has(k) && preState[k] !== state[k]);
+    const changed = total.filter((k) => preSet.has(k) && postSet.has(k) && compareWith[k] !== state[k]);
     const added = post.filter((k) => !preSet.has(k));
     const removed = pre.filter((k) => !postSet.has(k));
-    return added.length > 0 || removed.length > 0 || changed.length > 0;
+    const hasAnyChanges = added.length > 0 || removed.length > 0 || changed.length > 0;
+
+    return {
+      hasAnyChanges,
+      totalCount: total.length,
+      preCount: pre.length,
+      postCount: post.length,
+      added: added.length,
+      removed: removed.length,
+      changed: changed.length
+    };
   };
-  
-  const hasStorageChanges = calc(discoverStorageKeysForService);
-  const hasPreimageChanges = calc(discoverPreimageKeysForService);
-  const hasLookupHistoryChanges = calc(discoverLookupHistoryKeysForService);
-  
-  const hasAnyChanges = hasServiceInfoChanges || hasStorageChanges || hasPreimageChanges || hasLookupHistoryChanges;
-  
+
+  const postEntries = discoverServiceEntries(state, serviceId);
+  const preEntries = discoverServiceEntries(compareWith, serviceId);
+
+  const storage = calc((s) => {
+    const entries = s === state ? postEntries : preEntries;
+    return entries
+    .filter(v => v.kind === 'storage-or-lookup')
+    .map(v => v.key);
+  });
+  const preimages = calc((s) => {
+    const entries = s === state ? postEntries : preEntries;
+    return entries
+    .filter(v => v.kind === 'preimage')
+    .map(v => v.key);
+  });
+  const lookupHistory = calc((s) => {
+    const entries = s === state ? postEntries : preEntries;
+    return entries
+    .filter(v => v.kind === 'lookup')
+    .map(v => v.key);
+  });
+
+  const hasAnyChanges = storage.hasAnyChanges || preimages.hasAnyChanges || lookupHistory.hasAnyChanges || hasServiceInfoChanges;
   return {
     hasAnyChanges,
     hasServiceInfoChanges,
-    hasStorageChanges,
-    hasPreimageChanges,
-    hasLookupHistoryChanges,
+    storage,
+    preimages,
+    lookup: lookupHistory,
   };
 }
 
-export interface ServiceKeyInfo {
-  type: 'service-info' | 'storage' | 'preimage' | 'lookup-history' | null;
-  serviceId: number | null;
+function isServiceInfoKey(serviceId: number, key: string): boolean {
+  const expectedKey = state_merkleization.stateKeys.serviceInfo(serviceId as never);
+  return expectedKey.toString().startsWith(key);
 }
 
-export const detectServiceKeyType = (key: string): ServiceKeyInfo => {
-  if (!key.startsWith('0x') || key.length < 10) {
-    return { type: null, serviceId: null };
-  }
-
-  const hex = key.slice(2);
-  
-  const serviceId = extractServiceIdFromKey(key);
-  if (serviceId === null) {
-    return { type: null, serviceId: null };
-  }
-
+function isForServiceButNotInfo(serviceId: number, key: string) {
   const [b0, b1, b2, b3] = getServiceIdBytesLE(serviceId);
-  
-  if (key.startsWith('0xff') && hex.length >= 8) {
-    const expectedPattern = `ff${b0}00${b1}00${b2}00${b3}00`;
-    if (hex.startsWith(expectedPattern)) {
-      return { type: 'service-info', serviceId };
-    }
-  }
-  
-  const storagePrefix = `${b0}ff${b1}ff${b2}ff${b3}ff`;
-  if (hex.startsWith(storagePrefix)) {
-    return { type: 'storage', serviceId };
-  }
-  
-  const preimagePrefix = `${b0}fe${b1}ff${b2}ff${b3}ff`;
-  if (hex.startsWith(preimagePrefix)) {
-    return { type: 'preimage', serviceId };
-  }
-  
+  const hex = key.slice(2);
   const match = 
-    hex.slice(0, 2) === b0 &&
     hex.length >= 16 &&
+    hex.slice(0, 2) === b0 &&
     hex.slice(4, 6) === b1 &&
     hex.slice(8, 10) === b2 &&
     hex.slice(12, 14) === b3;
-  if (match && !hex.startsWith(storagePrefix) && !hex.startsWith(preimagePrefix)) {
-    return { type: 'lookup-history', serviceId };
-  }
-  
-  return { type: null, serviceId: null };
-};
+  return match;
+}
 
-const extractServiceIdFromKey = (key: string): number | null => {
-  if (!key.startsWith('0x') || key.length < 10) return null;
-  
+export function detectServiceId(key: string): number | null {
+  if (!key.startsWith('0x') || key.length < 10) {
+    return null;
+  }
+
   const hex = key.slice(2);
-  
+
   if (key.startsWith('0xff') && hex.length >= 8) {
     try {
       const serviceIdBytes = [
@@ -349,7 +367,7 @@ const extractServiceIdFromKey = (key: string): number | null => {
       return null;
     }
   }
-  
+
   try {
     const serviceIdBytes = [
       parseInt(hex.slice(0, 2), 16),
@@ -364,21 +382,21 @@ const extractServiceIdFromKey = (key: string): number | null => {
 };
 
 export const serviceMatchesSearch = (
-  serviceData: import('./types').ServiceData,
+  serviceData: ServiceData,
   searchTerm: string,
   state: Record<string, string>,
   preState?: Record<string, string>
 ): boolean => {
   if (!searchTerm.trim()) return true;
-  
+
   const { serviceId, preService, postService } = serviceData;
   const searchLower = searchTerm.toLowerCase();
-  
+
   const formattedId = formatServiceIdUnsigned(serviceId);
   if (formattedId.includes(searchLower) || serviceId.toString().includes(searchLower)) {
     return true;
   }
-  
+
   // Search by service raw key
   try {
     const rawKey = serviceDataSerializer(serviceId as never).key.toString().substring(0, 64);
@@ -388,26 +406,26 @@ export const serviceMatchesSearch = (
   } catch {
     // Ignore service raw key errors for search (important-comment)
   }
-  
+
   // Search by service info with enhanced field handling
   const activeService = postService || preService;
   if (activeService) {
     try {
       const info = activeService.getInfo();
-      
+
       // Search individual fields for better matching
       if (info.balance !== undefined && info.balance.toString().toLowerCase().includes(searchLower)) {
         return true;
       }
-      
+
       if (info.nonce !== undefined && info.nonce.toString().toLowerCase().includes(searchLower)) {
         return true;
       }
-      
+
       if (info.codeHash && info.codeHash instanceof Uint8Array) {
         const codeHashHex = Array.from(info.codeHash)
-          .map(b => b.toString(16).padStart(2, '0'))
-          .join('');
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
         if (codeHashHex.toLowerCase().includes(searchLower)) {
           return true;
         }
@@ -415,7 +433,7 @@ export const serviceMatchesSearch = (
           return true;
         }
       }
-      
+
       // Search other fields in service info
       for (const [key, value] of Object.entries(info)) {
         if (key === 'codeHash') continue; // Already handled above
@@ -426,7 +444,7 @@ export const serviceMatchesSearch = (
           }
         }
       }
-      
+
       const infoStr = JSON.stringify(info).toLowerCase();
       if (infoStr.includes(searchLower)) {
         return true;
@@ -435,36 +453,16 @@ export const serviceMatchesSearch = (
       // Ignore service info errors for search
     }
   }
-  
-  const storageKeys = discoverStorageKeysForService(state, serviceId);
-  const preStorageKeys = preState ? discoverStorageKeysForService(preState, serviceId) : [];
-  const allStorageKeys = Array.from(new Set([...storageKeys, ...preStorageKeys]));
-  
-  for (const key of allStorageKeys) {
+
+  const allPostKeys = discoverServiceEntries(state, serviceId).map(v => v.key)
+  const allPreKeys  = preState ? discoverServiceEntries(preState, serviceId).map(v => v.key) : [];
+  const allKeys = Array.from(new Set([...allPreKeys, ...allPostKeys]));
+
+  for (const key of allKeys) {
     if (key.toLowerCase().includes(searchLower)) return true;
     const value = state[key] || (preState && preState[key]);
     if (value && value.toLowerCase().includes(searchLower)) return true;
   }
-  
-  const preimageKeys = discoverPreimageKeysForService(state, serviceId);
-  const prePreimageKeys = preState ? discoverPreimageKeysForService(preState, serviceId) : [];
-  const allPreimageKeys = Array.from(new Set([...preimageKeys, ...prePreimageKeys]));
-  
-  for (const key of allPreimageKeys) {
-    if (key.toLowerCase().includes(searchLower)) return true;
-    const value = state[key] || (preState && preState[key]);
-    if (value && value.toLowerCase().includes(searchLower)) return true;
-  }
-  
-  const lookupKeys = discoverLookupHistoryKeysForService(state, serviceId);
-  const preLookupKeys = preState ? discoverLookupHistoryKeysForService(preState, serviceId) : [];
-  const allLookupKeys = Array.from(new Set([...lookupKeys, ...preLookupKeys]));
-  
-  for (const key of allLookupKeys) {
-    if (key.toLowerCase().includes(searchLower)) return true;
-    const value = state[key] || (preState && preState[key]);
-    if (value && value.toLowerCase().includes(searchLower)) return true;
-  }
-  
+
   return false;
 };

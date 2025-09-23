@@ -2,12 +2,19 @@ import { useMemo } from "react";
 import { Popover } from './ui/Popover';
 import { Info } from "lucide-react";
 import { getFieldInfo, getServiceInfo } from "@/utils/infoTooltipUtils";
+import {ServiceEntryType} from "./service";
 
 export function InfoTooltip(
-  { entryKey }: { entryKey: string },
+  {
+    entryKey,
+    serviceData,
+  }: {
+    entryKey: string,
+    serviceData: Map<number, ServiceEntryType[]>
+  },
 ) {
   const fieldInfo = useMemo(() => getFieldInfo(entryKey), [entryKey]);
-  const serviceInfo = useMemo(() => getServiceInfo(entryKey), [entryKey]);
+  const serviceInfo = useMemo(() => getServiceInfo(entryKey, serviceData), [entryKey, serviceData]);
   const hasTooltip = fieldInfo || serviceInfo;
 
   return hasTooltip && (

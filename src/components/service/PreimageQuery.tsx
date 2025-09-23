@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 
-import { getPreimageValue, parsePreimageInput, discoverPreimageKeysForService } from './serviceUtils';
+import { getPreimageValue, parsePreimageInput, discoverServiceEntries } from './serviceUtils';
 import PreimageHashDisplay from './PreimageHashDisplay';
 import PreimageDiffSection from './PreimageDiffSection';
 import { Service } from '@/types/service';
@@ -20,12 +20,14 @@ export interface PreimageQueryProps {
 
 const PreimageQuery = ({ serviceId, preService, service, state, preState, isDiffMode = false, disabled = false }: PreimageQueryProps) => {
   const [preimageHash, setPreimageHash] = useState('');
-  const discoveredKeys = useMemo(() => {
-    const post = discoverPreimageKeysForService(state, service.serviceId);
-    const pre = preState ? discoverPreimageKeysForService(preState, service.serviceId) : [];
-    return Array.from(new Set([...(post || []), ...(pre || [])]));
-  }, [state, preState, service.serviceId]);
 
+  const discoveredKeys = useMemo(() => {
+    const post = discoverServiceEntries(state, serviceId);
+    const pre = preState ? discoverServiceEntries(preState, serviceId) : [];
+
+    const all = [...post, ...pre].filter(v => v.kind === 'preimage').map(v => v.key);
+    return Array.from(new Set(all));
+  }, [state, preState, serviceId]);
 
   const rawKey = useMemo(() => {
     try {
