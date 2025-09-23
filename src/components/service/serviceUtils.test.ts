@@ -8,6 +8,7 @@ import {
   extractServiceIdsFromState,
   discoverPreimageKeysForService,
   discoverStorageKeysForService,
+  discoverLookupHistoryKeysForService,
   getServiceChangeType,
   formatServiceIdUnsigned
 } from './serviceUtils';
@@ -209,6 +210,38 @@ describe('serviceUtils', () => {
       
       expect(result).toContain('0x01ff02ff03ff04ff');
       expect(result).not.toContain('0x02ff03ff04ff05ff');
+    });
+  });
+
+  describe('discoverLookupHistoryKeysForService', () => {
+    it('discovers lookup history keys but excludes storage and preimage keys', () => {
+      const state = {
+        '0x01ff02ff03ff04ff': 'storage_value',     // Storage key - should be excluded
+        '0x01fe02ff03ff04ff': 'preimage_value',    // Preimage key - should be excluded  
+        '0x01ab02cd03ef04gh': 'lookup_value',      // Lookup history key - should be included
+        '0x02ff03ff04ff05ff': 'other_service'      // Different service - should be excluded
+      };
+      const serviceId = 0x04030201;
+      
+      const result = discoverLookupHistoryKeysForService(state, serviceId);
+      
+      expect(result).not.toContain('0x01ff02ff03ff04ff'); // Should exclude storage
+      expect(result).not.toContain('0x01fe02ff03ff04ff'); // Should exclude preimage
+      expect(result).toContain('0x01ab02cd03ef04gh');     // Should include lookup history
+      expect(result).not.toContain('0x02ff03ff04ff05ff'); // Should exclude other service
+    });
+
+    it('returns empty array when no lookup history keys match', () => {
+      const state = {
+        '0x01ff02ff03ff04ff': 'storage_value',     // Storage key only
+        '0x01fe02ff03ff04ff': 'preimage_value',    // Preimage key only
+        '0xother-key': 'other_value'
+      };
+      const serviceId = 0x04030201;
+      
+      const result = discoverLookupHistoryKeysForService(state, serviceId);
+      
+      expect(result).toEqual([]);
     });
   });
 

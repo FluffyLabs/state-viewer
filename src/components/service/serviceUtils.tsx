@@ -196,7 +196,9 @@ export const discoverLookupHistoryKeysForService = (state: Record<string, string
       hex.length >= 16 &&
       hex.slice(4, 6) === b1 &&
       hex.slice(8, 10) === b2 &&
-      hex.slice(12, 14) === b3;
+      hex.slice(12, 14) === b3 &&
+      hex.slice(2, 4) !== 'ff' &&
+      hex.slice(2, 4) !== 'fe';
     if (match) {
       results.push(key);
     }
