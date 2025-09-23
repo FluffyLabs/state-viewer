@@ -10,7 +10,6 @@ import {
   getServiceChangeType,
   formatServiceIdUnsigned
 } from './serviceUtils';
-import { bytes } from '@typeberry/lib';
 import type { Service, ServiceAccountInfo } from '@/types/service';
 
 
