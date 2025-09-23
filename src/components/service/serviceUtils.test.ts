@@ -12,6 +12,8 @@ import {
   getServiceChangeType,
   formatServiceIdUnsigned
 } from './serviceUtils';
+import { bytes } from '@typeberry/lib';
+import { serviceLookupHistory } from '../../constants/serviceFields';
 import type { Service, ServiceAccountInfo } from '@/types/service';
 
 
@@ -172,16 +174,28 @@ describe('serviceUtils', () => {
 
   describe('discoverPreimageKeysForService', () => {
     it('discovers preimage keys for specific service', () => {
-      const state = {
-        '0x01fe02ff03ff04ff': 'value1',
-        '0x01fe02ff03ff04fe': 'value2',
-        '0x02fe03ff04ff05ff': 'value3'
-      };
+      const testValue = '0x48656c6c6f';
+      const hash = calculatePreimageHash(testValue);
       const serviceId = 0x04030201;
+      
+      const blob = bytes.BytesBlob.parseBlob(testValue);
+      const length = blob.length;
+      const hashBytes = bytes.Bytes.parseBytes(hash, 32);
+      const expectedLookupKey = serviceLookupHistory(
+        serviceId as never,
+        hashBytes.asOpaque(),
+        length as never
+      ).key.toString().substring(0, 64);
+      
+      const state = {
+        [hash]: testValue,
+        [expectedLookupKey]: '0x1234',
+        '0x02fe03ff04ff05ff': '0xvalue3'
+      };
       
       const result = discoverPreimageKeysForService(state, serviceId);
       
-      expect(result).toContain('0x01fe02ff03ff04ff');
+      expect(result).toContain(hash);
       expect(result).not.toContain('0x02fe03ff04ff05ff');
     });
 
@@ -213,35 +227,74 @@ describe('serviceUtils', () => {
     });
   });
 
-  describe('discoverLookupHistoryKeysForService', () => {
-    it('discovers lookup history keys but excludes storage and preimage keys', () => {
-      const state = {
-        '0x01ff02ff03ff04ff': 'storage_value',     // Storage key - should be excluded
-        '0x01fe02ff03ff04ff': 'preimage_value',    // Preimage key - should be excluded  
-        '0x01ab02cd03ef04gh': 'lookup_value',      // Lookup history key - should be included
-        '0x02ff03ff04ff05ff': 'other_service'      // Different service - should be excluded
-      };
+  describe('Hash-based service key discovery', () => {
+    it('discovers preimage keys by hash matching', () => {
+      const testValue = '0x48656c6c6f';
+      const hash = calculatePreimageHash(testValue);
       const serviceId = 0x04030201;
       
-      const result = discoverLookupHistoryKeysForService(state, serviceId);
+      const blob = bytes.BytesBlob.parseBlob(testValue);
+      const length = blob.length;
+      const hashBytes = bytes.Bytes.parseBytes(hash, 32);
+      const expectedLookupKey = serviceLookupHistory(
+        serviceId as never,
+        hashBytes.asOpaque(),
+        length as never
+      ).key.toString().substring(0, 64);
       
-      expect(result).not.toContain('0x01ff02ff03ff04ff'); // Should exclude storage
-      expect(result).not.toContain('0x01fe02ff03ff04ff'); // Should exclude preimage
-      expect(result).toContain('0x01ab02cd03ef04gh');     // Should include lookup history
-      expect(result).not.toContain('0x02ff03ff04ff05ff'); // Should exclude other service
+      const state = {
+        [hash]: testValue,
+        [expectedLookupKey]: '0x1234', // The lookup history entry
+        '0x01ff02ff03ff04ff': '0xstorage_value',
+        '0xother-key': '0xother_value'
+      };
+      
+      const result = discoverPreimageKeysForService(state, serviceId);
+      
+      expect(result).toContain(hash);
+      expect(result).not.toContain('0x01ff02ff03ff04ff');
+      expect(result).not.toContain('0xother-key');
     });
 
-    it('returns empty array when no lookup history keys match', () => {
-      const state = {
-        '0x01ff02ff03ff04ff': 'storage_value',     // Storage key only
-        '0x01fe02ff03ff04ff': 'preimage_value',    // Preimage key only
-        '0xother-key': 'other_value'
-      };
+    it('computes lookup history keys from preimages', () => {
+      const testValue = '0x48656c6c6f'; // "Hello" in hex
+      const hash = calculatePreimageHash(testValue);
       const serviceId = 0x04030201;
+      
+      const blob = bytes.BytesBlob.parseBlob(testValue);
+      const length = blob.length;
+      const hashBytes = bytes.Bytes.parseBytes(hash, 32);
+      const expectedLookupKey = serviceLookupHistory(
+        serviceId as never,
+        hashBytes.asOpaque(),
+        length as never
+      ).key.toString().substring(0, 64);
+      
+      const state = {
+        [hash]: testValue,
+        [expectedLookupKey]: 'lookup_history_value'
+      };
       
       const result = discoverLookupHistoryKeysForService(state, serviceId);
       
-      expect(result).toEqual([]);
+      expect(result).toContain(expectedLookupKey);
+      expect(result).not.toContain(hash); // Preimage key should not be in lookup history
+    });
+
+    it('categorizes remaining keys as storage based on value characteristics', () => {
+      const state = {
+        '0x01ab02cd03ef04gh': 'large_structured_storage_value_that_looks_like_storage_and_is_definitely_longer_than_32_bytes',
+        '0x01ab02cd03ef04gi': '0x1234', // Small value, likely lookup history
+        '0x01ab02cd03ef04gj': 'another_large_storage_value_that_is_also_longer_than_32_bytes_for_sure'
+      };
+      const serviceId = 0x04030201;
+      
+      const storageResult = discoverStorageKeysForService(state, serviceId);
+      const lookupResult = discoverLookupHistoryKeysForService(state, serviceId);
+      
+      expect(storageResult).toContain('0x01ab02cd03ef04gh');
+      expect(storageResult).toContain('0x01ab02cd03ef04gj');
+      expect(lookupResult).toContain('0x01ab02cd03ef04gi');
     });
   });
 

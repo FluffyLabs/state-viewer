@@ -2,7 +2,7 @@ import blake2b from "blake2b";
 import type { Service, StorageKey, PreimageHash, U32 } from '../../types/service';
 import { bytes, state_merkleization } from '@typeberry/lib';
 import {RawState} from "./types";
-import { serviceData as serviceDataSerializer } from '../../constants/serviceFields';
+import { serviceData as serviceDataSerializer, serviceLookupHistory } from '../../constants/serviceFields';
 
 // Helper function to ensure serviceId is included in service info
 export const getServiceInfoWithId = (service: Service | null, serviceId: number) => {
@@ -155,54 +155,137 @@ export const getServiceIdBytesLE = (serviceId: number): [string, string, string,
 };
 
 export const discoverStorageKeysForService = (state: Record<string, string>, serviceId: number): string[] => {
-  const [b0, b1, b2, b3] = getServiceIdBytesLE(serviceId);
-  const prefix = `0x${b0}ff${b1}ff${b2}ff${b3}ff`;
   const results: string[] = [];
-  for (const key of Object.keys(state)) {
-    if (key.startsWith(prefix)) {
+  const preimageKeys = new Set<string>();
+  const lookupHistoryKeys = new Set<string>();
+  
+  for (const [key, value] of Object.entries(state)) {
+    const keyInfo = detectServiceKeyType(key);
+    if (keyInfo.serviceId !== serviceId) continue;
+    
+    if (keyInfo.type === 'service-info') continue;
+    
+    try {
+      const valueHash = calculatePreimageHash(value);
+      if (valueHash === key) {
+        preimageKeys.add(key);
+        
+        const blob = bytes.BytesBlob.parseBlob(value);
+        const length = blob.length;
+        const hash = bytes.Bytes.parseBytes(valueHash, 32);
+        const lookupKey = serviceLookupHistory(
+          serviceId as never,
+          hash.asOpaque(),
+          length as never
+        ).key.toString().substring(0, 64);
+        lookupHistoryKeys.add(lookupKey);
+      }
+    } catch {
+      // Continue if hashing fails
+    }
+  }
+  
+  for (const [key, value] of Object.entries(state)) {
+    const keyInfo = detectServiceKeyType(key);
+    if (keyInfo.serviceId !== serviceId) continue;
+    if (keyInfo.type === 'service-info') continue;
+    if (preimageKeys.has(key) || lookupHistoryKeys.has(key)) continue;
+    
+    try {
+      const blob = bytes.BytesBlob.parseBlob(value);
+      if (blob.length > 32) { // Storage values are typically larger
+        results.push(key);
+      }
+    } catch {
       results.push(key);
     }
   }
+  
   return results;
 };
 
 export const discoverPreimageKeysForService = (state: Record<string, string>, serviceId: number): string[] => {
-  const [b0, b1, b2, b3] = getServiceIdBytesLE(serviceId);
-  const prefix = `0x${b0}fe${b1}ff${b2}ff${b3}ff`;
   const results: string[] = [];
-  for (const key of Object.keys(state)) {
-    if (key.startsWith(prefix)) {
-      results.push(key);
+  
+  for (const [key, value] of Object.entries(state)) {
+    try {
+      const valueHash = calculatePreimageHash(value);
+      if (valueHash === key) {
+        const blob = bytes.BytesBlob.parseBlob(value);
+        const length = blob.length;
+        const hash = bytes.Bytes.parseBytes(valueHash, 32);
+        const lookupKey = serviceLookupHistory(
+          serviceId as never,
+          hash.asOpaque(),
+          length as never
+        ).key.toString().substring(0, 64);
+        
+        if (state[lookupKey] !== undefined) {
+          const lookupKeyInfo = detectServiceKeyType(lookupKey);
+          if (lookupKeyInfo.serviceId === serviceId) {
+            results.push(key);
+          }
+        }
+      }
+    } catch {
+      // Continue if hashing fails
     }
   }
+  
   return results;
 };
 
 export const discoverLookupHistoryKeysForService = (state: Record<string, string>, serviceId: number): string[] => {
-  const [b0, b1, b2, b3] = getServiceIdBytesLE(serviceId);
-  const storagePrefix = `0x${b0}ff${b1}ff${b2}ff${b3}ff`;
-  const preimagePrefix = `0x${b0}fe${b1}ff${b2}ff${b3}ff`;
   const results: string[] = [];
-  for (const key of Object.keys(state)) {
-    if (!key.startsWith('0x') || key.length < 2 + 16) {
+  const preimageKeys = new Set<string>();
+  const computedLookupKeys = new Set<string>();
+  
+  for (const [key, value] of Object.entries(state)) {
+    const keyInfo = detectServiceKeyType(key);
+    if (keyInfo.serviceId !== serviceId) continue;
+    if (keyInfo.type === 'service-info') continue;
+    
+    try {
+      const valueHash = calculatePreimageHash(value);
+      if (valueHash === key) {
+        preimageKeys.add(key);
+        
+        const blob = bytes.BytesBlob.parseBlob(value);
+        const length = blob.length;
+        const hash = bytes.Bytes.parseBytes(valueHash, 32);
+        const lookupKey = serviceLookupHistory(
+          serviceId as never,
+          hash.asOpaque(),
+          length as never
+        ).key.toString().substring(0, 64);
+        computedLookupKeys.add(lookupKey);
+      }
+    } catch {
+      // Continue if hashing fails
+    }
+  }
+  
+  for (const [key, value] of Object.entries(state)) {
+    const keyInfo = detectServiceKeyType(key);
+    if (keyInfo.serviceId !== serviceId) continue;
+    if (keyInfo.type === 'service-info') continue;
+    if (preimageKeys.has(key)) continue;
+    
+    if (computedLookupKeys.has(key)) {
+      results.push(key);
       continue;
     }
-    if (key.startsWith(storagePrefix) || key.startsWith(preimagePrefix)) {
-      continue;
-    }
-    const hex = key.slice(2);
-    const match =
-      hex.slice(0, 2) === b0 &&
-      hex.length >= 16 &&
-      hex.slice(4, 6) === b1 &&
-      hex.slice(8, 10) === b2 &&
-      hex.slice(12, 14) === b3 &&
-      hex.slice(2, 4) !== 'ff' &&
-      hex.slice(2, 4) !== 'fe';
-    if (match) {
+    
+    try {
+      const blob = bytes.BytesBlob.parseBlob(value);
+      if (blob.length <= 32) { // Typical lookup history size
+        results.push(key);
+      }
+    } catch {
       results.push(key);
     }
   }
+  
   return results;
 };
 
@@ -310,24 +393,14 @@ export const detectServiceKeyType = (key: string): ServiceKeyInfo => {
     }
   }
   
-  const storagePrefix = `${b0}ff${b1}ff${b2}ff${b3}ff`;
-  if (hex.startsWith(storagePrefix)) {
-    return { type: 'storage', serviceId };
-  }
-  
-  const preimagePrefix = `${b0}fe${b1}ff${b2}ff${b3}ff`;
-  if (hex.startsWith(preimagePrefix)) {
-    return { type: 'preimage', serviceId };
-  }
-  
   const match = 
     hex.slice(0, 2) === b0 &&
     hex.length >= 16 &&
     hex.slice(4, 6) === b1 &&
     hex.slice(8, 10) === b2 &&
     hex.slice(12, 14) === b3;
-  if (match && !hex.startsWith(storagePrefix) && !hex.startsWith(preimagePrefix)) {
-    return { type: 'lookup-history', serviceId };
+  if (match) {
+    return { type: null, serviceId };
   }
   
   return { type: null, serviceId: null };
