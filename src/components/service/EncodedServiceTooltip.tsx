@@ -1,12 +1,10 @@
 import React from 'react';
-import {ServiceKeyInfo, formatServiceIdUnsigned} from './serviceUtils';
+import {formatServiceIdUnsigned, ServiceEntryType} from './serviceUtils';
 
-export const generateServiceTooltipContent = (keyInfo: ServiceKeyInfo): React.ReactNode => {
-  if (!keyInfo.type || keyInfo.serviceId === null) return null;
+export const generateServiceTooltipContent = (serviceId: number, entry: ServiceEntryType): React.ReactNode => {
+  const formattedId = formatServiceIdUnsigned(serviceId);
   
-  const formattedId = formatServiceIdUnsigned(keyInfo.serviceId);
-  
-  switch (keyInfo.type) {
+  switch (entry.kind) {
     case 'service-info':
       return (
         <div className="space-y-1">
@@ -15,11 +13,11 @@ export const generateServiceTooltipContent = (keyInfo: ServiceKeyInfo): React.Re
           <div className="text-xs">Service Account Info</div>
         </div>
       );
-    case 'storage':
+    case 'storage-or-lookup':
       return (
         <div className="space-y-1">
-          <div className="font-semibold">Storage</div>
-          <div className="text-xs opacity-75">a_s[.]</div>
+          <div className="font-semibold">Storage or lookup history</div>
+          <div className="text-xs opacity-75">a_s[.] | a_l[.]</div>
           <div className="text-xs">Part of service {formattedId}</div>
         </div>
       );
@@ -31,7 +29,7 @@ export const generateServiceTooltipContent = (keyInfo: ServiceKeyInfo): React.Re
           <div className="text-xs">Part of service {formattedId}</div>
         </div>
       );
-    case 'lookup-history':
+    case 'lookup':
       return (
         <div className="space-y-1">
           <div className="font-semibold">Lookup History</div>

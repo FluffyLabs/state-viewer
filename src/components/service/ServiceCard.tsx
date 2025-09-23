@@ -5,7 +5,7 @@ import ServiceInfo from './ServiceInfo';
 import StorageQuery from './StorageQuery';
 import PreimageQuery from './PreimageQuery';
 import LookupHistoryQuery from './LookupHistoryQuery';
-import { getServiceChangeType, discoverStorageKeysForService, discoverPreimageKeysForService, discoverLookupHistoryKeysForService, getComprehensiveServiceChangeType, formatServiceIdUnsigned } from './serviceUtils';
+import { getServiceChangeType, getComprehensiveServiceChangeType, formatServiceIdUnsigned } from './serviceUtils';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui';
 import type { RawState, ServiceData } from './types';
 
@@ -23,7 +23,9 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
   const formattedId = formatServiceIdUnsigned(serviceId);
 
   const changeType = isDiffMode ? getServiceChangeType(serviceData) : 'normal';
-  const changeInfo = isDiffMode ? getComprehensiveServiceChangeType(serviceData, state, preState) : null;
+  const changeInfo = useMemo(() => {
+    return getComprehensiveServiceChangeType(serviceData, state, preState);
+  }, [serviceData, state, preState]);
   
   const backgroundClass = isDiffMode ? {
     'added': 'bg-green-100 dark:bg-green-900/20 border-green-300 dark:border-green-700',
@@ -31,25 +33,6 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
     'changed': 'bg-yellow-50/0 dark:bg-yellow-900/0 border-yellow-200 dark:border-yellow-700',
     'normal': 'bg-gray-50 dark:bg-gray-900/20'
   }[changeType] : 'bg-gray-50 dark:bg-gray-900/20';
-
-  const counts = useMemo(() => {
-    const calc = (discoverFn: (s: Record<string, string>, id: number) => string[]) => {
-      const post = discoverFn(state, serviceId);
-      const pre = preState ? discoverFn(preState, serviceId) : [];
-      const preSet = new Set(pre);
-      const postSet = new Set(post);
-      const total = Array.from(new Set([...pre, ...post]));
-      const added = post.filter((k) => !preSet.has(k));
-      const removed = pre.filter((k) => !postSet.has(k));
-      const changed = total.filter((k) => preSet.has(k) && postSet.has(k) && preState && preState[k] !== state[k]);
-      return { totalCount: total.length, preCount: pre.length, postCount: post.length, added: added.length, removed: removed.length, changed: changed.length };
-    };
-    return {
-      storage: calc(discoverStorageKeysForService),
-      preimages: calc(discoverPreimageKeysForService),
-      lookup: calc(discoverLookupHistoryKeysForService),
-    };
-  }, [state, preState, serviceId]);
 
   if (serviceData.postError || serviceData.preError) {
     return (
@@ -111,7 +94,7 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
             <TabsTrigger 
               value="storage" 
               className={`flex justify-start items-center gap-2 ${
-                isDiffMode && changeInfo && !changeInfo.hasServiceInfoChanges && changeInfo.hasStorageChanges 
+                isDiffMode && changeInfo && !changeInfo.hasServiceInfoChanges && changeInfo.storage.hasAnyChanges 
                   ? 'bg-yellow-100 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-700' 
                   : ''
               }`}
@@ -122,21 +105,21 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
               <span className="flex items-center gap-1">
                 <span>Storage</span>
                 {!isDiffMode ? (
-                  <span className="text-xs text-muted-foreground">({counts.storage.totalCount})</span>
+                  <span className="text-xs text-muted-foreground">({changeInfo.storage.totalCount})</span>
                 ) : (
                   <span className="text-xs text-muted-foreground">
-                    {counts.storage.changed > 0 ? (
+                    {changeInfo.storage.changed > 0 ? (
                       <>
-                        ({counts.storage.changed}/{counts.storage.preCount}
-                        {counts.storage.added > 0 && <span className="text-green-700 dark:text-green-400"> +{counts.storage.added}</span>}
-                        {counts.storage.removed > 0 && <span className="text-red-700 dark:text-red-400"> /-{counts.storage.removed}</span>}
+                        ({changeInfo.storage.changed}/{changeInfo.storage.preCount}
+                        {changeInfo.storage.added > 0 && <span className="text-green-700 dark:text-green-400"> +{changeInfo.storage.added}</span>}
+                        {changeInfo.storage.removed > 0 && <span className="text-red-700 dark:text-red-400"> /-{changeInfo.storage.removed}</span>}
                         )
                       </>
                     ) : (
                       <>
-                        ({counts.storage.preCount}
-                        {counts.storage.added > 0 && <span className="text-green-700 dark:text-green-400"> +{counts.storage.added}</span>}
-                        {counts.storage.removed > 0 && <span className="text-red-700 dark:text-red-400"> /-{counts.storage.removed}</span>}
+                        ({changeInfo.storage.preCount}
+                        {changeInfo.storage.added > 0 && <span className="text-green-700 dark:text-green-400"> +{changeInfo.storage.added}</span>}
+                        {changeInfo.storage.removed > 0 && <span className="text-red-700 dark:text-red-400"> /-{changeInfo.storage.removed}</span>}
                         )
                       </>
                     )}
@@ -147,7 +130,7 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
             <TabsTrigger 
               value="preimages" 
               className={`flex justify-start items-center gap-2 ${
-                isDiffMode && changeInfo && !changeInfo.hasServiceInfoChanges && changeInfo.hasPreimageChanges 
+                isDiffMode && changeInfo && !changeInfo.hasServiceInfoChanges && changeInfo.preimages.hasAnyChanges 
                   ? 'bg-yellow-100 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-700' 
                   : ''
               }`}
@@ -158,21 +141,21 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
               <span className="flex items-center gap-1">
                 <span>Preimages</span>
                 {!isDiffMode ? (
-                  <span className="text-xs text-muted-foreground">({counts.preimages.totalCount})</span>
+                  <span className="text-xs text-muted-foreground">({changeInfo.preimages.totalCount})</span>
                 ) : (
                   <span className="text-xs text-muted-foreground">
-                    {counts.preimages.changed > 0 ? (
+                    {changeInfo.preimages.changed > 0 ? (
                       <>
-                        ({counts.preimages.changed}/{counts.preimages.preCount}
-                        {counts.preimages.added > 0 && <span className="text-green-700 dark:text-green-400"> +{counts.preimages.added}</span>}
-                        {counts.preimages.removed > 0 && <span className="text-red-700 dark:text-red-400"> /-{counts.preimages.removed}</span>}
+                        ({changeInfo.preimages.changed}/{changeInfo.preimages.preCount}
+                        {changeInfo.preimages.added > 0 && <span className="text-green-700 dark:text-green-400"> +{changeInfo.preimages.added}</span>}
+                        {changeInfo.preimages.removed > 0 && <span className="text-red-700 dark:text-red-400"> /-{changeInfo.preimages.removed}</span>}
                         )
                       </>
                     ) : (
                       <>
-                        ({counts.preimages.preCount}
-                        {counts.preimages.added > 0 && <span className="text-green-700 dark:text-green-400"> +{counts.preimages.added}</span>}
-                        {counts.preimages.removed > 0 && <span className="text-red-700 dark:text-red-400"> /-{counts.preimages.removed}</span>}
+                        ({changeInfo.preimages.preCount}
+                        {changeInfo.preimages.added > 0 && <span className="text-green-700 dark:text-green-400"> +{changeInfo.preimages.added}</span>}
+                        {changeInfo.preimages.removed > 0 && <span className="text-red-700 dark:text-red-400"> /-{changeInfo.preimages.removed}</span>}
                         )
                       </>
                     )}
@@ -183,7 +166,7 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
             <TabsTrigger 
               value="lookup-history" 
               className={`flex justify-start items-center gap-2 ${
-                isDiffMode && changeInfo && !changeInfo.hasServiceInfoChanges && changeInfo.hasLookupHistoryChanges 
+                isDiffMode && changeInfo && !changeInfo.hasServiceInfoChanges && changeInfo.lookup.hasAnyChanges 
                   ? 'bg-yellow-100 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-700' 
                   : ''
               }`}
@@ -194,21 +177,21 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
               <span className="flex items-center gap-1">
                 <span>Lookup History</span>
                 {!isDiffMode ? (
-                  <span className="text-xs text-muted-foreground">({counts.lookup.totalCount})</span>
+                  <span className="text-xs text-muted-foreground">({changeInfo.lookup.totalCount})</span>
                 ) : (
                   <span className="text-xs text-muted-foreground">
-                    {counts.lookup.changed > 0 ? (
+                    {changeInfo.lookup.changed > 0 ? (
                       <>
-                        ({counts.lookup.changed}/{counts.lookup.preCount}
-                        {counts.lookup.added > 0 && <span className="text-green-700 dark:text-green-400"> +{counts.lookup.added}</span>}
-                        {counts.lookup.removed > 0 && <span className="text-red-700 dark:text-red-400"> /-{counts.lookup.removed}</span>}
+                        ({changeInfo.lookup.changed}/{changeInfo.lookup.preCount}
+                        {changeInfo.lookup.added > 0 && <span className="text-green-700 dark:text-green-400"> +{changeInfo.lookup.added}</span>}
+                        {changeInfo.lookup.removed > 0 && <span className="text-red-700 dark:text-red-400"> /-{changeInfo.lookup.removed}</span>}
                         )
                       </>
                     ) : (
                       <>
-                        ({counts.lookup.preCount}
-                        {counts.lookup.added > 0 && <span className="text-green-700 dark:text-green-400"> +{counts.lookup.added}</span>}
-                        {counts.lookup.removed > 0 && <span className="text-red-700 dark:text-red-400"> /-{counts.lookup.removed}</span>}
+                        ({changeInfo.lookup.preCount}
+                        {changeInfo.lookup.added > 0 && <span className="text-green-700 dark:text-green-400"> +{changeInfo.lookup.added}</span>}
+                        {changeInfo.lookup.removed > 0 && <span className="text-red-700 dark:text-red-400"> /-{changeInfo.lookup.removed}</span>}
                         )
                       </>
                     )}

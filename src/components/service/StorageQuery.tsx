@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { getStorageValue, parseStorageKey, discoverStorageKeysForService } from './serviceUtils';
+import { discoverServiceEntries, getStorageValue, parseStorageKey } from './serviceUtils';
 import ValueDisplay from './ValueDisplay';
 import ValueDiffSection from './ValueDiffSection';
 import { Service } from '@/types/service';
@@ -19,12 +19,14 @@ export interface StorageQueryProps {
 
 const StorageQuery = ({ serviceId, preService, service, state, preState, isDiffMode = false, disabled = false }: StorageQueryProps) => {
   const [storageKey, setStorageKey] = useState('');
-  const discoveredKeys = useMemo(() => {
-    const post = discoverStorageKeysForService(state, service.serviceId);
-    const pre = preState ? discoverStorageKeysForService(preState, service.serviceId) : [];
-    return Array.from(new Set([...(post || []), ...(pre || [])]));
-  }, [state, preState, service.serviceId]);
 
+  const discoveredKeys = useMemo(() => {
+    const post = discoverServiceEntries(state, serviceId);
+    const pre = preState ? discoverServiceEntries(preState, serviceId) : [];
+
+    const all = [...post, ...pre].filter(v => v.kind === 'storage-or-lookup').map(v => v.key);
+    return Array.from(new Set(all));
+  }, [state, preState, serviceId]);
 
   const rawKey = useMemo(() => {
     try {

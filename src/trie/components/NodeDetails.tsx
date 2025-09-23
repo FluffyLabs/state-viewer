@@ -2,14 +2,20 @@ import React from "react";
 import { XIcon } from "lucide-react";
 import { getNodeType, getNodeTypeColor, TreeNode } from "@/trie/components/trie/utils";
 import {InfoTooltip} from "@/components/InfoTooltip";
+import {ServiceEntryType} from "@/components/service";
 
 // Define the component props
 interface NodeDetailsProps {
   node?: TreeNode;
+  serviceData: Map<number, ServiceEntryType[]>,
   onClose: () => void;
 }
 
-export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, onClose }) => {
+export const NodeDetails: React.FC<NodeDetailsProps> = ({
+  node,
+  serviceData,
+  onClose
+}) => {
   const displayValue = (value: string | undefined) => {
     return value ?? "";
   };
@@ -33,7 +39,10 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, onClose }) => {
       {node?.attributes?.nodeKey && (
         <div className="mb-2 break-words">
           <span className="font-bold">Key:</span> {displayValue(node.attributes.nodeKey)}
-          <InfoTooltip entryKey={node.attributes.nodeKey} />
+          <InfoTooltip
+            entryKey={node.attributes.nodeKey}
+            serviceData={serviceData}
+          />
         </div>
       )}
       {node?.attributes?.value && (

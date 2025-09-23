@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { getLookupHistoryValue, parsePreimageInput, discoverLookupHistoryKeysForService } from './serviceUtils';
+import { discoverServiceEntries, getLookupHistoryValue, parsePreimageInput } from './serviceUtils';
 import ValueDisplay from './ValueDisplay';
 import ValueDiffSection from './ValueDiffSection';
 import { Service } from '@/types/service';
@@ -20,12 +20,14 @@ export interface LookupHistoryQueryProps {
 const LookupHistoryQuery = ({ serviceId, preService, service, state, preState, isDiffMode = false, disabled = false }: LookupHistoryQueryProps) => {
   const [hash, setHash] = useState('');
   const [length, setLength] = useState('');
-  const discoveredKeys = useMemo(() => {
-    const postLookup = discoverLookupHistoryKeysForService(state, service.serviceId);
-    const preLookup = preState ? discoverLookupHistoryKeysForService(preState, service.serviceId) : [];
-    return Array.from(new Set([...(postLookup || []), ...(preLookup || [])]));
-  }, [state, preState, service.serviceId]);
 
+  const discoveredKeys = useMemo(() => {
+    const post = discoverServiceEntries(state, serviceId);
+    const pre = preState ? discoverServiceEntries(preState, serviceId) : [];
+
+    const all = [...post, ...pre].filter(v => v.kind === 'lookup').map(v => v.key);
+    return Array.from(new Set(all));
+  }, [state, preState, serviceId]);
 
   const handleQuery = () => {
     if (hash && length && service) {

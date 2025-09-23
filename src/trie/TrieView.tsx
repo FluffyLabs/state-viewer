@@ -5,6 +5,7 @@ import { TreeNode, trieToTreeUI } from "@/trie/components/trie/utils";
 import { trie, bytes } from "@typeberry/lib";
 import { useCallback, useMemo, useState } from "react";
 import { NodeDetails } from "@/trie/components/NodeDetails";
+import {ServiceEntryType} from "@/components/service";
 
 const { InMemoryTrie, parseInputKey } = trie;
 
@@ -36,9 +37,10 @@ const findNodeByHash = (data: TreeNode[], hash: string): TreeNode | undefined =>
 
 interface TrieViewProps {
   rows: Row[];
+  serviceData: Map<number, ServiceEntryType[]>;
 }
 
-export const TrieView = ({ rows }: TrieViewProps) => {
+export const TrieView = ({ rows, serviceData }: TrieViewProps) => {
   const [selectedNodeHash, setSelectedNodeHash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hideEmpty, setHideEmpty] = useState<boolean>(true);
@@ -98,7 +100,11 @@ export const TrieView = ({ rows }: TrieViewProps) => {
         )}
       </div>
       {selectedNode && (
-        <NodeDetails node={selectedNode} onClose={closeNodeDetails} />
+        <NodeDetails
+          node={selectedNode}
+          serviceData={serviceData}
+          onClose={closeNodeDetails}
+        />
       )}
     </>
   );

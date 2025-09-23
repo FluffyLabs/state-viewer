@@ -5,6 +5,7 @@ import {selectState} from "./utils";
 import {lazy, Suspense, useMemo} from "react";
 import {Button} from "@fluffylabs/shared-ui";
 import {X} from "lucide-react";
+import {discoverServiceEntries, extractServiceIdsFromState, ServiceEntryType} from "@/components/service";
 
 const TrieView = lazy(async () => ({ default: (await import('@/trie/TrieView')).TrieView }));
 
@@ -28,6 +29,26 @@ export function TriePage() {
     }));
   }, [currentState]);
 
+  const serviceData = useMemo(() => {
+    const map = new Map<number, ServiceEntryType[]>();
+    const state = currentState;
+    if (state === undefined) {
+      return map;
+    }
+
+    try {
+      const ids = extractServiceIdsFromState(state);
+      for (const serviceId of ids) {
+        map.set(serviceId, discoverServiceEntries(state, serviceId));
+      }
+    } catch (e) {
+      console.error('Failed to prepare service data', e)
+    }
+
+    return map;
+  }, [currentState]);
+
+
   if (!stateRows) {
     return <Navigate to="/" />;
   }
@@ -43,7 +64,7 @@ export function TriePage() {
           <X />
         </Button>
         <Suspense fallback={<div className="font-mono p-4">Loading...</div>}>
-          <TrieView rows={stateRows} />
+          <TrieView rows={stateRows} serviceData={serviceData} />
         </Suspense>
       </div>
     </div>

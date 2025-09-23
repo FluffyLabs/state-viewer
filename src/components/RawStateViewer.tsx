@@ -4,6 +4,7 @@ import { calculateStateDiff } from '@/utils';
 import { filterEntriesWithFieldNames, highlightSearchMatchesWithContext } from '@/utils/searchUtils';
 import {Button} from '@fluffylabs/shared-ui';
 import {InfoTooltip} from './InfoTooltip';
+import {discoverServiceEntries, extractServiceIdsFromState, ServiceEntryType} from './service';
 
 interface DiffEntry {
   type: 'added' | 'removed' | 'changed' | 'normal';
@@ -35,6 +36,7 @@ interface StateEntryProps {
   formatHexValue: (hex: string) => string;
   getDiffLabel: (diffType: DiffEntry['type']) => string;
   createInlineDiff: (oldValue: string, newValue: string) => React.ReactNode;
+  serviceData: Map<number, ServiceEntryType[]>;
 }
 
 const RawStateViewer = ({
@@ -60,6 +62,20 @@ const RawStateViewer = ({
   }, [preState, state]);
 
   const stateEntries = useMemo(() => Object.entries(displayState), [displayState]);
+
+  const serviceData = useMemo(() => {
+    const map = new Map<number, ServiceEntryType[]>();
+    try {
+      const ids = extractServiceIdsFromState(state);
+      for (const serviceId of ids) {
+        map.set(serviceId, discoverServiceEntries(state, serviceId));
+      }
+    } catch(e) {
+      console.error(e);
+    }
+
+    return map;
+  }, [state]);
 
   const filteredEntries = useMemo(() => {
     return filterEntriesWithFieldNames(stateEntries, externalSearchTerm || '');
@@ -186,138 +202,6 @@ const RawStateViewer = ({
     });
   };
 
-const StateEntry = ({
-  entryKey,
-  value,
-  externalSearchTerm,
-  copiedKey,
-  handleCopy,
-  setDialogState,
-  parseDiffValue,
-  formatHexValue,
-  getDiffLabel,
-  createInlineDiff,
-}: StateEntryProps) => {
-  
-  const diffEntry = parseDiffValue(value);
-  const diffLabel = getDiffLabel(diffEntry.type);
-
-  return (
-    <div className="px-6 py-3 hover:bg-muted/30">
-      <div className="space-y-2">
-        {/* Key Row */}
-        <div className="flex items-center gap-4">
-          <label className="items-center text-xs font-medium text-muted-foreground w-16 flex-shrink-0 hidden md:flex">
-            <span className="uppercase tracking-wide mr-2">Key</span>
-            <InfoTooltip entryKey={entryKey} />
-          </label>
-          <div className="flex items-center space-x-2 flex-1 min-w-0">
-            <code className="text-sm font-mono text-foreground break-all bg-muted px-2 py-1 rounded flex-1">
-              {highlightSearchMatchesWithContext(entryKey, externalSearchTerm || '', true)}
-            </code>
-            <Button
-              onClick={() => handleCopy(entryKey, `key-${entryKey}`)}
-              variant="ghost"
-              size="sm"
-              className="flex-shrink-0"
-              aria-label="Copy key"
-            >
-              <Copy className="h-4 w-4" />
-              {copiedKey === `key-${entryKey}` && (
-                <span className="ml-1 text-xs">Copied!</span>
-              )}
-            </Button>
-          </div>
-        </div>
-
-        {/* Value Row */}
-        <div className="flex items-start gap-4">
-          <div className="w-16 flex-shrink-0 items-center gap-2 hidden md:flex">
-            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            {diffEntry.type !== 'normal' ? (
-              <span className={`px-0.5 py-0.5 rounded text-xs font-semibold ${
-                diffEntry.type === 'added' ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200' :
-                diffEntry.type === 'removed' ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200' :
-                'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-200'
-              }`}>
-                {diffEntry.type.toUpperCase()}
-              </span>
-            ) : (
-            <span>
-              {diffLabel}
-            </span>
-            )}
-          </label>
-          </div>
-
-          <div className="flex-1 min-w-0">
-            {diffEntry.type === 'changed' ? (
-              // Show inline diff for changed entries
-              <div className="flex items-center space-x-2">
-                <code className="text-sm font-mono break-all bg-muted px-2 py-1 rounded border border-border text-foreground flex-1">
-                  <span title={`${diffEntry.oldValue} → ${diffEntry.newValue}`}>
-                    {diffEntry.oldValue && diffEntry.newValue ? (
-                      createInlineDiff(
-                        diffEntry.oldValue.length > 50 ? formatHexValue(diffEntry.oldValue) : diffEntry.oldValue,
-                        diffEntry.newValue.length > 50 ? formatHexValue(diffEntry.newValue) : diffEntry.newValue
-                      )
-                    ) : (
-                      highlightSearchMatchesWithContext(formatHexValue(diffEntry.newValue || diffEntry.oldValue || value), externalSearchTerm || '', false)
-                    )}
-                  </span>
-                </code>
-                <Button
-                  onClick={() => setDialogState({
-                    isOpen: true,
-                    key: entryKey,
-                    value: diffEntry.newValue || diffEntry.oldValue || value,
-                    diffEntry
-                  })}
-                  variant="ghost"
-                  size="sm"
-                  className="flex-shrink-0"
-                  aria-label="View full value"
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              // Show single value for normal, added, or removed entries
-              <div className="flex items-center space-x-2">
-                <code className={`text-sm font-mono break-all px-2 py-1 rounded border flex-1 ${
-                  diffEntry.type === 'added'
-                    ? 'bg-green-100 border-green-300 text-green-900 dark:bg-green-900/20 dark:border-green-700 dark:text-green-100'
-                    : diffEntry.type === 'removed'
-                    ? 'bg-red-100 border-red-300 text-red-900 dark:bg-red-900/20 dark:border-red-700 dark:text-red-100'
-                    : 'bg-muted border-border text-foreground'
-                }`}>
-                  <span title={diffEntry.newValue || diffEntry.oldValue || value}>
-                    {highlightSearchMatchesWithContext(formatHexValue(diffEntry.newValue || diffEntry.oldValue || value), externalSearchTerm || '', false)}
-                  </span>
-                </code>
-                <Button
-                  onClick={() => setDialogState({
-                    isOpen: true,
-                    key: entryKey,
-                    value: diffEntry.newValue || diffEntry.oldValue || value,
-                    diffEntry
-                  })}
-                  variant="ghost"
-                  size="sm"
-                  className="flex-shrink-0"
-                  aria-label="View full value"
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
   if (stateEntries.length === 0) {
     return (
       <div className="rounded-lg border p-6 text-center">
@@ -344,6 +228,7 @@ const StateEntry = ({
               formatHexValue={formatHexValue}
               getDiffLabel={getDiffLabel}
               createInlineDiff={createInlineDiff}
+              serviceData={serviceData}
             />
           ))
         ) : (
@@ -459,5 +344,139 @@ const StateEntry = ({
                     </>
   );
 };
+
+const StateEntry = ({
+  entryKey,
+  value,
+  externalSearchTerm,
+  copiedKey,
+  handleCopy,
+  setDialogState,
+  parseDiffValue,
+  formatHexValue,
+  getDiffLabel,
+  createInlineDiff,
+  serviceData,
+}: StateEntryProps) => {
+  
+  const diffEntry = parseDiffValue(value);
+  const diffLabel = getDiffLabel(diffEntry.type);
+
+  return (
+    <div className="px-6 py-3 hover:bg-muted/30">
+      <div className="space-y-2">
+        {/* Key Row */}
+        <div className="flex items-center gap-4">
+          <label className="items-center text-xs font-medium text-muted-foreground w-16 flex-shrink-0 hidden md:flex">
+            <span className="uppercase tracking-wide mr-2">Key</span>
+            <InfoTooltip entryKey={entryKey} serviceData={serviceData} />
+          </label>
+          <div className="flex items-center space-x-2 flex-1 min-w-0">
+            <code className="text-sm font-mono text-foreground break-all bg-muted px-2 py-1 rounded flex-1">
+              {highlightSearchMatchesWithContext(entryKey, externalSearchTerm || '', true)}
+            </code>
+            <Button
+              onClick={() => handleCopy(entryKey, `key-${entryKey}`)}
+              variant="ghost"
+              size="sm"
+              className="flex-shrink-0"
+              aria-label="Copy key"
+            >
+              <Copy className="h-4 w-4" />
+              {copiedKey === `key-${entryKey}` && (
+                <span className="ml-1 text-xs">Copied!</span>
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* Value Row */}
+        <div className="flex items-start gap-4">
+          <div className="w-16 flex-shrink-0 items-center gap-2 hidden md:flex">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            {diffEntry.type !== 'normal' ? (
+              <span className={`px-0.5 py-0.5 rounded text-xs font-semibold ${
+                diffEntry.type === 'added' ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200' :
+                diffEntry.type === 'removed' ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200' :
+                'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-200'
+              }`}>
+                {diffEntry.type.toUpperCase()}
+              </span>
+            ) : (
+            <span>
+              {diffLabel}
+            </span>
+            )}
+          </label>
+          </div>
+
+          <div className="flex-1 min-w-0">
+            {diffEntry.type === 'changed' ? (
+              // Show inline diff for changed entries
+              <div className="flex items-center space-x-2">
+                <code className="text-sm font-mono break-all bg-muted px-2 py-1 rounded border border-border text-foreground flex-1">
+                  <span title={`${diffEntry.oldValue} → ${diffEntry.newValue}`}>
+                    {diffEntry.oldValue && diffEntry.newValue ? (
+                      createInlineDiff(
+                        diffEntry.oldValue.length > 50 ? formatHexValue(diffEntry.oldValue) : diffEntry.oldValue,
+                        diffEntry.newValue.length > 50 ? formatHexValue(diffEntry.newValue) : diffEntry.newValue
+                      )
+                    ) : (
+                      highlightSearchMatchesWithContext(formatHexValue(diffEntry.newValue || diffEntry.oldValue || value), externalSearchTerm || '', false)
+                    )}
+                  </span>
+                </code>
+                <Button
+                  onClick={() => setDialogState({
+                    isOpen: true,
+                    key: entryKey,
+                    value: diffEntry.newValue || diffEntry.oldValue || value,
+                    diffEntry
+                  })}
+                  variant="ghost"
+                  size="sm"
+                  className="flex-shrink-0"
+                  aria-label="View full value"
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              // Show single value for normal, added, or removed entries
+              <div className="flex items-center space-x-2">
+                <code className={`text-sm font-mono break-all px-2 py-1 rounded border flex-1 ${
+                  diffEntry.type === 'added'
+                    ? 'bg-green-100 border-green-300 text-green-900 dark:bg-green-900/20 dark:border-green-700 dark:text-green-100'
+                    : diffEntry.type === 'removed'
+                    ? 'bg-red-100 border-red-300 text-red-900 dark:bg-red-900/20 dark:border-red-700 dark:text-red-100'
+                    : 'bg-muted border-border text-foreground'
+                }`}>
+                  <span title={diffEntry.newValue || diffEntry.oldValue || value}>
+                    {highlightSearchMatchesWithContext(formatHexValue(diffEntry.newValue || diffEntry.oldValue || value), externalSearchTerm || '', false)}
+                  </span>
+                </code>
+                <Button
+                  onClick={() => setDialogState({
+                    isOpen: true,
+                    key: entryKey,
+                    value: diffEntry.newValue || diffEntry.oldValue || value,
+                    diffEntry
+                  })}
+                  variant="ghost"
+                  size="sm"
+                  className="flex-shrink-0"
+                  aria-label="View full value"
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
 export default RawStateViewer;
