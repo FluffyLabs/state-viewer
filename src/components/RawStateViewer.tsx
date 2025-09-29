@@ -5,6 +5,7 @@ import { filterEntriesWithFieldNames, highlightSearchMatchesWithContext } from '
 import {Button} from '@fluffylabs/shared-ui';
 import {InfoTooltip} from './InfoTooltip';
 import {discoverServiceEntries, extractServiceIdsFromState, ServiceEntryType} from './service';
+import {CodecLink} from './CodecLink';
 
 interface DiffEntry {
   type: 'added' | 'removed' | 'changed' | 'normal';
@@ -407,6 +408,8 @@ const StateEntry = ({
               {diffLabel}
             </span>
             )}
+
+            <CodecLink entryKey={entryKey} value={value} />
           </label>
           </div>
 
