@@ -35,7 +35,7 @@
     "react-dom": "^19.1.1",
     "react-dropzone": "^14.3.8",
     "react-router-dom": "^7.9.1",
-    "tailwindcss": "^4.1.12",
+    "tailwindcss": "^4.1.13",
     "tippy.js": "^6.3.7",
     "vite-bundle-analyzer": "^1.2.3",
     "zod": "^4.1.11"
