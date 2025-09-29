@@ -31,14 +31,15 @@ export function InfoTooltip(
             <div className="text-xs opacity-75">
               {fieldInfo.notation} ({fieldInfo.title})
             </div>
-            <div className="text-xs">{fieldInfo.description}</div>
+            <div className="text-xs font-normal text-justify">{fieldInfo.description}</div>
+            <a href={fieldInfo.gpLink} className="underline" target="gp">Gray Paper</a>
           </div>
         ) : (
           serviceInfo
         )
       }
       position="right"
-      triggerOn="hover"
+      triggerOn="click"
     />
   );
 }
