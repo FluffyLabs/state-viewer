@@ -1,6 +1,6 @@
 import blake2b from "blake2b";
 import type { Service, StorageKey, PreimageHash, U32 } from '../../types/service';
-import { bytes, numbers, state_merkleization } from '@typeberry/lib';
+import { bytes, numbers, state_merkleization, hash } from '@typeberry/lib';
 import {RawState, ServiceData} from "./types";
 import { serviceData as serviceDataSerializer } from '../../constants/serviceFields';
 
@@ -9,6 +9,8 @@ const hashBytes = (b: bytes.BytesBlob): bytes.Bytes<32> => {
   hasher.update(b.raw);
   return bytes.Bytes.fromBlob(hasher.digest(), 32);
 };
+
+const libBlake2b = await hash.Blake2b.createHasher();
 
 // Helper function to ensure serviceId is included in service info
 export const getServiceInfoWithId = (service: Service | null, serviceId: number) => {
@@ -166,6 +168,7 @@ function detectServiceEntryType(serviceId: number, key: string, value: string): 
     const data = bytes.BytesBlob.parseBlob(value);
     const hash = hashBytes(data);
     const computedKey = state_merkleization.stateKeys.servicePreimage(
+      libBlake2b,
       serviceId as never,
       hash.asOpaque()
     ).toString();
@@ -202,6 +205,7 @@ export const discoverServiceEntries = (state: RawState, serviceId: number) => {
 
     if (val.kind === 'preimage') {
       const serviceLookupKey = state_merkleization.stateKeys.serviceLookupHistory(
+        libBlake2b,
         serviceId as never,
         val.hash.asOpaque(),
         numbers.tryAsU32(val.length)

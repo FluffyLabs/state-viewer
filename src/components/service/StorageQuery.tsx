@@ -6,6 +6,7 @@ import { Service } from '@/types/service';
 import { RawState } from './types';
 import { serviceStorage } from '@/constants/serviceFields';
 import { Button, cn } from '@fluffylabs/shared-ui';
+import {hash} from '@typeberry/lib';
 
 export interface StorageQueryProps {
   preState?: RawState;
@@ -16,6 +17,8 @@ export interface StorageQueryProps {
   disabled?: boolean;
   isDiffMode?: boolean;
 }
+
+const libBlake2b = await hash.Blake2b.createHasher();
 
 const StorageQuery = ({ serviceId, preService, service, state, preState, isDiffMode = false, disabled = false }: StorageQueryProps) => {
   const [storageKey, setStorageKey] = useState('');
@@ -33,6 +36,7 @@ const StorageQuery = ({ serviceId, preService, service, state, preState, isDiffM
       const key = parseStorageKey(storageKey);
       if (key.type === 'storage') {
         return serviceStorage(
+          libBlake2b,
           service.serviceId as never,
           key.key.asOpaque(),
         ).key.toString().substring(0, 64);
