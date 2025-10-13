@@ -6,6 +6,7 @@ import { Service } from '@/types/service';
 import { RawState } from './types';
 import { serviceLookupHistory } from '@/constants/serviceFields';
 import { Button, cn } from '@fluffylabs/shared-ui';
+import {hash} from '@typeberry/lib';
 
 export interface LookupHistoryQueryProps {
   preState?: RawState;
@@ -16,6 +17,8 @@ export interface LookupHistoryQueryProps {
   disabled?: boolean;
   isDiffMode?: boolean;
 }
+
+const libBlake2b = await hash.Blake2b.createHasher();
 
 const LookupHistoryQuery = ({ serviceId, preService, service, state, preState, isDiffMode = false, disabled = false }: LookupHistoryQueryProps) => {
   const [hash, setHash] = useState('');
@@ -44,6 +47,7 @@ const LookupHistoryQuery = ({ serviceId, preService, service, state, preState, i
       }
 
       return serviceLookupHistory(
+        libBlake2b,
         service.serviceId as never,
         result.hash.asOpaque(),
         length as never,

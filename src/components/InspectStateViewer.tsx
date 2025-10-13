@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { config, bytes, state_merkleization as lib } from "@typeberry/lib";
+import { config, bytes, state_merkleization as lib, hash } from "@typeberry/lib";
 import { CompositeViewer } from './viewer';
 import ServiceViewer from './ServiceViewer';
 import type { StateAccess } from '../types/service';
@@ -14,6 +14,8 @@ interface InspectStateViewerProps {
   chainSpec?: 'tiny' | 'full';
 }
 
+const libBlake2b = await hash.Blake2b.createHasher();
+
 const useLoadState = (
   state: Record<string, string> | undefined,
   setError: (error: string | null) => void,
@@ -26,7 +28,7 @@ const useLoadState = (
     try {
       setError(null);
       const spec = chainSpec === 'tiny' ? config.tinyChainSpec : config.fullChainSpec;
-      return lib.loadState(spec, Object.entries(state).map(([key, value]) => {
+      return lib.loadState(spec, libBlake2b, Object.entries(state).map(([key, value]) => {
         return [
           bytes.Bytes.parseBytes(key, 31),
           bytes.BytesBlob.parseBlob(value),

@@ -7,6 +7,7 @@ import { Service } from '@/types/service';
 import { RawState } from './types';
 import { servicePreimages } from '@/constants/serviceFields';
 import { Button, cn } from '@fluffylabs/shared-ui';
+import {hash} from '@typeberry/lib';
 
 export interface PreimageQueryProps {
   preState?: RawState;
@@ -17,6 +18,8 @@ export interface PreimageQueryProps {
   disabled?: boolean;
   isDiffMode?: boolean;
 }
+
+const libBlake2b = await hash.Blake2b.createHasher();
 
 const PreimageQuery = ({ serviceId, preService, service, state, preState, isDiffMode = false, disabled = false }: PreimageQueryProps) => {
   const [preimageHash, setPreimageHash] = useState('');
@@ -36,6 +39,7 @@ const PreimageQuery = ({ serviceId, preService, service, state, preState, isDiff
         return input.key.toString();
       }
       return servicePreimages(
+        libBlake2b,
         service.serviceId as never,
         input.hash.asOpaque(),
       ).key.toString().substring(0, 64);
