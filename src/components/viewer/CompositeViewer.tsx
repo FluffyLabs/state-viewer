@@ -3,6 +3,7 @@ import ArrayViewer from './ArrayViewer';
 import ObjectViewer from './ObjectViewer';
 import ToStringViewer from './ToStringViewer';
 import {Button} from '@fluffylabs/shared-ui';
+import {collections} from '@typeberry/lib';
 
 type DisplayMode = 'decoded' | 'raw' | 'string';
 
@@ -82,6 +83,18 @@ const CompositeViewer = ({ value, rawValue, showModeToggle = false, showBytesLen
     }
     if (typeof value === 'object' && 'toJSON' in value && typeof value.toJSON === 'function') {
       return <CompositeViewer value={value.toJSON()} showBytesLength={showBytesLength} />;
+    }
+
+    if (value instanceof Map) {
+      return <ObjectViewer value={Object.fromEntries(value.entries())} renderValue={renderValue} />;
+    }
+
+    if (value instanceof collections.HashDictionary) {
+      return <ObjectViewer value={Object.fromEntries(value.entries())} renderValue={renderValue} />;
+    }
+
+    if (value instanceof collections.SortedArray) {
+      return <ArrayViewer array={value.array} renderValue={renderValue} />;
     }
 
     if (Array.isArray(value)) {
