@@ -1,3 +1,5 @@
+import {collections} from "@typeberry/lib";
+
 export const CUT_LENGTH = 66;
 
 export function shortenString(s: string) {
@@ -30,7 +32,12 @@ export function toSmartString(item: unknown, options: {
   }
 
   if (item instanceof Map) {
+    console.log(item);
     return `{${Array.from(item.entries()).map(([k, v]) => `${shortenString(k)}: ${toSmartString(v, options)}`).join(', ')}}`;
+  }
+  
+  if (item instanceof collections.SortedArray) {
+    return toSmartString(item.array, options);
   }
 
   if (String(item) === {}.toString()) {
