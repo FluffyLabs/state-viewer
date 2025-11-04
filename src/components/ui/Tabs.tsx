@@ -69,7 +69,7 @@ const TabsTrigger = React.forwardRef<
       role="tab"
       aria-selected={isActive}
       data-state={isActive ? "active" : "inactive"}
-      variant={isActive ? "default" : "outline"}
+      variant={isActive ? "primary" : "secondary"}
       size="sm"
       className={cn(
         "rounded-md data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm",

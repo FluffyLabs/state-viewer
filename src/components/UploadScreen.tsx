@@ -270,7 +270,7 @@ export const UploadScreen = ({
               {/* Browse Button (if no file uploaded) */}
                 <Button
                   onClick={open}
-                  variant="default"
+                  variant="primary"
                   size="lg"
                 >
                   <FolderOpen className="h-4 w-4" />
@@ -279,7 +279,7 @@ export const UploadScreen = ({
 
               <Button
                 onClick={handleManualEdit}
-                variant="outline"
+                variant="secondary"
                 size="lg"
               >
                 <Edit className="h-4 w-4" />

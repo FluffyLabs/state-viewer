@@ -19,7 +19,7 @@ export function StateKindSelector({ availableStates, selectedState, changeStateT
           <Button
             key={stateType}
             onClick={() => changeStateType(stateType)}
-            variant={selectedState === stateType ? "default" : "outline"}
+            variant={selectedState === stateType ? "primary" : "secondary"}
             size="sm"
           >
             {stateType === 'pre_state' ? 'Pre-State' :

@@ -171,20 +171,20 @@ const JsonEditorDialog = ({
             {onReset && (
               <Button
                 onClick={handleReset}
-                variant="outline"
+                variant="secondary"
               >
                 Reset
               </Button>
             )}
             <Button
               onClick={handleCancel}
-              variant="outline"
+              variant="secondary"
             >
               Cancel
             </Button>
             <Button
               onClick={handleSave}
-              variant="default"
+              variant="primary"
               disabled={!isJsonValid}
               className={!isJsonValid ? 'opacity-50 cursor-not-allowed' : ''}
             >
