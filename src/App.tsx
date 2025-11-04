@@ -27,14 +27,13 @@ const AppHeader = ({ onOpenSettings }: { onOpenSettings: () => void }) => {
       ghRepoName="state-view"
       keepNameWhenSmall
       endSlot={
-        <div className="flex items-center">
+        <div className="flex items-center pr-4">
           <VersionDisplay />
           <Button
             onClick={onOpenSettings}
             size="sm"
             aria-label="Settings"
             title="Settings"
-            forcedColorScheme="dark"
           >
             <Settings className="h-4 w-4" />
           </Button>

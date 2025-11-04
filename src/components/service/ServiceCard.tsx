@@ -17,7 +17,7 @@ export interface ServiceCardProps {
 }
 
 const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardProps) => {
-  const [activeTab, setActiveTab] = useState('storage');
+  const [activeTab, setActiveTab] = useState('info');
   const { serviceId, preService, postService, preError, postError } = serviceData;
   const activeService = postService || preService;
   const formattedId = formatServiceIdUnsigned(serviceId);
@@ -87,10 +87,19 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
       )}
 
       <div className="space-y-4">
-        <ServiceInfo serviceData={serviceData} preState={preState} state={state} isDiffMode={isDiffMode} />
-
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full sm:grid-cols-3 grid-cols-1">
+          <TabsList className="grid w-full sm:grid-cols-4 grid-cols-1">
+            <TabsTrigger
+              value="info"
+              className={`flex justify-start items-center gap-2`}
+            >
+              <code className="px-1 py-0.5 rounded text-xs font-mono bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200">
+                a
+              </code>
+              <span className="flex items-center gap-1">
+                <span>Info <span className="text-xs text-muted-foreground">{isDiffMode && changeInfo && changeInfo.hasServiceInfoChanges ? '*': ''}</span></span>
+              </span>
+            </TabsTrigger>
             <TabsTrigger 
               value="storage" 
               className={`flex justify-start items-center gap-2 ${
@@ -208,6 +217,9 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
               {activeTab === 'lookup-history' && lookupHistoryQuery.renderQueryInput()}
             </div>
 
+            <TabsContent value="info" className="mt-0">
+              <ServiceInfo serviceData={serviceData} preState={preState} state={state} isDiffMode={isDiffMode} />
+            </TabsContent>
             <TabsContent value="storage" className="mt-0">
               {storageQuery.renderResults()}
             </TabsContent>

@@ -32,7 +32,6 @@ export function toSmartString(item: unknown, options: {
   }
 
   if (item instanceof Map) {
-    console.log(item);
     return `{${Array.from(item.entries()).map(([k, v]) => `${shortenString(k)}: ${toSmartString(v, options)}`).join(', ')}}`;
   }
   

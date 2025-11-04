@@ -190,7 +190,17 @@ function detectServiceEntryType(serviceId: number, key: string, value: string): 
     };
 }
 
+export const cache = new Map<RawState, Map<number, ServiceEntryType[]>>();
+
 export const discoverServiceEntries = (state: RawState, serviceId: number) => {
+  // check cached entries
+  const cachedState = cache.get(state) ?? new Map();
+  cache.set(state, cachedState);
+  const serviceEntities = cachedState.get(serviceId);
+  if (serviceEntities !== undefined) {
+    return serviceEntities;
+  }
+
   // detect service info & preimages
   const initialEntries = Object.entries(state)
     .map(([key, value]) => detectServiceEntryType(serviceId, key, value))
@@ -221,12 +231,14 @@ export const discoverServiceEntries = (state: RawState, serviceId: number) => {
   }
 
   // filter out storage-or-lookups that are now duplicated
-  return allEntries.filter(v => {
+  const foundEntries = allEntries.filter(v => {
     if (v.kind === 'storage-or-lookup' && detectedLookups.has(v.key)) {
       return false;
     }
     return true;
   });
+  cachedState.set(serviceId, foundEntries);
+  return foundEntries;
 }
 
 export const getServiceChangeType = (serviceData: ServiceData): 'added' | 'removed' | 'changed' | 'normal' => {
