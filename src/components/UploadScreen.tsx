@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, AlertCircle, Edit, FolderOpen } from 'lucide-react';
 import JsonEditorDialog from './JsonEditorDialog';
-import { validateJsonFile, validateJsonContent, type JsonValidationResult, StfStateType } from '../utils';
+import { validateFile, validateJsonContent, type JsonValidationResult, StfStateType } from '../utils';
 
 import stfTestVectorFixture from '../utils/fixtures/00000041.json';
 import jip4ChainspecFixture from '../utils/fixtures/dev-tiny.json';
@@ -78,7 +78,7 @@ export const UploadScreen = ({
     const file = acceptedFiles[0];
     if (!file) return;
 
-    const validation = await validateJsonFile(file);
+    const validation = await validateFile(file);
 
     const newUploadState = {
       file,
@@ -98,6 +98,7 @@ export const UploadScreen = ({
     onDrop: handleFileDrop,
     accept: {
       'application/json': ['.json'],
+      'application/octet-stream': ['.bin'],
     },
     multiple: false,
     noClick: true, // Disable click on the dropzone area itself
@@ -256,7 +257,7 @@ export const UploadScreen = ({
             ) : (
                 <div className="space-y-2">
                   <p className="text-foreground font-medium">
-                    Drag & drop your state JSON here
+                    Drag & drop your state JSON / BIN here
                   </p>
                   <p className="text-sm text-muted-foreground">
                     Supports STF test vectors, STF genesis, and JIP-4 Chain Spec.
