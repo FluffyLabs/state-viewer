@@ -157,7 +157,7 @@ function ExamplesModal({ onSelect, button }: ExampleModalProps) {
             {examples.map((example, index) => (
               <div key={index} className="flex justify-between items-center">
                 <span>{example.name}</span>
-                <Button variant="outlineBrand" onClick={() => handleSelectExample(example.rows)}>
+                <Button variant="primary" onClick={() => handleSelectExample(example.rows)}>
                   Select
                 </Button>
               </div>

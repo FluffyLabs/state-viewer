@@ -324,7 +324,7 @@ const RawStateViewer = ({
                       : dialogState.value;
                     handleCopy(textToCopy, 'dialog');
                   }}
-                  variant="outline"
+                  variant="secondary"
                   className="flex items-center gap-2"
                 >
                   <Copy className="h-4 w-4" />
@@ -332,7 +332,7 @@ const RawStateViewer = ({
                 </Button>
                 <Button
                   onClick={() => setDialogState(prev => ({ ...prev, isOpen: false }))}
-                  variant="default"
+                  variant="primary"
                 >
                   Close
                 </Button>

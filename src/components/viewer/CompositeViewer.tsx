@@ -27,7 +27,7 @@ const CompositeViewer = ({ value, rawValue, showModeToggle = false, showBytesLen
           size="sm"
           disabled={displayMode === 'decoded'}
           className={displayMode === 'decoded' ? 'underline' : ''}
-          variant="link"
+          variant="ghost"
           onClick={() => setDisplayMode('decoded')}
         >
           Decoded
@@ -36,7 +36,7 @@ const CompositeViewer = ({ value, rawValue, showModeToggle = false, showBytesLen
           size="sm"
           disabled={displayMode === 'raw'}
           className={displayMode === 'raw' ? 'underline' : ''}
-          variant="link"
+          variant="ghost"
           onClick={() => setDisplayMode('raw')}
         >
           Raw
@@ -45,7 +45,7 @@ const CompositeViewer = ({ value, rawValue, showModeToggle = false, showBytesLen
           size="sm"
           disabled={displayMode === 'string'}
           className={displayMode === 'string' ? 'underline' : ''}
-          variant="link"
+          variant="ghost"
           onClick={() => setDisplayMode('string')}
         >
           String

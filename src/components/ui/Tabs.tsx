@@ -46,7 +46,7 @@ const TabsList = React.forwardRef<
     ref={ref}
     role="tablist"
     className={cn(
-      "inline-flex items-center justify-center rounded-lg bg-muted py-1 text-muted-foreground gap-1",
+      "inline-flex items-center justify-center rounded-lg bg-muted dark-bg-background py-1 text-muted-foreground gap-1",
       className
     )}
     {...props}
@@ -69,7 +69,8 @@ const TabsTrigger = React.forwardRef<
       role="tab"
       aria-selected={isActive}
       data-state={isActive ? "active" : "inactive"}
-      variant={isActive ? "default" : "outline"}
+      variant={isActive ? "primary" : "tertiary"}
+      intent='neutralStrong'
       size="sm"
       className={cn(
         "rounded-md data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm",
