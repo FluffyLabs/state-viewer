@@ -53,21 +53,8 @@ const StfTestVectorSchema = z.object({
   post_state: StateSchema,
 });
 
-const StfGenesisHeaderSchema = z.object({
-  parent: z.string(),
-  parent_state_root: z.string(),
-  extrinsic_hash: z.string(),
-  slot: z.number(),
-  epoch_mark: z.unknown().optional(),
-  tickets_mark: z.unknown().optional(),
-  offenders_mark: z.array(z.unknown()).optional(),
-  author_index: z.number(),
-  entropy_source: z.string(),
-  seal: z.string(),
-});
-
 const StfGenesisSchema = z.object({
-  header: StfGenesisHeaderSchema,
+  header: z.unknown(),
   state: StateSchema,
 });
 
@@ -127,6 +114,8 @@ const detectJsonFormat = (parsedJson: unknown): FormatDetectionResult => {
       description: 'STF Test Vector - contains pre_state and post_state',
       data: stfTestVectorResult.data,
     };
+  } else {
+    console.warn('(try) STF test vector', stfTestVectorResult.error);
   }
 
   // Try Typeberry Config
@@ -137,6 +126,8 @@ const detectJsonFormat = (parsedJson: unknown): FormatDetectionResult => {
       description: 'Typeberry Config - contains JIP-4 chainspec in chain_spec field',
       data: typeberryResult.data,
     };
+  } else {
+    console.warn('(try) Typeberry config', typeberryResult.error);
   }
 
   // Try STF Genesis
@@ -147,6 +138,8 @@ const detectJsonFormat = (parsedJson: unknown): FormatDetectionResult => {
       description: 'STF Genesis - contains initial state with header',
       data: stfGenesisResult.data,
     };
+  } else {
+    console.warn('(try) STF Genesis', stfGenesisResult.error);
   }
 
   // Try JIP-4 Chainspec
@@ -157,6 +150,8 @@ const detectJsonFormat = (parsedJson: unknown): FormatDetectionResult => {
       description: 'JIP-4 Chainspec - contains genesis_state directly',
       data: jip4Result.data,
     };
+  } else {
+    console.warn('(try) JIP 4 chainspec', jip4Result.error);
   }
 
   // Try raw state
@@ -167,42 +162,59 @@ const detectJsonFormat = (parsedJson: unknown): FormatDetectionResult => {
       description: 'Raw state entries',
       data: rawStateResult.data,
     };
+  } else {
+    console.warn('(try) RAW state file', rawStateResult.error);
   }
 
   return { format: 'unknown', description: 'Unknown format - does not match any supported schema' };
 };
 
+/**
+ * Validates an already-parsed JSON object
+ * Used when JSON is already parsed (e.g., from binary conversion)
+ *
+ * @param parsedJson - The parsed JSON object
+ * @returns JsonValidationResult
+ */
+const validateParsedJson = (parsedJson: unknown): Omit<JsonValidationResult, 'content'> => {
+
+  const parsedJsonFixCase = convertCamelCaseToSnake(parsedJson);
+  const { format, description } = detectJsonFormat(parsedJsonFixCase);
+
+  let availableStates: StfStateType[] = ['post_state'];
+
+  if (format === 'stf-test-vector') {
+    availableStates = ['pre_state', 'post_state', 'diff'];
+  }
+
+  if (format === 'unknown') {
+    return {
+      isValid: false,
+      error: `Unsupported JSON format. ${description}. Please upload a JIP-4 chainspec, Typeberry config, STF test vector, or STF genesis file.`,
+      format,
+      formatDescription: description,
+      availableStates: [],
+    };
+  } else {
+    return {
+      isValid: true,
+      error: null,
+      format,
+      formatDescription: description,
+      availableStates,
+    };
+  }
+};
+
 export const validateJsonContent = (content: string): JsonValidationResult => {
   try {
     const parsedJson = JSON.parse(content);
+    const result = validateParsedJson(parsedJson);
 
-    const { format, description } = detectJsonFormat(parsedJson);
-
-    let availableStates: StfStateType[] = ['post_state'];
-
-    if (format === 'stf-test-vector') {
-      availableStates = ['pre_state', 'post_state', 'diff'];
-    }
-
-    if (format === 'unknown') {
-      return {
-        content,
-        isValid: false,
-        error: `Unsupported JSON format. ${description}. Please upload a JIP-4 chainspec, Typeberry config, STF test vector, or STF genesis file.`,
-        format,
-        formatDescription: description,
-        availableStates: [],
-      };
-    } else {
-      return {
-        content,
-        isValid: true,
-        error: null,
-        format,
-        formatDescription: description,
-        availableStates,
-      };
-    }
+    return {
+      content,
+      ...result,
+    };
   } catch {
     return {
       content,
@@ -370,3 +382,25 @@ export const extractGenesisState = (
     return {state: null};
   }
 };
+
+export function convertCamelCaseToSnake(parsedJson: unknown): unknown {
+  if (parsedJson === null || parsedJson === undefined) {
+    return parsedJson;
+  }
+
+  if (typeof parsedJson !== 'object') {
+    return parsedJson;
+  }
+
+  if (Array.isArray(parsedJson)) {
+    return parsedJson.map(convertCamelCaseToSnake);
+  }
+
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(parsedJson)) {
+    const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+    result[snakeKey] = convertCamelCaseToSnake(value);
+  }
+  return result;
+}
+
