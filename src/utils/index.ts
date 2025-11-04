@@ -1,7 +1,7 @@
-export { 
-  validateJsonFile, 
+export {
+  validateJsonFile,
   validateJsonContent,
-  extractGenesisState, 
+  extractGenesisState,
   extractStateFromStfVector,
   extractBothStatesFromStfVector,
   calculateStateDiff,
@@ -11,3 +11,5 @@ export {
   type StfGenesis,
   type DiffEntry
 } from './jsonValidation';
+
+export { validateFile } from './fileValidation';

@@ -6,6 +6,7 @@ import {
   extractStateFromStfVector,
   extractBothStatesFromStfVector,
   calculateStateDiff,
+  convertCamelCaseToSnake,
   type StfTestVector
 } from './jsonValidation';
 
@@ -1405,6 +1406,76 @@ describe('validateJsonContent', () => {
         expect(result.format).toBe('jip4-chainspec');
         expect(result.formatDescription).toBe('JIP-4 Chainspec - contains genesis_state directly');
       });
+    });
+  });
+});
+
+describe('convertCamelCaseToSnake', () => {
+  it('should convert simple camelCase properties to snake_case', () => {
+    const input = {
+      firstName: 'John',
+      lastName: 'Doe',
+      emailAddress: 'john@example.com'
+    };
+
+    const result = convertCamelCaseToSnake(input);
+
+    expect(result).toEqual({
+      first_name: 'John',
+      last_name: 'Doe',
+      email_address: 'john@example.com'
+    });
+  });
+
+  it('should handle nested objects and convert all property keys', () => {
+    const input = {
+      userName: 'testUser',
+      userProfile: {
+        firstName: 'Jane',
+        lastName: 'Smith',
+        contactInfo: {
+          phoneNumber: '123-456-7890',
+          emailAddress: 'jane@example.com'
+        }
+      }
+    };
+
+    const result = convertCamelCaseToSnake(input);
+
+    expect(result).toEqual({
+      user_name: 'testUser',
+      user_profile: {
+        first_name: 'Jane',
+        last_name: 'Smith',
+        contact_info: {
+          phone_number: '123-456-7890',
+          email_address: 'jane@example.com'
+        }
+      }
+    });
+  });
+
+  it('should handle arrays with objects and preserve primitive values', () => {
+    const input = {
+      userList: [
+        { firstName: 'Alice', accountType: 'admin' },
+        { firstName: 'Bob', accountType: 'user' }
+      ],
+      itemCount: 42,
+      isActive: true,
+      nullValue: null
+    };
+
+    const result = convertCamelCaseToSnake(input);
+
+    expect(result).toEqual({
+      user_list: [
+        { first_name: 'Alice', account_type: 'admin' },
+        { first_name: 'Bob', account_type: 'user' }
+      ],
+      item_count: 42,
+      is_active: true,
+      null_value: null
     });
   });
 });
