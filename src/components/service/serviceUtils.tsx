@@ -192,7 +192,7 @@ function detectServiceEntryType(serviceId: number, key: string, value: string): 
 
 export const cache = new Map<RawState, Map<number, ServiceEntryType[]>>();
 
-export const discoverServiceEntries = (state: RawState, serviceId: number) => {
+export const discoverServiceEntries = (state: RawState, serviceId: number): ServiceEntryType[] => {
   // check cached entries
   const cachedState = cache.get(state) ?? new Map();
   cache.set(state, cachedState);
