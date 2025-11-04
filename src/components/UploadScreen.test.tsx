@@ -74,7 +74,7 @@ describe('UploadScreen', () => {
     render(<UploadScreen {...defaultProps} />);
 
     expect(screen.getByText('JAM State Viewer')).toBeInTheDocument();
-    expect(screen.getByText('Drag & drop your state JSON here')).toBeInTheDocument();
+    expect(screen.getByText('Drag & drop your state JSON / BIN here')).toBeInTheDocument();
     expect(screen.getByText('JSON')).toBeInTheDocument();
     expect(screen.getByText('Upload')).toBeInTheDocument();
     expect(screen.getByTestId('upload-icon')).toBeInTheDocument();
@@ -185,12 +185,12 @@ describe('UploadScreen', () => {
   it('displays upload area with proper styling and file input', () => {
     render(<UploadScreen {...defaultProps} />);
 
-    const uploadArea = screen.getByText('Drag & drop your state JSON here').closest('div');
+    const uploadArea = screen.getByText('Drag & drop your state JSON / BIN here').closest('div');
     expect(uploadArea).toBeInTheDocument();
 
     const fileInput = document.querySelector('input[type="file"]');
     expect(fileInput).toBeInTheDocument();
-    expect(fileInput).toHaveAttribute('accept', 'application/json,.json');
+    expect(fileInput).toHaveAttribute('accept', 'application/json,.json,application/octet-stream,.bin');
   });
 
   it('shows correct icons based on state', () => {
@@ -243,7 +243,7 @@ describe('UploadScreen', () => {
       render(<UploadScreen {...defaultProps} />);
       
       // Component should still render normally even if state extraction fails
-      expect(screen.getByText('Drag & drop your state JSON here')).toBeInTheDocument();
+      expect(screen.getByText('Drag & drop your state JSON / BIN here')).toBeInTheDocument();
       expect(screen.getByText('Supports STF test vectors, STF genesis, and JIP-4 Chain Spec.')).toBeInTheDocument();
     });
   });

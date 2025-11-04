@@ -141,7 +141,7 @@ describe('App', () => {
     }
 
     // These elements should always be present
-    expect(screen.getByText('Drag & drop your state JSON here')).toBeInTheDocument();
+    expect(screen.getByText('Drag & drop your state JSON / BIN here')).toBeInTheDocument();
     expect(screen.getByText('JSON')).toBeInTheDocument();
   });
 
@@ -171,14 +171,14 @@ describe('App', () => {
     expect(sidebar).toBeInTheDocument();
     
     // The upload screen components should be present
-    expect(screen.getByText('Drag & drop your state JSON here')).toBeInTheDocument();
+    expect(screen.getByText('Drag & drop your state JSON / BIN here')).toBeInTheDocument();
   });
 
   it('renders navigation routes correctly', () => {
     renderApp(['/']);
 
     // Should render MainPage component on root route (which includes UploadScreen)
-    expect(screen.getByText('Drag & drop your state JSON here')).toBeInTheDocument();
+    expect(screen.getByText('Drag & drop your state JSON / BIN here')).toBeInTheDocument();
     expect(screen.getByText('JSON')).toBeInTheDocument();
   });
 
@@ -186,7 +186,7 @@ describe('App', () => {
     renderApp(['/view/encoded/post_state']);
 
     // Should render MainPage component on /view route (which includes UploadScreen initially)
-    expect(screen.getByText('Drag & drop your state JSON here')).toBeInTheDocument();
+    expect(screen.getByText('Drag & drop your state JSON / BIN here')).toBeInTheDocument();
     expect(screen.getByText('JSON')).toBeInTheDocument();
   });
 
