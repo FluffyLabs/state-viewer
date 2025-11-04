@@ -81,7 +81,7 @@ describe('ServiceCard', () => {
     expect(screen.getByTestId('service-info')).toBeInTheDocument();
   });
 
-  it('shows storage tab as active by default', () => {
+  it('shows info tab as active by default', () => {
     const serviceData = createMockServiceData();
     
     render(
@@ -92,10 +92,9 @@ describe('ServiceCard', () => {
       />
     );
 
-    const storageTab = screen.getByRole('tab', { name: /aₛ Storage/ });
+    const storageTab = screen.getByRole('tab', { name: /a Info/ });
     expect(storageTab).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByTestId('storage-input')).toBeInTheDocument();
-    expect(screen.getByTestId('storage-results')).toBeInTheDocument();
+    expect(screen.getByTestId('service-info')).toBeInTheDocument();
   });
 
   it('switches to preimages tab when clicked', () => {
@@ -236,7 +235,8 @@ describe('ServiceCard', () => {
       />
     );
 
-    // Initially storage input should be visible
+    // Switch to storage
+    fireEvent.click(screen.getByRole('tab', { name: /aₛ Storage/ }));
     expect(screen.getByTestId('storage-input')).toBeInTheDocument();
     expect(screen.queryByTestId('preimage-input')).not.toBeInTheDocument();
     expect(screen.queryByTestId('lookup-input')).not.toBeInTheDocument();
@@ -266,7 +266,11 @@ describe('ServiceCard', () => {
       />
     );
 
-    // Check that storage tab is active initially
+    // Check that info tab is active initially
+    expect(screen.getByTestId('service-info')).toBeInTheDocument();
+
+    // Switch tabs to storage and verify content changes
+    fireEvent.click(screen.getByRole('tab', { name: /aₛ Storage/ }));
     expect(screen.getByTestId('storage-input')).toBeInTheDocument();
     expect(screen.getByTestId('storage-results')).toBeInTheDocument();
     
