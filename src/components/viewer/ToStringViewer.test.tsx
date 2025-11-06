@@ -5,10 +5,10 @@ import ToStringViewer from './ToStringViewer';
 describe('ToStringViewer', () => {
   it('should render null value with special styling', () => {
     render(<ToStringViewer value={null} />);
-    
+
     const nullElement = screen.getByText('null');
     expect(nullElement).toBeInTheDocument();
-    expect(nullElement).toHaveClass('text-gray-500', 'italic');
+    expect(nullElement).toHaveClass('italic');
   });
 
   it('should render string values', () => {
@@ -51,18 +51,19 @@ describe('ToStringViewer', () => {
 
   it('should have proper CSS classes', () => {
     const { container } = render(<ToStringViewer value="test" />);
-    
+
     const preElement = container.querySelector('pre');
     expect(preElement).toHaveClass(
       'mt-1',
       'pl-2',
       'text-xs',
       'font-mono',
-      'bg-gray-50',
       'rounded',
       'p-2',
       'break-all',
-      'overflow-auto'
+      'overflow-auto',
+      'text-gray-500',
+      'dark:text-gray-400'
     );
   });
 

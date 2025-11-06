@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { discoverServiceEntries, getLookupHistoryValue, parsePreimageInput } from './serviceUtils';
 import ValueDisplay from './ValueDisplay';
-import ValueDiffSection from './ValueDiffSection';
+import CompositeDiff from '../viewer/CompositeDiff';
 import { Service } from '@/types/service';
 import { RawState } from './types';
 import { serviceLookupHistory } from '@/constants/serviceFields';
@@ -68,14 +68,14 @@ const LookupHistoryQuery = ({ serviceId, preService, service, state, preState, i
         placeholder="Preimage hash for lookup (0x-prefixed)"
         value={hash}
         onChange={(e) => setHash(e.target.value)}
-        className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 dark-bg-background dark:text-gray-100 rounded text-sm"
+        className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 bg-background dark:text-gray-100 rounded text-sm"
       />
       <input
         type="number"
         placeholder="Length"
         value={length}
         onChange={(e) => setLength(e.target.value)}
-        className="sm:w-20 w-14 px-2 py-1 border border-gray-300 dark:border-gray-600 dark-bg-background dark:text-gray-100 rounded text-sm"
+        className="sm:w-20 w-14 px-2 py-1 border border-gray-300 dark:border-gray-600 bg-background dark:text-gray-100 rounded text-sm"
       />
       <Button
         size="sm"
@@ -93,22 +93,12 @@ const LookupHistoryQuery = ({ serviceId, preService, service, state, preState, i
         <div className="space-y-2 overflow-hidden">
           <div className="text-xs font-mono">Serialized key: {rawKey}</div>
           {isDiffMode && hasChanged ? (
-            <div className="space-y-2">
-              <ValueDiffSection
-                title="Before:"
-                value={preState && preService ? getLookupHistoryValue(preService, hash, length, preState) : undefined}
-                rawValue={preRawValue}
-                variant="before"
-                showModeToggle={true}
-              />
-              <ValueDiffSection
-                title="After:"
-                value={getLookupHistoryValue(service, hash, length, state)}
-                rawValue={postRawValue}
-                variant="after"
-                showModeToggle={true}
-              />
-            </div>
+            <CompositeDiff
+              beforeValue={preState && preService ? getLookupHistoryValue(preService, hash, length, preState) : undefined}
+              afterValue={getLookupHistoryValue(service, hash, length, state)}
+              beforeRawValue={preRawValue}
+              afterRawValue={postRawValue}
+            />
           ) : (
             <div className="bg-gray-100 dark-bg-background p-2 rounded text-xs">
               <ValueDisplay
@@ -123,7 +113,7 @@ const LookupHistoryQuery = ({ serviceId, preService, service, state, preState, i
 
       {discoveredKeys.length > 0 && (
         <div className="space-y-3 overflow-hidden text-gray-600 dark:text-gray-300">
-          <div className="text-xs">Discovered items</div>
+          <div className="text-xs">{isDiffMode ? 'Changed' : 'Discovered'} items</div>
           <div className="space-y-2">
             {discoveredKeys.map((keyHex) => {
               const preRawValueItem = preState ? preState[keyHex] : undefined;
@@ -133,22 +123,13 @@ const LookupHistoryQuery = ({ serviceId, preService, service, state, preState, i
                 <div key={keyHex} className={cn("border border-gray-200 dark:border-gray-700 rounded p-2", itemChanged ? "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700" : "")}>
                   <div className="text-xs font-mono mb-1 break-all">Key: <strong>{keyHex}</strong> {isDiffMode && !itemChanged && "(no change)"}</div>
                   {isDiffMode && itemChanged ? (
-                    <div className="space-y-2">
-                      <ValueDiffSection
-                        title="Before:"
-                        value={preRawValueItem}
-                        rawValue={preRawValueItem}
-                        variant="before"
-                        showBytesLength
-                      />
-                      <ValueDiffSection
-                        title="After:"
-                        value={postRawValueItem}
-                        rawValue={postRawValueItem}
-                        variant="after"
-                        showBytesLength
-                      />
-                    </div>
+                    <CompositeDiff
+                      beforeValue={preRawValueItem}
+                      afterValue={postRawValueItem}
+                      beforeRawValue={preRawValueItem}
+                      afterRawValue={postRawValueItem}
+                      showBytesLength
+                    />
                   ) : !isDiffMode && (
                     <div className="bg-gray-100 dark-bg-background p-2 rounded text-xs font-mono break-all">
                       <ValueDisplay
