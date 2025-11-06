@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Button, cn } from "@fluffylabs/shared-ui";
+import { Button, ButtonGroup, cn } from "@fluffylabs/shared-ui";
 
 interface TabsContextValue {
   value?: string;
@@ -42,11 +42,11 @@ const TabsList = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div
+  <ButtonGroup
     ref={ref}
     role="tablist"
     className={cn(
-      "inline-flex items-center justify-center rounded-lg bg-muted dark-bg-background py-1 text-muted-foreground gap-1",
+      "inline-flex items-center justify-center rounded-lg py-1 text-muted-foreground",
       className
     )}
     {...props}

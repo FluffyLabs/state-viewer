@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { config, bytes, state_merkleization as lib, hash } from "@typeberry/lib";
-import { CompositeViewer } from './viewer';
+import { CompositeViewer, CompositeDiff } from './viewer';
 import ServiceViewer from './ServiceViewer';
 import type { StateAccess } from '../types/service';
 
@@ -171,32 +171,12 @@ const InspectStateViewer = ({
                         ) : !hasValue ? (
                           <div className="text-xs text-gray-400 dark:text-gray-500">Not found</div>
                         ) : isDiffMode && hasChanged ? (
-                          <div className="space-y-2">
-                            {preValue !== undefined && (
-                              <div>
-                                <div className="text-xs font-medium text-red-700 dark:text-red-400 mb-1">Before:</div>
-                                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 p-2 rounded text-xs">
-                                  <CompositeViewer
-                                    value={preValue}
-                                    rawValue={preRawValue}
-                                    showModeToggle={true}
-                                  />
-                                </div>
-                              </div>
-                            )}
-                            {postValue !== undefined && (
-                              <div>
-                                <div className="text-xs font-medium text-green-700 dark:text-green-400 mb-1">After:</div>
-                                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 p-2 rounded text-xs">
-                                  <CompositeViewer
-                                    value={postValue}
-                                    rawValue={postRawValue}
-                                    showModeToggle={true}
-                                  />
-                                </div>
-                              </div>
-                            )}
-                          </div>
+                          <CompositeDiff
+                            beforeValue={preValue}
+                            afterValue={postValue}
+                            beforeRawValue={preRawValue}
+                            afterRawValue={postRawValue}
+                          />
                         ) : (
                           <div className="bg-gray-100 dark-bg-background p-2 rounded text-xs">
                             <CompositeViewer

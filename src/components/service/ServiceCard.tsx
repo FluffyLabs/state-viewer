@@ -30,7 +30,7 @@ const ServiceCard = ({ serviceData, isDiffMode, preState, state }: ServiceCardPr
   const backgroundClass = isDiffMode ? {
     'added': 'bg-green-100 dark:bg-green-900/20 border-green-300 dark:border-green-700',
     'removed': 'bg-red-100 dark:bg-red-900/20 border-red-300 dark:border-red-700',
-    'changed': 'bg-yellow-50/0 dark:bg-yellow-900/0 border-yellow-200 dark:border-yellow-700',
+    'changed': 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700',
     'normal': 'bg-gray-50 dark:bg-gray-900/20'
   }[changeType] : 'bg-gray-50 dark:bg-gray-900/20';
 
