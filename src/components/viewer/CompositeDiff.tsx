@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import CompositeViewer from './CompositeViewer';
-import {Button, ButtonGroup} from '@fluffylabs/shared-ui';
+import { Button, ButtonGroup } from '@fluffylabs/shared-ui';
 
 type DisplayMode = 'decoded' | 'raw' | 'string';
 
