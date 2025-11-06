@@ -131,7 +131,7 @@ const CompositeDiff = ({
             const prefix = line.type === 'added' ? '+ ' : line.type === 'removed' ? '- ' : '  ';
 
             return (
-              <div key={idx} className={`${bgColor} ${textColor} px-2 py-0.5`}>
+              <div key={`${line.type}-${line.line}-${idx}`} className={`${bgColor} ${textColor} px-2 py-0.5`}>
                 {prefix}{line.line}
               </div>
             );
