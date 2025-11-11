@@ -4,26 +4,105 @@ import ServiceCard from './ServiceCard';
 import type { ServiceData, RawState } from './types';
 import { Service } from '@/types/service';
 
+// Mock @fluffylabs/shared-ui to properly forward role attributes
+vi.mock('@fluffylabs/shared-ui', () => ({
+  Button: ({ children, className, onClick, role, ...props }: any) => (
+    <button className={className} onClick={onClick} role={role} {...props}>
+      {children}
+    </button>
+  ),
+  ButtonGroup: ({ children, className, role, ...props }: any) => (
+    <div className={className} role={role} {...props}>
+      {children}
+    </div>
+  ),
+  cn: (...args: any[]) => args.filter(Boolean).join(' '),
+}));
+
+// Mock the UI components
+vi.mock('../ui', () => {
+  const React = require('react');
+
+  const TabsContext = React.createContext<{ value?: string; onValueChange?: (value: string) => void }>({});
+
+  const Tabs = ({ children, value, onValueChange, ...props }: any) => {
+    const [internalValue, setInternalValue] = React.useState('info');
+    const currentValue = value ?? internalValue;
+    const handleValueChange = React.useCallback((newValue: string) => {
+      if (value === undefined) {
+        setInternalValue(newValue);
+      }
+      onValueChange?.(newValue);
+    }, [value, onValueChange]);
+
+    return (
+      <TabsContext.Provider value={{ value: currentValue, onValueChange: handleValueChange }}>
+        <div {...props}>{children}</div>
+      </TabsContext.Provider>
+    );
+  };
+
+  const TabsList = ({ children, ...props }: any) => (
+    <div role="tablist" {...props}>{children}</div>
+  );
+
+  const TabsTrigger = ({ children, value, className, ...props }: any) => {
+    const context = React.useContext(TabsContext);
+    const isActive = context.value === value;
+
+    return (
+      <button
+        role="tab"
+        aria-selected={isActive}
+        className={className}
+        onClick={() => context.onValueChange?.(value)}
+        {...props}
+      >
+        {children}
+      </button>
+    );
+  };
+
+  const TabsContent = ({ children, value, ...props }: any) => {
+    const context = React.useContext(TabsContext);
+    if (context.value !== value) return null;
+    return <div role="tabpanel" {...props}>{children}</div>;
+  };
+
+  return {
+    Tabs,
+    TabsList,
+    TabsTrigger,
+    TabsContent,
+  };
+});
+
 // Mock the query components - they are called as functions and return render objects
 vi.mock('./StorageQuery', () => ({
-  default: vi.fn(() => ({
-    renderQueryInput: () => <div data-testid="storage-input">Storage Input</div>,
-    renderResults: () => <div data-testid="storage-results">Storage Results</div>
-  }))
+  default: vi.fn(function() {
+    return {
+      renderQueryInput: () => <div data-testid="storage-input">Storage Input</div>,
+      renderResults: () => <div data-testid="storage-results">Storage Results</div>
+    };
+  })
 }));
 
 vi.mock('./PreimageQuery', () => ({
-  default: vi.fn(() => ({
-    renderQueryInput: () => <div data-testid="preimage-input">Preimage Input</div>,
-    renderResults: () => <div data-testid="preimage-results">Preimage Results</div>
-  }))
+  default: vi.fn(function() {
+    return {
+      renderQueryInput: () => <div data-testid="preimage-input">Preimage Input</div>,
+      renderResults: () => <div data-testid="preimage-results">Preimage Results</div>
+    };
+  })
 }));
 
 vi.mock('./LookupHistoryQuery', () => ({
-  default: vi.fn(() => ({
-    renderQueryInput: () => <div data-testid="lookup-input">Lookup History Input</div>,
-    renderResults: () => <div data-testid="lookup-results">Lookup History Results</div>
-  }))
+  default: vi.fn(function() {
+    return {
+      renderQueryInput: () => <div data-testid="lookup-input">Lookup History Input</div>,
+      renderResults: () => <div data-testid="lookup-results">Lookup History Results</div>
+    };
+  })
 }));
 
 vi.mock('./ServiceInfo', () => ({
@@ -64,9 +143,9 @@ describe('ServiceCard', () => {
 
   it('renders service card with tabs', () => {
     const serviceData = createMockServiceData();
-    
+
     render(
-      <ServiceCard 
+      <ServiceCard
         serviceData={serviceData}
         state={mockState}
         isDiffMode={false}
@@ -75,40 +154,40 @@ describe('ServiceCard', () => {
 
     expect(screen.getByText('Service')).toBeInTheDocument();
     expect(screen.getByText('1')).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /aₛ Storage/ })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /aₚ Preimages/ })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /aₗ Lookup History/ })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /aₛStorage/ })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /aₚPreimages/ })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /aₗLookup History/ })).toBeInTheDocument();
     expect(screen.getByTestId('service-info')).toBeInTheDocument();
   });
 
   it('shows info tab as active by default', () => {
     const serviceData = createMockServiceData();
-    
+
     render(
-      <ServiceCard 
+      <ServiceCard
         serviceData={serviceData}
         state={mockState}
         isDiffMode={false}
       />
     );
 
-    const storageTab = screen.getByRole('tab', { name: /a Info/ });
-    expect(storageTab).toHaveAttribute('aria-selected', 'true');
+    const infoTab = screen.getByRole('tab', { name: /aInfo/ });
+    expect(infoTab).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByTestId('service-info')).toBeInTheDocument();
   });
 
   it('switches to preimages tab when clicked', () => {
     const serviceData = createMockServiceData();
-    
+
     render(
-      <ServiceCard 
+      <ServiceCard
         serviceData={serviceData}
         state={mockState}
         isDiffMode={false}
       />
     );
 
-    const preimagesTab = screen.getByRole('tab', { name: /aₚ Preimages/ });
+    const preimagesTab = screen.getByRole('tab', { name: /aₚPreimages/ });
     fireEvent.click(preimagesTab);
 
     expect(preimagesTab).toHaveAttribute('aria-selected', 'true');
@@ -119,16 +198,16 @@ describe('ServiceCard', () => {
 
   it('switches to lookup history tab when clicked', () => {
     const serviceData = createMockServiceData();
-    
+
     render(
-      <ServiceCard 
+      <ServiceCard
         serviceData={serviceData}
         state={mockState}
         isDiffMode={false}
       />
     );
 
-    const lookupHistoryTab = screen.getByRole('tab', { name: /aₗ Lookup History/ });
+    const lookupHistoryTab = screen.getByRole('tab', { name: /aₗLookup History/ });
     fireEvent.click(lookupHistoryTab);
 
     expect(lookupHistoryTab).toHaveAttribute('aria-selected', 'true');
@@ -226,9 +305,9 @@ describe('ServiceCard', () => {
 
   it('shows correct input for each tab', () => {
     const serviceData = createMockServiceData();
-    
+
     render(
-      <ServiceCard 
+      <ServiceCard
         serviceData={serviceData}
         state={mockState}
         isDiffMode={false}
@@ -236,19 +315,19 @@ describe('ServiceCard', () => {
     );
 
     // Switch to storage
-    fireEvent.click(screen.getByRole('tab', { name: /aₛ Storage/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /aₛStorage/ }));
     expect(screen.getByTestId('storage-input')).toBeInTheDocument();
     expect(screen.queryByTestId('preimage-input')).not.toBeInTheDocument();
     expect(screen.queryByTestId('lookup-input')).not.toBeInTheDocument();
 
     // Switch to preimages
-    fireEvent.click(screen.getByRole('tab', { name: /aₚ Preimages/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /aₚPreimages/ }));
     expect(screen.getByTestId('preimage-input')).toBeInTheDocument();
     expect(screen.queryByTestId('storage-input')).not.toBeInTheDocument();
     expect(screen.queryByTestId('lookup-input')).not.toBeInTheDocument();
 
     // Switch to lookup history
-    fireEvent.click(screen.getByRole('tab', { name: /aₗ Lookup History/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /aₗLookup History/ }));
     expect(screen.getByTestId('lookup-input')).toBeInTheDocument();
     expect(screen.queryByTestId('storage-input')).not.toBeInTheDocument();
     expect(screen.queryByTestId('preimage-input')).not.toBeInTheDocument();
@@ -256,9 +335,9 @@ describe('ServiceCard', () => {
 
   it('renders all tab components correctly', () => {
     const serviceData = createMockServiceData();
-    
+
     render(
-      <ServiceCard 
+      <ServiceCard
         serviceData={serviceData}
         state={mockState}
         preState={mockState}
@@ -270,17 +349,17 @@ describe('ServiceCard', () => {
     expect(screen.getByTestId('service-info')).toBeInTheDocument();
 
     // Switch tabs to storage and verify content changes
-    fireEvent.click(screen.getByRole('tab', { name: /aₛ Storage/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /aₛStorage/ }));
     expect(screen.getByTestId('storage-input')).toBeInTheDocument();
     expect(screen.getByTestId('storage-results')).toBeInTheDocument();
-    
+
     // Switch tabs and verify content changes
-    fireEvent.click(screen.getByRole('tab', { name: /aₚ Preimages/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /aₚPreimages/ }));
     expect(screen.getByTestId('preimage-input')).toBeInTheDocument();
     expect(screen.getByTestId('preimage-results')).toBeInTheDocument();
-    
+
     // Switch to lookup history tab
-    fireEvent.click(screen.getByRole('tab', { name: /aₗ Lookup History/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /aₗLookup History/ }));
     expect(screen.getByTestId('lookup-input')).toBeInTheDocument();
     expect(screen.getByTestId('lookup-results')).toBeInTheDocument();
   });
