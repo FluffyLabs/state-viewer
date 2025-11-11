@@ -50,11 +50,13 @@ export const TrieView = ({ rows, serviceData }: TrieViewProps) => {
       return;
     }
 
+    // eslint-disable-next-line react-hooks/set-state-in-render
     setError(null);
     try {
       return getTrie(rows);
     } catch (error: unknown) {
       if (error instanceof Error) {
+        // eslint-disable-next-line react-hooks/set-state-in-render
         setError(error.message);
       }
       return null;

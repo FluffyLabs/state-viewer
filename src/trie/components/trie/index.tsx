@@ -118,6 +118,7 @@ const Trie: React.FC<GraphComponentProps> = ({ treeData, onNodeSelect }) => {
     const graphElements = buildCytoscapeGraphData(treeData, containerSize.width, containerSize.height);
     // Perform deep equal to make sure the values are different and prevent trie re-rendering. It's more expensive operation
     if (!deepEqual(graphElements, elements)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setElements(graphElements);
     }
   }, [containerSize.height, containerSize.width, elements, treeData]);
