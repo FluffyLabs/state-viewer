@@ -53,14 +53,6 @@ const JsonEditorDialog = ({
     };
   }, []);
 
-  // Update editor content when initialContent changes
-  useEffect(() => {
-    if (isOpen) {
-      setEditorContent(initialContent);
-      validateJson(initialContent);
-    }
-  }, [isOpen, initialContent]);
-
   // Validate JSON content
   const validateJson = (content: string) => {
     try {
@@ -73,6 +65,15 @@ const JsonEditorDialog = ({
       setIsJsonValid(false);
     }
   };
+
+  // Update editor content when initialContent changes
+  useEffect(() => {
+    if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setEditorContent(initialContent);
+      validateJson(initialContent);
+    }
+  }, [isOpen, initialContent]);
 
   // Handle content changes in editor
   const handleContentChange = (value: string) => {

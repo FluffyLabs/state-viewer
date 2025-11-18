@@ -24,6 +24,7 @@ const ServiceViewer = ({ preStateAccess, stateAccess, preState, state, searchTer
 
   useEffect(() => {
     if (discoveredServiceIds.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setServiceIdsInput(discoveredServiceIds.map(formatServiceIdUnsigned).join(', '));
     }
   }, [discoveredServiceIds]);

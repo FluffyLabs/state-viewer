@@ -55,7 +55,7 @@ describe('validateJsonFile', () => {
 
   const mockFileReader = (content: string) => {
     const originalFileReader = global.FileReader;
-    global.FileReader = vi.fn().mockImplementation(() => {
+    global.FileReader = vi.fn(function() {
       const reader = new MockFileReader();
       reader.simulateSuccess(content);
       return reader;
@@ -288,7 +288,7 @@ describe('validateJsonFile', () => {
       const file = createMockFile('test.json', 'application/json');
 
       const originalFileReader = global.FileReader;
-      global.FileReader = vi.fn().mockImplementation(() => {
+      global.FileReader = vi.fn(function() {
         const reader = new MockFileReader();
         reader.simulateError();
         return reader;
@@ -597,7 +597,7 @@ describe('extractGenesisState', () => {
 describe('Integration tests with fixture files', () => {
   const mockFileReaderWithContent = (content: string) => {
     const originalFileReader = global.FileReader;
-    global.FileReader = vi.fn().mockImplementation(() => {
+    global.FileReader = vi.fn(function() {
       const reader = new MockFileReader();
       reader.simulateSuccess(content);
       return reader;

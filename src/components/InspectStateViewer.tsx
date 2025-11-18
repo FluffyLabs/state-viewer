@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { config, bytes, state_merkleization as lib, hash } from "@typeberry/lib";
 import { CompositeViewer, CompositeDiff } from './viewer';
 import ServiceViewer from './ServiceViewer';
@@ -56,10 +56,12 @@ const InspectStateViewer = ({
   const preStateAccess = useLoadState(preState, setError, 'preState', chainSpec);
   const stateAccess = useLoadState(state, setError, 'postState', chainSpec);
 
-  // Expose all states to the global window object for DevTools inspection.
-  (window as unknown as { preState: unknown }).preState = preStateAccess;
-  (window as unknown as { postState: unknown }).postState = stateAccess;
-  (window as unknown as { state: unknown }).state = stateAccess;
+  useEffect(() => {
+    // Expose all states to the global window object for DevTools inspection.
+    (window as unknown as { preState: unknown }).preState = preStateAccess;
+    (window as unknown as { postState: unknown }).postState = stateAccess;
+    (window as unknown as { state: unknown }).state = stateAccess;
+  }, [preStateAccess, stateAccess]);
 
   // Function to get raw value from original state data
   const getRawValue = (rawKey: string, stateData: Record<string, string> | undefined) => {

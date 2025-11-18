@@ -4,10 +4,6 @@ import { Upload, FileText, AlertCircle, Edit, FolderOpen } from 'lucide-react';
 import JsonEditorDialog from './JsonEditorDialog';
 import { validateFile, validateJsonContent, type JsonValidationResult, StfStateType } from '../utils';
 
-import stfTestVectorFixture from '../utils/fixtures/00000041.json';
-import jip4ChainspecFixture from '../utils/fixtures/dev-tiny.json';
-import stfGenesisFixture from '../utils/fixtures/genesis.json';
-import typeberryConfigFixture from '../utils/fixtures/typeberry-dev.json';
 import ExamplesModal from '@/trie/components/ExamplesModal';
 import type { AppState, UploadState } from '@/types/shared';
 import {StateKindSelector} from './StateKindSelector';
@@ -16,29 +12,29 @@ import {Button} from '@fluffylabs/shared-ui';
 interface ExampleFile {
   name: string;
   description: string;
-  content: string;
+  content: () => Promise<string>;
 }
 
 const EXAMPLE_FILES: ExampleFile[] = [
   {
     name: 'STF Test Vector',
     description: 'Example with pre-state and post-state data',
-    content: JSON.stringify(stfTestVectorFixture, null, 2)
+    content: async () => JSON.stringify(await import('../utils/fixtures/00000041.json'), null, 2),
   },
   {
     name: 'JIP-4 Chain Spec',
     description: 'Genesis state from chain specification',
-    content: JSON.stringify(jip4ChainspecFixture, null, 2)
+    content: async () => JSON.stringify(await import('../utils/fixtures/dev-tiny.json'), null, 2)
   },
   {
     name: 'STF Genesis',
     description: 'Initial state with header information',
-    content: JSON.stringify(stfGenesisFixture, null, 2)
+    content: async () => JSON.stringify(await import('../utils/fixtures/genesis.json'), null, 2)
   },
   {
     name: 'Typeberry Config',
     description: 'Typeberry framework configuration',
-    content: JSON.stringify(typeberryConfigFixture, null, 2)
+    content: async () => JSON.stringify(await import('../utils/fixtures/typeberry-dev.json'), null, 2),
   }
 ];
 
@@ -61,6 +57,7 @@ export const UploadScreen = ({
   const { uploadState, selectedState } = appState;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formatError, setFormatError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const clearUpload = useCallback(() => {
     onClearUpload();
@@ -135,10 +132,17 @@ export const UploadScreen = ({
     validateManualContent();
   }, [handleUploadStateWithStorage]);
 
-  const handleExampleLoad = useCallback((exampleContent: string) => {
+  const handleExampleLoad = useCallback(async (exampleContent: () => Promise<string>) => {
     clearUpload();
+    setIsLoading(true);
+    let content = '';
+    try {
+      content = await exampleContent();
+    } finally {
+      setIsLoading(false);
+    }
 
-    const validation = validateJsonContent(exampleContent);
+    const validation = validateJsonContent(content);
 
     const newUploadState = {
       file: null,
@@ -164,6 +168,7 @@ export const UploadScreen = ({
         <p className="text-muted-foreground">
           Upload a serialized state dump to inspect it or try loading one of the examples:{' '}
           <button
+            disabled={isLoading}
             onClick={() => handleExampleLoad(EXAMPLE_FILES[0].content)}
             className="text-primary hover:text-primary/80 hover:underline transition-colors"
             title={EXAMPLE_FILES[0].description}
@@ -172,6 +177,7 @@ export const UploadScreen = ({
           </button>
           ,{' '}
           <button
+            disabled={isLoading}
             onClick={() => handleExampleLoad(EXAMPLE_FILES[2].content)}
             className="text-primary hover:text-primary/80 hover:underline transition-colors"
             title={EXAMPLE_FILES[2].description}
@@ -180,6 +186,7 @@ export const UploadScreen = ({
           </button>
           ,{' '}
           <button
+            disabled={isLoading}
             onClick={() => handleExampleLoad(EXAMPLE_FILES[1].content)}
             className="text-primary hover:text-primary/80 hover:underline transition-colors"
             title={EXAMPLE_FILES[1].description}
@@ -188,6 +195,7 @@ export const UploadScreen = ({
           </button>
           ,{' '}
           <button
+            disabled={isLoading}
             onClick={() => handleExampleLoad(EXAMPLE_FILES[3].content)}
             className="text-primary hover:text-primary/80 hover:underline transition-colors"
             title={EXAMPLE_FILES[3].description}
@@ -198,11 +206,12 @@ export const UploadScreen = ({
         <p className="text-muted-foreground">
           Instead of loading full JAM state you can also try out&nbsp;
           <ExamplesModal
-            onSelect={(rows) => handleExampleLoad(JSON.stringify({
+            onSelect={(rows) => handleExampleLoad(async () => JSON.stringify({
               state: rows
             }, null, 2))}
             button={(open) => (
               <button
+                disabled={isLoading}
                 onClick={open}
                   className="text-primary hover:text-primary/80 hover:underline transition-colors"
                 title="open trie examples"
@@ -254,6 +263,10 @@ export const UploadScreen = ({
                   {(uploadState.file.size / 1024).toFixed(1)} KB
                 </p>
               </div>
+            ) : isLoading ?  (
+              <div className="space-y-2">
+                Loading example...
+              </div>
             ) : (
                 <div className="space-y-2">
                   <p className="text-foreground font-medium">
@@ -267,26 +280,28 @@ export const UploadScreen = ({
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap gap-3 justify-center">
-              {/* Browse Button (if no file uploaded) */}
+            {!isLoading && (
+                <div className="flex flex-wrap gap-3 justify-center">
+                {/* Browse Button (if no file uploaded) */}
+                  <Button
+                    onClick={open}
+                    variant="primary"
+                    size="lg"
+                  >
+                    <FolderOpen className="h-4 w-4" />
+                    <span>{(!uploadState.file && !uploadState.content) ? 'Upload' : 'Change'}</span>
+                  </Button>
+
                 <Button
-                  onClick={open}
-                  variant="primary"
+                  onClick={handleManualEdit}
+                  variant="secondary"
                   size="lg"
                 >
-                  <FolderOpen className="h-4 w-4" />
-                  <span>{(!uploadState.file && !uploadState.content) ? 'Upload' : 'Change'}</span>
+                  <Edit className="h-4 w-4" />
+                  <span>{(!uploadState.file && !uploadState.content) ? 'JSON' : 'Edit'}</span>
                 </Button>
-
-              <Button
-                onClick={handleManualEdit}
-                variant="secondary"
-                size="lg"
-              >
-                <Edit className="h-4 w-4" />
-                <span>{(!uploadState.file && !uploadState.content) ? 'JSON' : 'Edit'}</span>
-              </Button>
-            </div>
+              </div>
+            )}
           </div>
         </div>
 
