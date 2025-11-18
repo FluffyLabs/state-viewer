@@ -6,28 +6,29 @@ import { Service } from '@/types/service';
 
 // Mock @fluffylabs/shared-ui to properly forward role attributes
 vi.mock('@fluffylabs/shared-ui', () => ({
-  Button: ({ children, className, onClick, role, ...props }: any) => (
+  Button: ({ children, className, onClick, role, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { role?: string }) => (
     <button className={className} onClick={onClick} role={role} {...props}>
       {children}
     </button>
   ),
-  ButtonGroup: ({ children, className, role, ...props }: any) => (
+  ButtonGroup: ({ children, className, role, ...props }: React.HTMLAttributes<HTMLDivElement> & { role?: string }) => (
     <div className={className} role={role} {...props}>
       {children}
     </div>
   ),
-  cn: (...args: any[]) => args.filter(Boolean).join(' '),
+  cn: (...args: (string | boolean | undefined | null)[]) => args.filter(Boolean).join(' '),
 }));
 
 // Mock the UI components
-vi.mock('../ui', () => {
-  const React = require('react');
+vi.mock('../ui', async () => {
+  const React = await import('react');
 
   const TabsContext = React.createContext<{ value?: string; onValueChange?: (value: string) => void }>({});
 
-  const Tabs = ({ children, value, onValueChange, ...props }: any) => {
+  const Tabs = ({ children, value, onValueChange, ...props }: React.PropsWithChildren<{ value?: string; onValueChange?: (value: string) => void }>) => {
     const [internalValue, setInternalValue] = React.useState('info');
     const currentValue = value ?? internalValue;
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization
     const handleValueChange = React.useCallback((newValue: string) => {
       if (value === undefined) {
         setInternalValue(newValue);
@@ -42,13 +43,13 @@ vi.mock('../ui', () => {
     );
   };
 
-  const TabsList = ({ children, ...props }: any) => (
+  const TabsList = ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
     <div role="tablist" {...props}>{children}</div>
   );
 
-  const TabsTrigger = ({ children, value, className, ...props }: any) => {
+  const TabsTrigger = ({ children, value, className, ...props }: React.PropsWithChildren<{ value: string; className?: string }>) => {
     const context = React.useContext(TabsContext);
-    const isActive = context.value === value;
+    const isActive = context?.value === value;
 
     return (
       <button
@@ -63,9 +64,9 @@ vi.mock('../ui', () => {
     );
   };
 
-  const TabsContent = ({ children, value, ...props }: any) => {
+  const TabsContent = ({ children, value, ...props }: React.PropsWithChildren<{ value: string }>) => {
     const context = React.useContext(TabsContext);
-    if (context.value !== value) return null;
+    if (context?.value !== value) return null;
     return <div role="tabpanel" {...props}>{children}</div>;
   };
 

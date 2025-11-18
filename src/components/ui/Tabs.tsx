@@ -43,7 +43,7 @@ const TabsList = React.forwardRef<
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
   <ButtonGroup
-    ref={ref}
+    ref={ref as React.Ref<HTMLDivElement>}
     role="tablist"
     className={cn(
       "inline-flex items-center justify-center rounded-lg py-1 text-muted-foreground",
@@ -65,7 +65,7 @@ const TabsTrigger = React.forwardRef<
 
   return (
     <Button
-      ref={ref}
+      ref={ref as React.Ref<HTMLButtonElement>}
       role="tab"
       aria-selected={isActive}
       data-state={isActive ? "active" : "inactive"}

@@ -26,7 +26,6 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
     if (!isOpen) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedGpVersion(utils.CURRENT_VERSION as unknown as string);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedSuite(utils.CURRENT_SUITE as unknown as string);
   }, [isOpen]);
 

@@ -51,12 +51,13 @@ describe('JsonEditorDialog', () => {
     });
 
     // Mock MutationObserver
-    global.MutationObserver = vi.fn(function() {
+    global.MutationObserver = vi.fn(function(this: MutationObserver) {
       return {
         observe: vi.fn(),
         disconnect: vi.fn(),
+        takeRecords: vi.fn(() => []),
       };
-    }) as any;
+    }) as unknown as typeof MutationObserver;
   });
 
   afterEach(() => {
