@@ -1,5 +1,4 @@
-import {RawState} from "@/components/service";
-import {StfStateType} from "@/utils";
+import {RawState, StfStateType} from "@/types/shared";
 
 export function selectState(stateType: StfStateType, extractedState: { state: RawState; preState?: RawState; } | null) {
   // Determine which state to show based on stateType

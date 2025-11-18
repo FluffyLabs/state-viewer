@@ -1,4 +1,10 @@
-import type { JsonFileFormat, StfStateType } from '@/utils';
+export type JsonFileFormat = 'jip4-chainspec' | 'typeberry-config' | 'stf-test-vector' | 'stf-genesis' | 'state' | 'unknown';
+
+export type StfStateType = 'pre_state' | 'post_state' | 'diff';
+
+export type RawState = Record<string, string>;
+
+export type ExtractedState = { state: RawState; preState?: RawState, block?: unknown };
 
 export interface UploadState {
   file: File | null;
@@ -12,7 +18,7 @@ export interface UploadState {
 
 export interface AppState {
   uploadState: UploadState;
-  extractedState: { state: Record<string, string>; preState?: Record<string, string> } | null;
+  extractedState: ExtractedState | null;
   selectedState: StfStateType;
   stateTitle: string;
 }

@@ -3,10 +3,10 @@ import { discoverServiceEntries, getStorageValue, parseStorageKey } from './serv
 import ValueDisplay from './ValueDisplay';
 import CompositeDiff from '../viewer/CompositeDiff';
 import { Service } from '@/types/service';
-import { RawState } from './types';
 import { serviceStorage } from '@/constants/serviceFields';
 import { Button, cn } from '@fluffylabs/shared-ui';
 import {hash} from '@typeberry/lib';
+import {RawState} from '@/types/shared';
 
 export interface StorageQueryProps {
   preState?: RawState;

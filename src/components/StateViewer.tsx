@@ -3,8 +3,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/Tabs';
 import { SearchInput } from './ui/SearchInput';
 import RawStateViewer from './RawStateViewer';
 import InspectStateViewer from './InspectStateViewer';
-import {StfStateType} from '@/utils';
 import { Tabs as TabsType, isValidTab } from '@/utils/stateViewerUtils';
+import {StfStateType} from '@/types/shared';
 
 export interface StateViewerProps {
   preState?: Record<string, string>;

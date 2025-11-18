@@ -1,10 +1,9 @@
 import {useFileContext} from "@/contexts/FileContext";
-import {AppState} from "@/types/shared";
+import {AppState, StfStateType} from "@/types/shared";
 import {useNavigate, useParams} from "react-router-dom";
 import { UploadScreen } from "../components/UploadScreen";
 import { StateViewer } from "../components/StateViewer";
 import { Tabs, isValidTab } from "@/utils/stateViewerUtils";
-import {StfStateType} from "@/utils";
 import {isValidStateType} from "@/utils/jsonValidation";
 import {useCallback} from "react";
 import {selectState} from "./utils";

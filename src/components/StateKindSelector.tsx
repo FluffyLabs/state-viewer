@@ -1,4 +1,4 @@
-import {StfStateType} from "@/utils";
+import {StfStateType} from "@/types/shared";
 import {Button} from "@fluffylabs/shared-ui";
 
 type StateKindSelectorProps = {

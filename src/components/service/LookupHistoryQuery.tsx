@@ -3,10 +3,10 @@ import { discoverServiceEntries, getLookupHistoryValue, parsePreimageInput } fro
 import ValueDisplay from './ValueDisplay';
 import CompositeDiff from '../viewer/CompositeDiff';
 import { Service } from '@/types/service';
-import { RawState } from './types';
 import { serviceLookupHistory } from '@/constants/serviceFields';
 import { Button, cn } from '@fluffylabs/shared-ui';
 import {hash} from '@typeberry/lib';
+import {RawState} from '@/types/shared';
 
 export interface LookupHistoryQueryProps {
   preState?: RawState;

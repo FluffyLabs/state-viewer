@@ -1,13 +1,9 @@
 export {
   validateJsonFile,
   validateJsonContent,
-  extractGenesisState,
-  extractStateFromStfVector,
-  extractBothStatesFromStfVector,
+  extractInputData as extractGenesisState,
   calculateStateDiff,
   type JsonValidationResult,
-  type JsonFileFormat,
-  type StfStateType,
   type StfGenesis,
   type DiffEntry
 } from './jsonValidation';

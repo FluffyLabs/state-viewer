@@ -1,8 +1,9 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import ServiceCard from './ServiceCard';
-import type { ServiceData, RawState } from './types';
+import type { ServiceData} from './types';
 import { Service } from '@/types/service';
+import {RawState} from '@/types/shared';
 
 // Mock @fluffylabs/shared-ui to properly forward role attributes
 vi.mock('@fluffylabs/shared-ui', () => ({

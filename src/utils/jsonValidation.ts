@@ -1,8 +1,5 @@
+import {JsonFileFormat, RawState, StfStateType} from '@/types/shared';
 import { z } from 'zod';
-
-export type JsonFileFormat = 'jip4-chainspec' | 'typeberry-config' | 'stf-test-vector' | 'stf-genesis' | 'state' | 'unknown';
-
-export type StfStateType = 'pre_state' | 'post_state' | 'diff';
 
 export function isValidStateType(state?: string): state is StfStateType {
   return state === 'pre_state' || state === 'post_state' || state === 'diff';
@@ -273,7 +270,8 @@ export const validateJsonFile = (file: File): Promise<JsonValidationResult> => {
   });
 };
 
-export const extractStateFromStfVector = (
+
+const extractStateFromStfVector = (
   stfVector: StfTestVector,
   stateType: StfStateType
 ): Record<string, string> => {
@@ -287,25 +285,6 @@ export const extractStateFromStfVector = (
   return stateMap;
 };
 
-export const extractBothStatesFromStfVector = (
-  stfVector: StfTestVector
-): { preState: Record<string, string>, postState: Record<string, string> } => {
-  const preStateMap: Record<string, string> = {};
-  for (const item of stfVector.pre_state.keyvals) {
-    preStateMap[item.key] = item.value;
-  }
-
-  const postStateMap: Record<string, string> = {};
-  for (const item of stfVector.post_state.keyvals) {
-    postStateMap[item.key] = item.value;
-  }
-
-  return {
-    preState: preStateMap,
-    postState: postStateMap
-  };
-};
-
 const addHexPrefix = (state: Record<string, string>): Record<string, string> => {
   const prefixedState: Record<string, string> = {};
   for (const [key, value] of Object.entries(state)) {
@@ -316,12 +295,13 @@ const addHexPrefix = (state: Record<string, string>): Record<string, string> => 
   return prefixedState;
 };
 
-export const extractGenesisState = (
+export const extractInputData = (
   content: string,
   format: JsonFileFormat,
 ): {
-  state: Record<string, string> | null,
-  preState?: Record<string, string>,
+  state: RawState | null,
+  preState?: RawState,
+  block?: unknown,
 } => {
   try {
     const parsedJson = JSON.parse(content);
@@ -343,9 +323,11 @@ export const extractGenesisState = (
 
         const preState = extractStateFromStfVector(result.data, 'pre_state');
         const postState = extractStateFromStfVector(result.data, 'post_state');
+
         return {
           state: postState,
           preState,
+          block: result.data.block,
         };
       }
 
@@ -353,7 +335,7 @@ export const extractGenesisState = (
         const result = StfGenesisSchema.safeParse(parsedJson);
         if (!result.success) return {state: null};
 
-        const stateMap: Record<string, string> = {};
+        const stateMap: RawState = {};
         for (const item of result.data.state.keyvals) {
           stateMap[item.key] = item.value;
         }
@@ -364,7 +346,7 @@ export const extractGenesisState = (
         const result = RawStateFileSchema.safeParse(parsedJson);
         if (!result.success) return {state: null};
 
-        const stateMap: Record<string, string> = {};
+        const stateMap: RawState = {};
         for (const item of result.data.state) {
           stateMap[item.key] = item.value;
         }

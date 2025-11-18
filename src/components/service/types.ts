@@ -8,8 +8,6 @@ export interface ServiceData {
   postError: string | null;
 }
 
-export type RawState = Record<string, string>;
-
 export interface ServiceErrorProps {
   preError: string | null;
   postError: string | null;

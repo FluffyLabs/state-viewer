@@ -2,12 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   validateJsonFile,
   validateJsonContent,
-  extractGenesisState,
-  extractStateFromStfVector,
-  extractBothStatesFromStfVector,
+  extractInputData,
   calculateStateDiff,
   convertCamelCaseToSnake,
-  type StfTestVector
 } from './jsonValidation';
 
 // Mock FileReader
@@ -310,101 +307,7 @@ describe('validateJsonFile', () => {
   });
 });
 
-describe('extractStateFromStfVector', () => {
-  const mockStfVector: StfTestVector = {
-    pre_state: {
-      state_root: "0x3e2f...",
-      keyvals: [
-        { key: "0x01", value: "0x123" },
-        { key: "0x02", value: "0x456" }
-      ]
-    },
-    block: {},
-    post_state: {
-      state_root: "0x6451...",
-      keyvals: [
-        { key: "0x01", value: "0x789" },
-        { key: "0x03", value: "0xabc" }
-      ]
-    }
-  };
-
-  it('should extract pre_state correctly', () => {
-    const result = extractStateFromStfVector(mockStfVector, 'pre_state');
-
-    expect(result).toEqual({
-      "0x01": "0x123",
-      "0x02": "0x456"
-    });
-  });
-
-  it('should extract post_state correctly', () => {
-    const result = extractStateFromStfVector(mockStfVector, 'post_state');
-
-    expect(result).toEqual({
-      "0x01": "0x789",
-      "0x03": "0xabc"
-    });
-  });
-});
-
-describe('extractBothStatesFromStfVector', () => {
-  it('should extract both pre and post states correctly', () => {
-    const mockStfVector: StfTestVector = {
-      pre_state: {
-        state_root: 'root1',
-        keyvals: [
-          { key: '0x01', value: '0x123456' },
-          { key: '0x02', value: '0x789abc' },
-        ],
-      },
-      post_state: {
-        state_root: 'root2',
-        keyvals: [
-          { key: '0x01', value: '0x654321' },
-          { key: '0x03', value: '0xnewvalue' },
-        ],
-      },
-      block: {},
-    };
-
-    const result = extractBothStatesFromStfVector(mockStfVector);
-
-    expect(result).toEqual({
-      preState: {
-        '0x01': '0x123456',
-        '0x02': '0x789abc',
-      },
-      postState: {
-        '0x01': '0x654321',
-        '0x03': '0xnewvalue',
-      },
-    });
-  });
-
-  it('should handle empty keyvals arrays', () => {
-    const mockStfVector: StfTestVector = {
-      pre_state: {
-        state_root: 'root1',
-        keyvals: [],
-      },
-      post_state: {
-        state_root: 'root2',
-        keyvals: [],
-      },
-      block: {},
-    };
-
-    const result = extractBothStatesFromStfVector(mockStfVector);
-
-    expect(result).toEqual({
-      preState: {},
-      postState: {},
-    });
-  });
-});
-
-describe('extractGenesisState', () => {
+describe('extractInputData', () => {
   it('should extract genesis_state from JIP-4 chainspec', () => {
     const jip4Content = JSON.stringify({
       id: "test-chain",
@@ -415,7 +318,7 @@ describe('extractGenesisState', () => {
       }
     });
 
-    const result = extractGenesisState(jip4Content, 'jip4-chainspec');
+    const result = extractInputData(jip4Content, 'jip4-chainspec');
 
     expect(result.state).toEqual({
       "0x01": "0x123",
@@ -438,7 +341,7 @@ describe('extractGenesisState', () => {
       }
     });
 
-    const result = extractGenesisState(typeberryContent, 'typeberry-config');
+    const result = extractInputData(typeberryContent, 'typeberry-config');
 
     expect(result.state).toEqual({
       "0x01": "0x789",
@@ -464,12 +367,13 @@ describe('extractGenesisState', () => {
       }
     });
 
-    const result = extractGenesisState(stfContent, 'stf-test-vector');
+    const result = extractInputData(stfContent, 'stf-test-vector');
 
     expect(result.preState).toEqual({
       "0x01": "0x123",
       "0x02": "0x456"
     });
+    expect(result.block).toEqual({});
   });
 
   it('should extract state from STF test vector with post_state', () => {
@@ -490,7 +394,7 @@ describe('extractGenesisState', () => {
       }
     });
 
-    const result = extractGenesisState(stfContent, 'stf-test-vector');
+    const result = extractInputData(stfContent, 'stf-test-vector');
     
     expect(result.state).toEqual({
       "0x01": "0x789",
@@ -519,7 +423,7 @@ describe('extractGenesisState', () => {
       }
     });
 
-    const result = extractGenesisState(stfGenesisContent, 'stf-genesis');
+    const result = extractInputData(stfGenesisContent, 'stf-genesis');
 
     expect(result.state).toEqual({
       "0x004700b0000000000b0cce53c35439dfe73087b1439c846b5ff0b18ec0052e": "0x0100000000",
@@ -547,7 +451,7 @@ describe('extractGenesisState', () => {
       }
     });
 
-    const result = extractGenesisState(stfContent, 'stf-test-vector');
+    const result = extractInputData(stfContent, 'stf-test-vector');
     expect(result.state).toEqual({
       "0x01": "0x123",
       "0x02": "0x789",
@@ -562,7 +466,7 @@ describe('extractGenesisState', () => {
   it('should return null for unknown format', () => {
     const unknownContent = JSON.stringify({ some: "data" });
 
-    const result = extractGenesisState(unknownContent, 'unknown');
+    const result = extractInputData(unknownContent, 'unknown');
 
     expect(result.state).toBeNull();
   });
@@ -570,7 +474,7 @@ describe('extractGenesisState', () => {
   it('should return null for malformed JSON', () => {
     const malformedContent = '{"incomplete": json}';
 
-    const result = extractGenesisState(malformedContent, 'jip4-chainspec');
+    const result = extractInputData(malformedContent, 'jip4-chainspec');
 
     expect(result.state).toBeNull();
   });
@@ -588,7 +492,7 @@ describe('extractGenesisState', () => {
       }
     });
 
-    const result = extractGenesisState(stfContent, 'stf-test-vector');
+    const result = extractInputData(stfContent, 'stf-test-vector');
 
     expect(result).toEqual({ state: {}, preState: {} });
   });
@@ -629,7 +533,7 @@ describe('Integration tests with fixture files', () => {
     expect(result.availableStates).toEqual(['post_state']);
 
     // Test extracting genesis state
-    const genesisState = extractGenesisState(jip4Content, 'jip4-chainspec');
+    const genesisState = extractInputData(jip4Content, 'jip4-chainspec');
     expect(genesisState).toBeDefined();
     expect(genesisState.state!['0x01000000000000000000000000000000000000000000000000000000000000']).toBe('0x08000000000000000000000000000000000000000000000000000000000000');
 
@@ -668,7 +572,7 @@ describe('Integration tests with fixture files', () => {
     expect(result.availableStates).toEqual(['post_state']);
 
     // Test extracting genesis state from embedded chain_spec
-    const genesisState = extractGenesisState(typeberryContent, 'typeberry-config');
+    const genesisState = extractInputData(typeberryContent, 'typeberry-config');
     expect(genesisState).toBeDefined();
     expect(genesisState.state!['0x01000000000000000000000000000000000000000000000000000000000000']).toBe('0x08000000000000000000000000000000000000000000000000000000000000');
 
@@ -718,7 +622,7 @@ describe('Integration tests with fixture files', () => {
     expect(result.availableStates).toEqual(['pre_state', 'post_state', 'diff']);
 
     // Test extracting both pre and post states
-    const genesisState = extractGenesisState(stfContent, 'stf-test-vector');
+    const genesisState = extractInputData(stfContent, 'stf-test-vector');
     expect(genesisState.preState).toBeDefined();
     expect(genesisState.preState!['0x004700b0000000000b0cce53c35439dfe73087b1439c846b5ff0b18ec0052e']).toBe('0x0100000000');
 
@@ -768,7 +672,7 @@ describe('Integration tests with fixture files', () => {
     expect(result.format).toBe('stf-test-vector');
 
     // Verify pre_state extraction
-    const extractedStates = extractGenesisState(stfContent, 'stf-test-vector');
+    const extractedStates = extractInputData(stfContent, 'stf-test-vector');
     expect(extractedStates.preState).toEqual({
       '0x001122': '0x123456',
       '0x003344': '0x789abc'
@@ -819,7 +723,7 @@ describe('Integration tests with fixture files', () => {
     expect(result.availableStates).toEqual(['post_state']);
 
     // Test extracting genesis state
-    const genesisState = extractGenesisState(stfGenesisContent, 'stf-genesis');
+    const genesisState = extractInputData(stfGenesisContent, 'stf-genesis');
     expect(genesisState).toBeDefined();
     expect(genesisState.state!['0x004700b0000000000b0cce53c35439dfe73087b1439c846b5ff0b18ec0052e']).toBe('0x0100000000');
 
@@ -1116,7 +1020,7 @@ describe('validateJsonContent', () => {
         }
       });
 
-      const result = extractGenesisState(stfContent, 'stf-test-vector');
+      const result = extractInputData(stfContent, 'stf-test-vector');
 
       expect(result.preState).toEqual({
         "0x01": "0x123",
@@ -1149,7 +1053,7 @@ describe('validateJsonContent', () => {
         }
       });
 
-      const result = extractGenesisState(stfContent, 'stf-test-vector');
+      const result = extractInputData(stfContent, 'stf-test-vector');
       expect(result.state).toEqual({
         "0x01": "0x123",
         "0x02": "0x789",

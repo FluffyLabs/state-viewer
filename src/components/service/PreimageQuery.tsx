@@ -4,10 +4,10 @@ import { getPreimageValue, parsePreimageInput, discoverServiceEntries, calculate
 import PreimageHashDisplay from './PreimageHashDisplay';
 import CompositeDiff from '../viewer/CompositeDiff';
 import { Service } from '@/types/service';
-import { RawState } from './types';
 import { servicePreimages } from '@/constants/serviceFields';
 import { Button, cn } from '@fluffylabs/shared-ui';
 import {hash} from '@typeberry/lib';
+import {RawState} from '@/types/shared';
 
 export interface PreimageQueryProps {
   preState?: RawState;

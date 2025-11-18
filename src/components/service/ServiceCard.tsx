@@ -1,4 +1,3 @@
-
 import { useMemo, useState } from 'react';
 import ServiceError from './ServiceError';
 import ServiceInfo from './ServiceInfo';
@@ -7,7 +6,8 @@ import PreimageQuery from './PreimageQuery';
 import LookupHistoryQuery from './LookupHistoryQuery';
 import { getServiceChangeType, getComprehensiveServiceChangeType, formatServiceIdUnsigned } from './serviceUtils';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui';
-import type { RawState, ServiceData } from './types';
+import type { ServiceData } from './types';
+import {RawState} from '@/types/shared';
 
 export interface ServiceCardProps {
   preState?: RawState;
