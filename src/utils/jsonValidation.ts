@@ -2,7 +2,7 @@ import {JsonFileFormat, RawState, StfStateType} from '@/types/shared';
 import { z } from 'zod';
 
 export function isValidStateType(state?: string): state is StfStateType {
-  return state === 'pre_state' || state === 'post_state' || state === 'diff';
+  return state === 'pre_state' || state === 'post_state' || state === 'diff' || state === 'exec_diff';
 }
 
 export interface JsonValidationResult {

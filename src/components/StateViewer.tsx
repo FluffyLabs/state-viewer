@@ -44,7 +44,7 @@ export const StateViewer = ({
 
       <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-4 pb-2">
-          <TabsTrigger value="trie" disabled={stateType === 'diff'}>Trie</TabsTrigger>
+          <TabsTrigger value="trie" disabled={stateType === 'diff' || stateType == 'exec_diff'}>Trie</TabsTrigger>
           <TabsTrigger value="encoded">Encoded</TabsTrigger>
           <TabsTrigger value="decoded-tiny">Decoded Tiny</TabsTrigger>
           <TabsTrigger value="decoded-full">Decoded Full</TabsTrigger>

@@ -45,6 +45,7 @@ export interface UploadScreenProps {
     newState: UploadState | ((prev: UploadState) => UploadState),
     validation?: JsonValidationResult
   ) => void;
+  onSetExecutedState: (state: RawState) => void;
   onClearUpload: () => void;
   changeStateType: (type: StfStateType) => void;
 }
@@ -52,6 +53,7 @@ export interface UploadScreenProps {
 export const UploadScreen = ({
   appState,
   onUpdateUploadState,
+  onSetExecutedState,
   onClearUpload,
   changeStateType,
 }: UploadScreenProps) => {
@@ -59,7 +61,7 @@ export const UploadScreen = ({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formatError, setFormatError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [executedState, setRawExecutedState] = useState<RawState | null>(null);
+  const executedState = extractedState?.executedState;
   
   const stateBlock = useMemo(() => {
     const block = extractedState?.block;
@@ -68,7 +70,7 @@ export const UploadScreen = ({
     }
     // todo: chainspec
     return json_parser.parseFromJson(block, block_json.blockFromJson(config.tinyChainSpec));
-  }, []);
+  }, [extractedState]);
 
   const clearUpload = useCallback(() => {
     onClearUpload();
@@ -171,6 +173,7 @@ export const UploadScreen = ({
 
   async function runBlock(stateBlock: block.Block): Promise<void> {
     const hasher = await transition.TransitionHasher.create();
+    // TODO [ToDr] Select from global settings
     const spec = config.tinyChainSpec;
     const preState = extractedState?.preState;
     const entries = state_merkleization.StateEntries.fromEntriesUnsafe(
@@ -191,8 +194,9 @@ export const UploadScreen = ({
     const res = await stf.transition(blockView, headerHash.hash);
     if (res.isOk) {
       console.log('Block imported correctly!');
+      state.backend.applyUpdate(state_merkleization.serializeStateUpdate(spec, hasher.blake2b, res.ok));
       const stateEntries = Array.from(state.backend);
-      setRawExecutedState(Object.fromEntries(
+      onSetExecutedState(Object.fromEntries(
         stateEntries.map(([h, b]) => [h.toString(), b.toString()])
       ));
     } else {
@@ -379,12 +383,10 @@ export const UploadScreen = ({
                   availableStates={uploadState.availableStates}
                   selectedState={selectedState}
                   changeStateType={changeStateType}
+                  stateBlock={stateBlock}
+                  executedState={executedState}
+                  runBlock={runBlock}
                 />
-                {stateBlock !== undefined && (<Button
-                  onClick={() => runBlock(stateBlock)}
-                  variant="tertiary"
-                  size="lg"
-                >Run Block</Button>)}
               </div>
             </div>
           </div>

@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useMemo, useCallback, ReactNode } from "react";
 import { extractGenesisState, JsonValidationResult } from "@/utils";
-import type { UploadState, StoredFileData, ExtractedState, StfStateType, JsonFileFormat } from "@/types/shared";
+import type { UploadState, StoredFileData, ExtractedState, StfStateType, JsonFileFormat, RawState } from "@/types/shared";
 
 const SESSION_STORAGE_KEY = 'state-view-file-data';
 
@@ -15,6 +15,7 @@ interface FileContextType {
     newState: UploadState | ((prev: UploadState) => UploadState),
     validation?: JsonValidationResult
   ) => void;
+  setExecutedState: (state: RawState) => void;
   clearUpload: () => void;
 }
 
@@ -25,6 +26,7 @@ interface FileProviderProps {
 }
 
 export const FileProvider = ({ children }: FileProviderProps) => {
+  const [executedState, setExecutedState] = useState<RawState>();
   const [uploadState, setUploadState] = useState<UploadState>(() => {
     // Try to restore from session storage
     const stored = sessionStorage.getItem(SESSION_STORAGE_KEY);
@@ -72,6 +74,14 @@ export const FileProvider = ({ children }: FileProviderProps) => {
       return null;
     }
   }, [uploadState.content, uploadState.format, uploadState.isValidJson]);
+
+  const extractedAndExecuted = useMemo(() => {
+    if (extractedState === null) {
+      return null;
+    }
+
+    return { executedState, ...extractedState };
+  }, [extractedState, executedState]);
 
   const stateTitle = useCallback((selectedState: StfStateType) => {
     if (uploadState.format === 'stf-test-vector' && selectedState) {
@@ -123,9 +133,10 @@ export const FileProvider = ({ children }: FileProviderProps) => {
 
   const value = {
     uploadState,
-    extractedState,
+    extractedState: extractedAndExecuted,
     stateTitle,
     updateUploadState,
+    setExecutedState,
     clearUpload,
   };
 
