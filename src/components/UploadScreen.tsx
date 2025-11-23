@@ -1,11 +1,12 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, AlertCircle, Edit, FolderOpen } from 'lucide-react';
 import JsonEditorDialog from './JsonEditorDialog';
-import { validateFile, validateJsonContent, type JsonValidationResult, StfStateType } from '../utils';
+import { validateFile, validateJsonContent, type JsonValidationResult, getChainSpec } from '../utils';
+import { block, block_json, bytes, config, json_parser, state_merkleization, transition, utils } from '@typeberry/lib';
 
 import ExamplesModal from '@/trie/components/ExamplesModal';
-import type { AppState, UploadState } from '@/types/shared';
+import type { AppState, RawState, StfStateType, UploadState } from '@/types/shared';
 import {StateKindSelector} from './StateKindSelector';
 import {Button} from '@fluffylabs/shared-ui';
 
@@ -44,6 +45,7 @@ export interface UploadScreenProps {
     newState: UploadState | ((prev: UploadState) => UploadState),
     validation?: JsonValidationResult
   ) => void;
+  onSetExecutedState: (state: RawState) => void;
   onClearUpload: () => void;
   changeStateType: (type: StfStateType) => void;
 }
@@ -51,13 +53,28 @@ export interface UploadScreenProps {
 export const UploadScreen = ({
   appState,
   onUpdateUploadState,
+  onSetExecutedState,
   onClearUpload,
   changeStateType,
 }: UploadScreenProps) => {
-  const { uploadState, selectedState } = appState;
+  const { uploadState, selectedState, extractedState } = appState;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formatError, setFormatError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const executedState = extractedState?.executedState;
+  
+  const stateBlock = useMemo(() => {
+    const block = extractedState?.block;
+    if (block === undefined) {
+      return undefined;
+    }
+    try {
+      return json_parser.parseFromJson(block, block_json.blockFromJson(getChainSpec()));
+    } catch (e) {
+      console.warn('Unable to parse state block', e);
+      return undefined;
+    }
+  }, [extractedState]);
 
   const clearUpload = useCallback(() => {
     onClearUpload();
@@ -157,6 +174,34 @@ export const UploadScreen = ({
 
     handleUploadStateWithStorage(newUploadState, validation);
   }, [clearUpload, handleUploadStateWithStorage]);
+
+  async function runBlock(stateBlock: block.Block): Promise<void> {
+    const hasher = await transition.TransitionHasher.create();
+    const spec = getChainSpec();
+    const preState = extractedState?.preState;
+    const entries = state_merkleization.StateEntries.fromEntriesUnsafe(
+      Object.entries(preState ?? {}).map(([key, val]) => ([bytes.Bytes.parseBytes(key, 31),  bytes.BytesBlob.parseBlob(val)]))
+    );
+    const state = state_merkleization.SerializedState.fromStateEntries(spec, hasher.blake2b, entries);
+    const stf = new transition.OnChain(spec, state, hasher, config.PvmBackend.BuiltIn, {
+      isAncestor(): boolean {
+        return true;
+      }
+    });
+    const blockView = block.reencodeAsView(block.Block.Codec, stateBlock, spec);
+    const headerHash = stf.hasher.header(blockView.header.view());
+    const res = await stf.transition(blockView, headerHash.hash);
+    if (res.isOk) {
+      console.log('Block imported correctly!');
+      state.backend.applyUpdate(state_merkleization.serializeStateUpdate(spec, hasher.blake2b, res.ok));
+      const stateEntries = Array.from(state.backend);
+      onSetExecutedState(Object.fromEntries(
+        stateEntries.map(([h, b]) => [h.toString(), b.toString()])
+      ));
+    } else {
+      console.log(`Error: ${utils.resultToString(res)}`);
+    }
+  }
 
   return (
     <>
@@ -281,7 +326,7 @@ export const UploadScreen = ({
 
             {/* Action Buttons */}
             {!isLoading && (
-                <div className="flex flex-wrap gap-3 justify-center">
+              <div className="flex flex-wrap gap-3 justify-center">
                 {/* Browse Button (if no file uploaded) */}
                   <Button
                     onClick={open}
@@ -291,7 +336,7 @@ export const UploadScreen = ({
                     <FolderOpen className="h-4 w-4" />
                     <span>{(!uploadState.file && !uploadState.content) ? 'Upload' : 'Change'}</span>
                   </Button>
-
+                
                 <Button
                   onClick={handleManualEdit}
                   variant="secondary"
@@ -337,6 +382,9 @@ export const UploadScreen = ({
                   availableStates={uploadState.availableStates}
                   selectedState={selectedState}
                   changeStateType={changeStateType}
+                  stateBlock={stateBlock}
+                  executedState={executedState}
+                  runBlock={runBlock}
                 />
               </div>
             </div>

@@ -1,8 +1,9 @@
 import blake2b from "blake2b";
 import type { Service, StorageKey, PreimageHash, U32 } from '../../types/service';
 import { bytes, numbers, state_merkleization, hash } from '@typeberry/lib';
-import {RawState, ServiceData} from "./types";
+import { ServiceData} from "./types";
 import { serviceData as serviceDataSerializer } from '../../constants/serviceFields';
+import {RawState} from "@/types/shared";
 
 const hashBytes = (b: bytes.BytesBlob): bytes.Bytes<32> => {
   const hasher = blake2b(32);

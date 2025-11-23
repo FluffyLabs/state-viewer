@@ -1,15 +1,17 @@
 export {
   validateJsonFile,
   validateJsonContent,
-  extractGenesisState,
-  extractStateFromStfVector,
-  extractBothStatesFromStfVector,
+  extractInputData as extractGenesisState,
   calculateStateDiff,
   type JsonValidationResult,
-  type JsonFileFormat,
-  type StfStateType,
   type StfGenesis,
   type DiffEntry
 } from './jsonValidation';
 
 export { validateFile } from './fileValidation';
+
+export {
+  getChainSpec,
+  getChainSpecType,
+  type ChainSpecType
+} from './chainSpecConfig';

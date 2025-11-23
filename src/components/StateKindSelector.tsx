@@ -1,20 +1,32 @@
-import {StfStateType} from "@/utils";
+import {StfStateType} from "@/types/shared";
 import {Button} from "@fluffylabs/shared-ui";
+import type { block } from '@typeberry/lib';
+import { Popover } from '@/components/ui/Popover';
 
 type StateKindSelectorProps = {
   availableStates?: StfStateType[];
   selectedState?: StfStateType;
   changeStateType: (type: StfStateType) => void;
+  stateBlock?: block.Block;
+  executedState?: unknown;
+  runBlock?: (stateBlock: block.Block) => void;
 };
 
-export function StateKindSelector({ availableStates, selectedState, changeStateType }: StateKindSelectorProps) {
+export function StateKindSelector({
+  availableStates,
+  selectedState,
+  changeStateType,
+  stateBlock,
+  executedState,
+  runBlock
+}: StateKindSelectorProps) {
   if (!availableStates || availableStates.length === 0) {
     return;
   }
 
   return (
     <div className="ml-4">
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-2 flex-wrap justify-end">
         {availableStates.map((stateType) => (
           <Button
             key={stateType}
@@ -22,10 +34,35 @@ export function StateKindSelector({ availableStates, selectedState, changeStateT
             variant={selectedState === stateType ? "primary" : "secondary"}
             size="sm"
           >
-            {stateType === 'pre_state' ? 'Pre-State' :
-              stateType === 'post_state' ? 'Post-State' : 'Diff'}
+            {stateType === 'pre_state' ? 'pre-state' :
+              stateType === 'post_state' ? 'post-state' : 'diff'}
           </Button>
         ))}
+        {stateBlock !== undefined && executedState === undefined && runBlock && (
+          <Popover
+            trigger={
+              <Button
+                onClick={() => runBlock(stateBlock)}
+                variant="tertiary"
+                size="sm"
+              >
+                run block
+              </Button>
+            }
+            content="Run the block in typeberry to compare with expected post state"
+            position="top"
+            triggerOn="hover"
+          />
+        )}
+        {stateBlock !== undefined && executedState !== undefined && (
+          <Button
+            onClick={() => changeStateType('exec_diff')}
+            variant={selectedState === 'exec_diff' ? "primary" : "secondary"}
+            size="sm"
+          >
+            exec diff
+          </Button>
+        )}
       </div>
     </div>
   );

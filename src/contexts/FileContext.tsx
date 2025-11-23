@@ -1,16 +1,13 @@
 import { createContext, useContext, useState, useMemo, useCallback, ReactNode } from "react";
-import { extractGenesisState, JsonValidationResult, JsonFileFormat, StfStateType } from "@/utils";
-import type { UploadState, StoredFileData } from "@/types/shared";
-import {RawState} from "@/components/service";
+import { extractGenesisState, JsonValidationResult } from "@/utils";
+import type { UploadState, StoredFileData, ExtractedState, StfStateType, JsonFileFormat, RawState } from "@/types/shared";
 
 const SESSION_STORAGE_KEY = 'state-view-file-data';
-
-
 
 interface FileContextType {
   // State
   uploadState: UploadState;
-  extractedState: { state: RawState; preState?: RawState } | null;
+  extractedState: ExtractedState | null;
   stateTitle: (selectedState: StfStateType) => string;
   
   // Actions
@@ -18,6 +15,7 @@ interface FileContextType {
     newState: UploadState | ((prev: UploadState) => UploadState),
     validation?: JsonValidationResult
   ) => void;
+  setExecutedState: (state: RawState) => void;
   clearUpload: () => void;
 }
 
@@ -28,6 +26,7 @@ interface FileProviderProps {
 }
 
 export const FileProvider = ({ children }: FileProviderProps) => {
+  const [executedState, setExecutedState] = useState<RawState>();
   const [uploadState, setUploadState] = useState<UploadState>(() => {
     // Try to restore from session storage
     const stored = sessionStorage.getItem(SESSION_STORAGE_KEY);
@@ -69,12 +68,20 @@ export const FileProvider = ({ children }: FileProviderProps) => {
         uploadState.content,
         uploadState.format,
       );
-      return state.state === null ? null : { state: state.state, preState: state.preState }
+      return state.state === null ? null : { state: state.state, preState: state.preState, block: state.block }
     } catch (error) {
       console.error('Failed to extract state:', error);
       return null;
     }
   }, [uploadState.content, uploadState.format, uploadState.isValidJson]);
+
+  const extractedAndExecuted = useMemo(() => {
+    if (extractedState === null) {
+      return null;
+    }
+
+    return { executedState, ...extractedState };
+  }, [extractedState, executedState]);
 
   const stateTitle = useCallback((selectedState: StfStateType) => {
     if (uploadState.format === 'stf-test-vector' && selectedState) {
@@ -126,9 +133,10 @@ export const FileProvider = ({ children }: FileProviderProps) => {
 
   const value = {
     uploadState,
-    extractedState,
+    extractedState: extractedAndExecuted,
     stateTitle,
     updateUploadState,
+    setExecutedState,
     clearUpload,
   };
 

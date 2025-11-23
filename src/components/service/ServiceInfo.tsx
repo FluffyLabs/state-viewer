@@ -3,7 +3,8 @@ import { CompositeViewer } from '../viewer';
 import CompositeDiff from '../viewer/CompositeDiff';
 import { getServiceInfoWithId } from './serviceUtils';
 import { serviceData as serviceDataSerializer } from '../../constants/serviceFields';
-import type { RawState, ServiceData } from './types';
+import type { ServiceData } from './types';
+import {RawState} from '@/types/shared';
 
 export interface ServiceInfoProps {
   preState?: RawState;

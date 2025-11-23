@@ -1,13 +1,9 @@
-import { codec, config, state_vectors } from '@typeberry/lib';
+import { codec, state_vectors } from '@typeberry/lib';
+import { getChainSpec } from './chainSpecConfig';
 /**
  * Binary file conversion utilities
  * Handles conversion from binary formats (.bin files) to parsed JSON objects
  */
-
-const supportedTypes = [
-  state_vectors.StateTransition,
-  state_vectors.StateTransitionGenesis,
-];
 
 /**
  * Converts a Uint8Array containing binary data to a parsed JSON object
@@ -18,13 +14,19 @@ const supportedTypes = [
  */
 export const convertBinaryToJson = (data: Uint8Array): unknown => {
   // we are going to try all of the types
-  for (const typ of supportedTypes) {
-    try {
-      const decoded = codec.Decoder.decodeObject(typ.Codec, data, config.tinyChainSpec);
-      return decoded;
-    } catch (e) {
-      console.warn(`Unable to decode as ${typ.name}: ${e}`);
-    }
+  try {
+    const decoded = codec.Decoder.decodeObject(state_vectors.StateTransition.Codec, data, getChainSpec());
+    return decoded;
+  } catch (e) {
+    console.warn(`Unable to decode as StateTransition: ${e}`);
   }
+
+  try {
+    const decoded = codec.Decoder.decodeObject(state_vectors.StateTransitionGenesis.Codec, data, getChainSpec());
+    return decoded;
+  } catch (e) {
+    console.warn(`Unable to decode as StateTransitionGenesis: ${e}`);
+  }
+
   throw new Error(`Couldn't decode the binary as any of the known types.`);
 };

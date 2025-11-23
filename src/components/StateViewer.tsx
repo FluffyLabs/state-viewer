@@ -3,8 +3,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/Tabs';
 import { SearchInput } from './ui/SearchInput';
 import RawStateViewer from './RawStateViewer';
 import InspectStateViewer from './InspectStateViewer';
-import {StfStateType} from '@/utils';
 import { Tabs as TabsType, isValidTab } from '@/utils/stateViewerUtils';
+import {StfStateType} from '@/types/shared';
+import { getChainSpecType} from '@/utils';
 
 export interface StateViewerProps {
   preState?: Record<string, string>;
@@ -43,11 +44,10 @@ export const StateViewer = ({
       />
 
       <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 pb-2">
-          <TabsTrigger value="trie" disabled={stateType === 'diff'}>Trie</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 pb-2">
+          <TabsTrigger value="trie" disabled={stateType === 'diff' || stateType === 'exec_diff'}>Trie</TabsTrigger>
           <TabsTrigger value="encoded">Encoded</TabsTrigger>
-          <TabsTrigger value="decoded-tiny">Decoded Tiny</TabsTrigger>
-          <TabsTrigger value="decoded-full">Decoded Full</TabsTrigger>
+          <TabsTrigger value="decoded">Decoded</TabsTrigger>
         </TabsList>
 
         <TabsContent value="encoded" className="mt-0">
@@ -59,21 +59,12 @@ export const StateViewer = ({
           />
         </TabsContent>
 
-        <TabsContent value="decoded-tiny" className="mt-0">
+        <TabsContent value="decoded" className="mt-0">
           <InspectStateViewer
             preState={preState}
             state={state}
             searchTerm={searchTerm}
-            chainSpec="tiny"
-          />
-        </TabsContent>
-
-        <TabsContent value="decoded-full" className="mt-0">
-          <InspectStateViewer
-            preState={preState}
-            state={state}
-            searchTerm={searchTerm}
-            chainSpec="full"
+            chainSpec={getChainSpecType()}
           />
         </TabsContent>
       </Tabs>
