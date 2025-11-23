@@ -9,3 +9,9 @@ export {
 } from './jsonValidation';
 
 export { validateFile } from './fileValidation';
+
+export {
+  getChainSpec,
+  getChainSpecType,
+  type ChainSpecType
+} from './chainSpecConfig';

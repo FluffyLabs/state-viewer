@@ -2,8 +2,8 @@ import { useState, useCallback, useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, AlertCircle, Edit, FolderOpen } from 'lucide-react';
 import JsonEditorDialog from './JsonEditorDialog';
-import { validateFile, validateJsonContent, type JsonValidationResult} from '../utils';
-import { block, block_json, bytes, config, hash, json_parser, state_merkleization, transition, utils } from '@typeberry/lib';
+import { validateFile, validateJsonContent, type JsonValidationResult, getChainSpec } from '../utils';
+import { block, block_json, bytes, config, json_parser, state_merkleization, transition, utils } from '@typeberry/lib';
 
 import ExamplesModal from '@/trie/components/ExamplesModal';
 import type { AppState, RawState, StfStateType, UploadState } from '@/types/shared';
@@ -68,8 +68,12 @@ export const UploadScreen = ({
     if (block === undefined) {
       return undefined;
     }
-    // todo: chainspec
-    return json_parser.parseFromJson(block, block_json.blockFromJson(config.tinyChainSpec));
+    try {
+      return json_parser.parseFromJson(block, block_json.blockFromJson(getChainSpec()));
+    } catch (e) {
+      console.warn('Unable to parse state block', e);
+      return undefined;
+    }
   }, [extractedState]);
 
   const clearUpload = useCallback(() => {
@@ -173,19 +177,14 @@ export const UploadScreen = ({
 
   async function runBlock(stateBlock: block.Block): Promise<void> {
     const hasher = await transition.TransitionHasher.create();
-    // TODO [ToDr] Select from global settings
-    const spec = config.tinyChainSpec;
+    const spec = getChainSpec();
     const preState = extractedState?.preState;
     const entries = state_merkleization.StateEntries.fromEntriesUnsafe(
-      Object.entries(preState ?? {}).map(([key, val]) => ([bytes.Bytes.parseBytes(key, hash.TRUNCATED_HASH_SIZE),  bytes.BytesBlob.parseBlob(val)]))
+      Object.entries(preState ?? {}).map(([key, val]) => ([bytes.Bytes.parseBytes(key, 31),  bytes.BytesBlob.parseBlob(val)]))
     );
     const state = state_merkleization.SerializedState.fromStateEntries(spec, hasher.blake2b, entries);
     const stf = new transition.OnChain(spec, state, hasher, config.PvmBackend.BuiltIn, {
-      isAncestor(
-        _pastBlockSlot: block.TimeSlot,
-        _pastBlock: block.HeaderHash,
-        _currentBlock: block.HeaderHash
-      ): boolean {
+      isAncestor(): boolean {
         return true;
       }
     });

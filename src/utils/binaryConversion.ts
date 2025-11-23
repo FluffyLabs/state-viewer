@@ -1,4 +1,5 @@
-import { codec, config, state_vectors } from '@typeberry/lib';
+import { codec, state_vectors } from '@typeberry/lib';
+import { getChainSpec } from './chainSpecConfig';
 /**
  * Binary file conversion utilities
  * Handles conversion from binary formats (.bin files) to parsed JSON objects
@@ -20,7 +21,7 @@ export const convertBinaryToJson = (data: Uint8Array): unknown => {
   // we are going to try all of the types
   for (const typ of supportedTypes) {
     try {
-      const decoded = codec.Decoder.decodeObject(typ.Codec, data, config.tinyChainSpec);
+      const decoded = codec.Decoder.decodeObject(typ.Codec, data, getChainSpec());
       return decoded;
     } catch (e) {
       console.warn(`Unable to decode as ${typ.name}: ${e}`);

@@ -11,6 +11,9 @@ interface SettingsDialogProps {
 const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
   const [selectedGpVersion, setSelectedGpVersion] = useState<string>(window.process.env.GP_VERSION ?? "");
   const [selectedSuite, setSelectedSuite] = useState<string>(window.process.env.TEST_SUITE ?? "");
+  const [selectedChainSpec, setSelectedChainSpec] = useState<string>(
+    window.sessionStorage.getItem('CHAIN_SPEC') ?? "tiny"
+  );
 
   const gpOptions = useMemo(() => {
     const values = Object.values(utils.GpVersion).filter((v) => typeof v === 'string') as string[];
@@ -34,6 +37,7 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
   const handleApply = () => {
     window.sessionStorage.setItem('GP_VERSION', selectedGpVersion);
     window.sessionStorage.setItem('TEST_SUITE', selectedSuite);
+    window.sessionStorage.setItem('CHAIN_SPEC', selectedChainSpec);
     window.location.reload();
   };
 
@@ -89,6 +93,19 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
                   </option>
                 ))
               )}
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="chain-spec-select" className="text-sm text-muted-foreground">Chain Specification</label>
+            <select
+              id="chain-spec-select"
+              className="w-full bg-background border border-border rounded-md px-3 py-2 text-foreground"
+              value={selectedChainSpec}
+              onChange={(e) => setSelectedChainSpec(e.target.value)}
+            >
+              <option value="tiny">Tiny</option>
+              <option value="full">Full</option>
             </select>
           </div>
         </div>

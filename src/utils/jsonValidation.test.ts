@@ -494,7 +494,7 @@ describe('extractInputData', () => {
 
     const result = extractInputData(stfContent, 'stf-test-vector');
 
-    expect(result).toEqual({ state: {}, preState: {} });
+    expect(result).toEqual({ state: {}, preState: {}, block: {} });
   });
 });
 

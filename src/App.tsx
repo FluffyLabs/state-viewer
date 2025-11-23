@@ -8,14 +8,16 @@ import { utils } from "@typeberry/lib";
 import { FileProvider } from "@/contexts/FileContext";
 import {MainPage} from "./pages/MainPage";
 import {TriePage} from "./pages/TriePage";
+import { getChainSpecType } from "@/utils/chainSpecConfig";
 
 const VersionDisplay = () => {
   const currentVersion = utils.CURRENT_VERSION as string;
   const currentSuite = utils.CURRENT_SUITE as string;
+  const chainSpec = getChainSpecType();
 
   return (
     <span className="text-sm text-muted-foreground mr-2">
-      GP: {currentVersion}, Suite: {currentSuite}
+      GP: {currentVersion}, Suite: {currentSuite}, Spec: {chainSpec}
     </span>
   );
 };
