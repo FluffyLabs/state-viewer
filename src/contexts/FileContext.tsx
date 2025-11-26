@@ -9,6 +9,7 @@ interface FileContextType {
   uploadState: UploadState;
   extractedState: ExtractedState | null;
   stateTitle: (selectedState: StfStateType) => string;
+  executionLog: string[];
   
   // Actions
   updateUploadState: (
@@ -16,6 +17,8 @@ interface FileContextType {
     validation?: JsonValidationResult
   ) => void;
   setExecutedState: (state: RawState) => void;
+  logExecutionMessage: (message: string) => void;
+  resetExecutionLog: () => void;
   clearUpload: () => void;
 }
 
@@ -27,6 +30,7 @@ interface FileProviderProps {
 
 export const FileProvider = ({ children }: FileProviderProps) => {
   const [executedState, setExecutedState] = useState<RawState>();
+  const [executionLog, setExecutionLog] = useState<string[]>([]);
   const [uploadState, setUploadState] = useState<UploadState>(() => {
     // Try to restore from session storage
     const stored = sessionStorage.getItem(SESSION_STORAGE_KEY);
@@ -83,6 +87,14 @@ export const FileProvider = ({ children }: FileProviderProps) => {
     return { executedState, ...extractedState };
   }, [extractedState, executedState]);
 
+  const logExecutionMessage = useCallback((message: string) => {
+    setExecutionLog(prev => [...prev, message]);
+  }, []);
+
+  const resetExecutionLog = useCallback(() => {
+    setExecutionLog([]);
+  }, []);
+
   const stateTitle = useCallback((selectedState: StfStateType) => {
     if (uploadState.format === 'stf-test-vector' && selectedState) {
       if (selectedState === 'pre_state') {
@@ -128,8 +140,10 @@ export const FileProvider = ({ children }: FileProviderProps) => {
       format: 'unknown',
       formatDescription: '',
     });
+    setExecutedState(undefined);
+    resetExecutionLog();
     sessionStorage.removeItem(SESSION_STORAGE_KEY);
-  }, []);
+  }, [resetExecutionLog]);
 
   const value = {
     uploadState,
@@ -137,6 +151,9 @@ export const FileProvider = ({ children }: FileProviderProps) => {
     stateTitle,
     updateUploadState,
     setExecutedState,
+    executionLog,
+    logExecutionMessage,
+    resetExecutionLog,
     clearUpload,
   };
 

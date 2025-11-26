@@ -2,6 +2,7 @@ import {StfStateType} from "@/types/shared";
 import {Button} from "@fluffylabs/shared-ui";
 import type { block } from '@typeberry/lib';
 import { Popover } from '@/components/ui/Popover';
+import {Loader2} from "lucide-react";
 
 type StateKindSelectorProps = {
   availableStates?: StfStateType[];
@@ -10,6 +11,7 @@ type StateKindSelectorProps = {
   stateBlock?: block.Block;
   executedState?: unknown;
   runBlock?: (stateBlock: block.Block) => void;
+  runBlockLoading?: boolean;
 };
 
 export function StateKindSelector({
@@ -18,7 +20,8 @@ export function StateKindSelector({
   changeStateType,
   stateBlock,
   executedState,
-  runBlock
+  runBlock,
+  runBlockLoading
 }: StateKindSelectorProps) {
   if (!availableStates || availableStates.length === 0) {
     return;
@@ -45,8 +48,16 @@ export function StateKindSelector({
                 onClick={() => runBlock(stateBlock)}
                 variant="tertiary"
                 size="sm"
+                disabled={runBlockLoading}
               >
-                run block
+                {runBlockLoading ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Running...
+                  </span>
+                ) : (
+                  'run block'
+                )}
               </Button>
             }
             content="Run the block in typeberry to compare with expected post state"

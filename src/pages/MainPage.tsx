@@ -5,11 +5,21 @@ import { UploadScreen } from "../components/UploadScreen";
 import { StateViewer } from "../components/StateViewer";
 import { Tabs, isValidTab } from "@/utils/stateViewerUtils";
 import {isValidStateType} from "@/utils/jsonValidation";
-import {useCallback} from "react";
+import {useCallback, useEffect} from "react";
 import {selectState} from "./utils";
 
 export function MainPage() {
-  const { uploadState, extractedState, stateTitle, updateUploadState, setExecutedState, clearUpload } = useFileContext();
+  const {
+    uploadState,
+    extractedState,
+    stateTitle,
+    updateUploadState,
+    setExecutedState,
+    clearUpload,
+    executionLog,
+    logExecutionMessage,
+    resetExecutionLog
+  } = useFileContext();
   const navigate = useNavigate();
   const { tab, stateType } = useParams<{ tab: string; stateType: string }>();
 
@@ -35,6 +45,12 @@ export function MainPage() {
     handleChangeView(validTab, state);
   }, [handleChangeView, validTab]);
 
+  useEffect(() => {
+    if (validStateType === 'exec_diff' && !extractedState?.executedState) {
+      changeStateType('pre_state');
+    }
+  }, [validStateType, extractedState?.executedState, changeStateType]);
+
   const { currentState, preState } = selectState(validStateType, extractedState);
 
   return (
@@ -44,6 +60,8 @@ export function MainPage() {
         onUpdateUploadState={updateUploadState}
         onClearUpload={clearUpload}
         onSetExecutedState={setExecutedState}
+        onAppendExecutionLog={logExecutionMessage}
+        onResetExecutionLog={resetExecutionLog}
         changeStateType={changeStateType}
       />
       {currentState && (
@@ -53,6 +71,7 @@ export function MainPage() {
           title={appState.stateTitle}
           tab={validTab}
           stateType={validStateType}
+          executionLog={executionLog}
           changeView={handleChangeView}
         />
       )}

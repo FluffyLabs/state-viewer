@@ -3,7 +3,7 @@ import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, AlertCircle, Edit, FolderOpen } from 'lucide-react';
 import JsonEditorDialog from './JsonEditorDialog';
 import { validateFile, validateJsonContent, type JsonValidationResult, getChainSpec } from '../utils';
-import { block, block_json, bytes, config, json_parser, state_merkleization, transition, utils } from '@typeberry/lib';
+import { block, block_json, bytes, config, json_parser, logger, state_merkleization, transition, utils } from '@typeberry/lib';
 
 import ExamplesModal from '@/trie/components/ExamplesModal';
 import type { AppState, RawState, StfStateType, UploadState } from '@/types/shared';
@@ -48,6 +48,8 @@ export interface UploadScreenProps {
   onSetExecutedState: (state: RawState) => void;
   onClearUpload: () => void;
   changeStateType: (type: StfStateType) => void;
+  onAppendExecutionLog: (entry: string) => void;
+  onResetExecutionLog: () => void;
 }
 
 export const UploadScreen = ({
@@ -56,11 +58,14 @@ export const UploadScreen = ({
   onSetExecutedState,
   onClearUpload,
   changeStateType,
+  onAppendExecutionLog,
+  onResetExecutionLog,
 }: UploadScreenProps) => {
   const { uploadState, selectedState, extractedState } = appState;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formatError, setFormatError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRunningBlock, setIsRunningBlock] = useState(false);
   const executedState = extractedState?.executedState;
   
   const stateBlock = useMemo(() => {
@@ -176,30 +181,67 @@ export const UploadScreen = ({
   }, [clearUpload, handleUploadStateWithStorage]);
 
   async function runBlock(stateBlock: block.Block): Promise<void> {
-    const hasher = await transition.TransitionHasher.create();
-    const spec = getChainSpec();
-    const preState = extractedState?.preState;
-    const entries = state_merkleization.StateEntries.fromEntriesUnsafe(
-      Object.entries(preState ?? {}).map(([key, val]) => ([bytes.Bytes.parseBytes(key, 31),  bytes.BytesBlob.parseBlob(val)]))
-    );
-    const state = state_merkleization.SerializedState.fromStateEntries(spec, hasher.blake2b, entries);
-    const stf = new transition.OnChain(spec, state, hasher, config.PvmBackend.BuiltIn, {
-      isAncestor(): boolean {
-        return true;
-      }
+    if (isRunningBlock) {
+      return;
+    }
+
+    onResetExecutionLog();
+    setIsRunningBlock(true);
+
+    const originalConsoleInfo = console.info;
+    console.info = (...args: Parameters<typeof console.info>) => {
+      const serialized = args.map((arg) => {
+        if (typeof arg === 'string') {
+          return arg;
+        }
+        try {
+          return JSON.stringify(arg);
+        } catch {
+          return String(arg);
+        }
+      }).join(' ');
+      onAppendExecutionLog(serialized);
+      originalConsoleInfo(...args);
+    };
+
+    logger.Logger.configureAllFromOptions({
+      defaultLevel: logger.Level.TRACE,
+      modules: new Map(),
+      workingDir: '/',
     });
-    const blockView = block.reencodeAsView(block.Block.Codec, stateBlock, spec);
-    const headerHash = stf.hasher.header(blockView.header.view());
-    const res = await stf.transition(blockView, headerHash.hash);
-    if (res.isOk) {
-      console.log('Block imported correctly!');
-      state.backend.applyUpdate(state_merkleization.serializeStateUpdate(spec, hasher.blake2b, res.ok));
-      const stateEntries = Array.from(state.backend);
-      onSetExecutedState(Object.fromEntries(
-        stateEntries.map(([h, b]) => [h.toString(), b.toString()])
-      ));
-    } else {
-      console.log(`Error: ${utils.resultToString(res)}`);
+
+    try {
+      const hasher = await transition.TransitionHasher.create();
+      const spec = getChainSpec();
+      const preState = extractedState?.preState;
+      const entries = state_merkleization.StateEntries.fromEntriesUnsafe(
+        Object.entries(preState ?? {}).map(([key, val]) => ([bytes.Bytes.parseBytes(key, 31),  bytes.BytesBlob.parseBlob(val)]))
+      );
+      const state = state_merkleization.SerializedState.fromStateEntries(spec, hasher.blake2b, entries);
+      const stf = new transition.OnChain(spec, state, hasher, config.PvmBackend.BuiltIn, {
+        isAncestor(): boolean {
+          return true;
+        }
+      });
+      const blockView = block.reencodeAsView(block.Block.Codec, stateBlock, spec);
+      const headerHash = stf.hasher.header(blockView.header.view());
+      const res = await stf.transition(blockView, headerHash.hash);
+      if (res.isOk) {
+        console.info('Block imported correctly!');
+        state.backend.applyUpdate(state_merkleization.serializeStateUpdate(spec, hasher.blake2b, res.ok));
+        const stateEntries = Array.from(state.backend);
+        onSetExecutedState(Object.fromEntries(
+          stateEntries.map(([h, b]) => [h.toString(), b.toString()])
+        ));
+        changeStateType('exec_diff');
+      } else {
+        console.info(`Error: ${utils.resultToString(res)}`);
+      }
+    } catch (error) {
+      console.info(`Unexpected error: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      console.info = originalConsoleInfo;
+      setIsRunningBlock(false);
     }
   }
 
@@ -385,6 +427,7 @@ export const UploadScreen = ({
                   stateBlock={stateBlock}
                   executedState={executedState}
                   runBlock={runBlock}
+                  runBlockLoading={isRunningBlock}
                 />
               </div>
             </div>
