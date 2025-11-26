@@ -9,7 +9,15 @@ import {useCallback} from "react";
 import {selectState} from "./utils";
 
 export function MainPage() {
-  const { uploadState, extractedState, stateTitle, updateUploadState, setExecutedState, clearUpload } = useFileContext();
+  const {
+    uploadState,
+    extractedState,
+    stateTitle,
+    updateUploadState,
+    setExecutedState,
+    clearUpload,
+    isRestoring,
+  } = useFileContext();
   const navigate = useNavigate();
   const { tab, stateType } = useParams<{ tab: string; stateType: string }>();
 
@@ -21,6 +29,7 @@ export function MainPage() {
     extractedState,
     stateTitle: stateTitle(validStateType),
     selectedState: validStateType,
+    isRestoring,
   };
 
   const handleChangeView = useCallback((newTab: Tabs, stateType: StfStateType) => {

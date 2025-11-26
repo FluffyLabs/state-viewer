@@ -1,14 +1,14 @@
-import { createContext, useContext, useState, useMemo, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useMemo, useCallback, useEffect, ReactNode } from "react";
 import { extractGenesisState, JsonValidationResult } from "@/utils";
-import type { UploadState, StoredFileData, ExtractedState, StfStateType, JsonFileFormat, RawState } from "@/types/shared";
-
-const SESSION_STORAGE_KEY = 'state-view-file-data';
+import type { UploadState, StoredFileData, ExtractedState, StfStateType, RawState } from "@/types/shared";
+import { clearStoredFileData, getSessionStoredFileData, hasIndexedDbStoredFile, loadStoredFileData, saveStoredFileData } from "@/utils/fileStorage";
 
 interface FileContextType {
   // State
   uploadState: UploadState;
   extractedState: ExtractedState | null;
   stateTitle: (selectedState: StfStateType) => string;
+  isRestoring: boolean;
   
   // Actions
   updateUploadState: (
@@ -25,37 +25,64 @@ interface FileProviderProps {
   children: ReactNode;
 }
 
+const createEmptyUploadState = (): UploadState => ({
+  file: null,
+  content: '',
+  error: null,
+  isValidJson: false,
+  format: 'unknown',
+  formatDescription: '',
+  availableStates: undefined,
+  fileName: undefined,
+});
+
+const storedFileDataToUploadState = (data: StoredFileData): UploadState => ({
+  file: null,
+  content: data.content,
+  error: null,
+  isValidJson: true,
+  format: data.format,
+  formatDescription: data.formatDescription,
+  availableStates: data.availableStates,
+  fileName: data.fileName,
+});
+
 export const FileProvider = ({ children }: FileProviderProps) => {
   const [executedState, setExecutedState] = useState<RawState>();
   const [uploadState, setUploadState] = useState<UploadState>(() => {
-    // Try to restore from session storage
-    const stored = sessionStorage.getItem(SESSION_STORAGE_KEY);
-    if (stored) {
-      try {
-        const data: StoredFileData = JSON.parse(stored);
-        return {
-          file: null,
-          content: data.content,
-          error: null,
-          isValidJson: true,
-          format: data.format as JsonFileFormat,
-          formatDescription: data.formatDescription,
-          availableStates: data.availableStates,
-        };
-      } catch {
-        sessionStorage.removeItem(SESSION_STORAGE_KEY);
-      }
+    const stored = getSessionStoredFileData();
+    return stored ? storedFileDataToUploadState(stored) : createEmptyUploadState();
+  });
+  const [isRestoring, setIsRestoring] = useState<boolean>(() => {
+    return getSessionStoredFileData() ? false : hasIndexedDbStoredFile();
+  });
+
+  useEffect(() => {
+    if (getSessionStoredFileData() || !hasIndexedDbStoredFile()) {
+      return;
     }
 
-    return {
-      file: null,
-      content: '',
-      error: null,
-      isValidJson: false,
-      format: 'unknown',
-      formatDescription: '',
+    let isMounted = true;
+
+    const restoreState = async () => {
+      const data = await loadStoredFileData();
+      if (!isMounted) {
+        return;
+      }
+
+      if (data) {
+        setUploadState(storedFileDataToUploadState(data));
+      }
+
+      setIsRestoring(false);
     };
-  });
+
+    void restoreState();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Extract state data based on format and selected state
   const extractedState = useMemo(() => {
@@ -114,21 +141,15 @@ export const FileProvider = ({ children }: FileProviderProps) => {
         format: validation.format,
         formatDescription: validation.formatDescription,
         availableStates: validation.availableStates,
+        fileName: validation.fileName,
       };
-      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(dataToStore));
+      void saveStoredFileData(dataToStore);
     }
   }, []);
 
   const clearUpload = useCallback(() => {
-    setUploadState({
-      file: null,
-      content: '',
-      error: null,
-      isValidJson: false,
-      format: 'unknown',
-      formatDescription: '',
-    });
-    sessionStorage.removeItem(SESSION_STORAGE_KEY);
+    setUploadState(createEmptyUploadState());
+    void clearStoredFileData();
   }, []);
 
   const value = {
@@ -138,6 +159,7 @@ export const FileProvider = ({ children }: FileProviderProps) => {
     updateUploadState,
     setExecutedState,
     clearUpload,
+    isRestoring,
   };
 
   return (
