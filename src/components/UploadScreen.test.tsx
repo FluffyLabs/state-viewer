@@ -65,12 +65,16 @@ describe('UploadScreen', () => {
   const mockOnClearUpload = vi.fn();
   const mockChangeStateType = vi.fn();
   const mockOnSetExecutedState = vi.fn();
+  const mockOnAppendExecutionLog = vi.fn();
+  const mockOnResetExecutionLog = vi.fn();
 
   const defaultProps = {
     appState: mockAppState,
     onUpdateUploadState: mockOnUpdateUploadState,
     onSetExecutedState: mockOnSetExecutedState,
     onClearUpload: mockOnClearUpload,
+    onAppendExecutionLog: mockOnAppendExecutionLog,
+    onResetExecutionLog: mockOnResetExecutionLog,
     changeStateType: mockChangeStateType,
   };
 
