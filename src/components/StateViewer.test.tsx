@@ -5,6 +5,25 @@ import StateViewer from './StateViewer';
 // Mock the getChainSpecType function
 vi.mock('@/utils', () => ({
   getChainSpecType: vi.fn(() => 'tiny'),
+  calculateStateDiff: (preState: Record<string, string> = {}, postState: Record<string, string> = {}) => {
+    const diffResult: Record<string, string> = {};
+    const allKeys = new Set([...Object.keys(preState), ...Object.keys(postState)]);
+
+    for (const key of allKeys) {
+      const preValue = preState[key];
+      const postValue = postState[key];
+
+      if (preValue === undefined && postValue !== undefined) {
+        diffResult[key] = `[ADDED] ${postValue}`;
+      } else if (preValue !== undefined && postValue === undefined) {
+        diffResult[key] = `[REMOVED] ${preValue}`;
+      } else if (preValue !== postValue) {
+        diffResult[key] = `[CHANGED] ${preValue} → ${postValue}`;
+      }
+    }
+
+    return diffResult;
+  },
 }));
 
 // Mock the child components
@@ -268,5 +287,42 @@ describe('StateViewer', () => {
 
     fireEvent.click(screen.getByText('Decoded'));
     expect(mockChangeView).toHaveBeenCalledWith('decoded', 'pre_state');
+  });
+
+  it('should show execution log controls with diff count for exec diff state', () => {
+    render(
+      <StateViewer
+        state={mockState}
+        preState={mockPreState}
+        tab="encoded"
+        stateType="exec_diff"
+        executionLog={['Block imported correctly!']}
+        changeView={mockChangeView}
+      />
+    );
+
+    const execButton = screen.getByText('Execution log');
+    expect(execButton).toBeInTheDocument();
+    expect(screen.getByText('3 state differences')).toBeInTheDocument();
+
+    fireEvent.click(execButton);
+    const preElement = screen.getByText('Block imported correctly!');
+    expect(preElement.tagName).toBe('PRE');
+  });
+
+  it('should show empty-state message when execution log is empty', () => {
+    render(
+      <StateViewer
+        state={mockState}
+        preState={mockPreState}
+        tab="encoded"
+        stateType="exec_diff"
+        changeView={mockChangeView}
+      />
+    );
+
+    fireEvent.click(screen.getByText('Execution log'));
+    const preElement = screen.getByText('No execution logs captured yet. Run the block to see trace output here.');
+    expect(preElement.tagName).toBe('PRE');
   });
 });
