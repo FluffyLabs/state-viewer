@@ -194,35 +194,53 @@ const clearIndexedDb = async () => {
 };
 
 export const loadStoredFileData = async (): Promise<StoredFileData | null> => {
-  const stored = await getFromIndexedDb();
-  if (!stored) {
+  try {
+    const stored = await getFromIndexedDb();
+    if (!stored) {
+      clearIndexedFlag();
+    }
+    return stored;
+  } catch (error) {
+    console.warn('Failed to read IndexedDB data, falling back to sessionStorage.', error);
     clearIndexedFlag();
+    return getSessionStoredFileData();
   }
-  return stored;
 };
 
 export const saveStoredFileData = async (data: StoredFileData) => {
-  const persisted = await saveToIndexedDb(data);
-  if (persisted) {
-    setIndexedFlag();
-    clearSession();
-    return;
-  }
+  try {
+    const persisted = await saveToIndexedDb(data);
+    if (persisted) {
+      setIndexedFlag();
+      clearSession();
+      return;
+    }
 
-  clearIndexedFlag();
-  saveToSession(data);
+    clearIndexedFlag();
+    saveToSession(data);
+  } catch (error) {
+    console.warn('Failed to persist data to IndexedDB, falling back to sessionStorage.', error);
+    clearIndexedFlag();
+    saveToSession(data);
+  }
 };
 
 export const clearStoredFileData = async () => {
-  const cleared = await clearIndexedDb();
-  if (!cleared) {
+  try {
+    const cleared = await clearIndexedDb();
+    if (!cleared) {
+      clearSession();
+      clearIndexedFlag();
+      return;
+    }
+
     clearSession();
     clearIndexedFlag();
-    return;
+  } catch (error) {
+    console.warn('Failed to clear persisted data, removing session fallback only.', error);
+    clearSession();
+    clearIndexedFlag();
   }
-
-  clearSession();
-  clearIndexedFlag();
 };
 
 export const hasIndexedDbStoredFile = () => hasIndexedFlag();
