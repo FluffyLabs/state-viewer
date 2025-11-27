@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { utils } from '@typeberry/lib';
 import {Button} from '@fluffylabs/shared-ui';
+import { useFileContext } from '@/contexts/FileContext';
 
 interface SettingsDialogProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface SettingsDialogProps {
 }
 
 const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
+  const { showPvmLogs, setShowPvmLogs } = useFileContext();
   const [selectedGpVersion, setSelectedGpVersion] = useState<string>(window.process.env.GP_VERSION ?? "");
   const [selectedSuite, setSelectedSuite] = useState<string>(window.process.env.TEST_SUITE ?? "");
   const [selectedChainSpec, setSelectedChainSpec] = useState<string>(
@@ -107,6 +109,25 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
               <option value="tiny">Tiny</option>
               <option value="full">Full</option>
             </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm text-muted-foreground">Execution Logs</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="show-pvm-logs-setting"
+                checked={showPvmLogs}
+                onChange={(e) => setShowPvmLogs(e.target.checked)}
+                className="h-4 w-4 rounded border-muted-foreground/30"
+              />
+              <label htmlFor="show-pvm-logs-setting" className="text-sm text-foreground cursor-pointer">
+                Capture PVM trace logs (INSANE level)
+              </label>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              When enabled, detailed PVM trace logs will be captured during block execution. This may generate a large volume of logs.
+            </p>
           </div>
         </div>
 

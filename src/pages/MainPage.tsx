@@ -18,8 +18,8 @@ export function MainPage() {
     clearUpload,
     isRestoring,
     executionLog,
-    logExecutionMessage,
-    resetExecutionLog
+    setExecutionLog,
+    showPvmLogs
   } = useFileContext();
   const navigate = useNavigate();
   const { tab, stateType } = useParams<{ tab: string; stateType: string }>();
@@ -62,9 +62,9 @@ export function MainPage() {
         onUpdateUploadState={updateUploadState}
         onClearUpload={clearUpload}
         onSetExecutedState={setExecutedState}
-        onAppendExecutionLog={logExecutionMessage}
-        onResetExecutionLog={resetExecutionLog}
+        onSetExecutionLog={setExecutionLog}
         changeStateType={changeStateType}
+        showPvmLogs={showPvmLogs}
       />
       {currentState && (
         <StateViewer

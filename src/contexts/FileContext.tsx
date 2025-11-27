@@ -10,15 +10,16 @@ interface FileContextType {
   stateTitle: (selectedState: StfStateType) => string;
   isRestoring: boolean;
   executionLog: string[];
-  
+  showPvmLogs: boolean;
+
   // Actions
   updateUploadState: (
     newState: UploadState | ((prev: UploadState) => UploadState),
     validation?: JsonValidationResult
   ) => void;
   setExecutedState: (state: RawState) => void;
-  logExecutionMessage: (message: string) => void;
-  resetExecutionLog: () => void;
+  setExecutionLog: (log: string[]) => void;
+  setShowPvmLogs: (show: boolean) => void;
   clearUpload: () => void;
 }
 
@@ -53,6 +54,10 @@ const storedFileDataToUploadState = (data: StoredFileData): UploadState => ({
 export const FileProvider = ({ children }: FileProviderProps) => {
   const [executedState, setExecutedState] = useState<RawState>();
   const [executionLog, setExecutionLog] = useState<string[]>([]);
+  const [showPvmLogs, setShowPvmLogs] = useState<boolean>(() => {
+    const stored = localStorage.getItem('SHOW_PVM_LOGS');
+    return stored === null ? false : stored === 'true';
+  });
   const [uploadState, setUploadState] = useState<UploadState>(() => {
     const stored = getSessionStoredFileData();
     return stored ? storedFileDataToUploadState(stored) : createEmptyUploadState();
@@ -114,13 +119,6 @@ export const FileProvider = ({ children }: FileProviderProps) => {
     return { executedState, ...extractedState };
   }, [extractedState, executedState]);
 
-  const logExecutionMessage = useCallback((message: string) => {
-    setExecutionLog(prev => [...prev, message]);
-  }, []);
-
-  const resetExecutionLog = useCallback(() => {
-    setExecutionLog([]);
-  }, []);
 
   const stateTitle = useCallback((selectedState: StfStateType) => {
     if (uploadState.format === 'stf-test-vector' && selectedState) {
@@ -162,9 +160,14 @@ export const FileProvider = ({ children }: FileProviderProps) => {
   const clearUpload = useCallback(() => {
     setUploadState(createEmptyUploadState());
     setExecutedState(undefined);
-    resetExecutionLog();
+    setExecutionLog([]);
     clearStoredFileData();
-  }, [resetExecutionLog]);
+  }, []);
+
+  const handleSetShowPvmLogs = useCallback((show: boolean) => {
+    setShowPvmLogs(show);
+    localStorage.setItem('SHOW_PVM_LOGS', String(show));
+  }, []);
 
   const value = {
     uploadState,
@@ -173,8 +176,9 @@ export const FileProvider = ({ children }: FileProviderProps) => {
     updateUploadState,
     setExecutedState,
     executionLog,
-    logExecutionMessage,
-    resetExecutionLog,
+    setExecutionLog,
+    showPvmLogs,
+    setShowPvmLogs: handleSetShowPvmLogs,
     clearUpload,
     isRestoring,
   };
