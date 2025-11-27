@@ -3,6 +3,15 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import SettingsDialog from './SettingsDialog';
 
+const mockSetShowPvmLogs = vi.fn();
+
+vi.mock('@/contexts/FileContext', () => ({
+  useFileContext: () => ({
+    showPvmLogs: false,
+    setShowPvmLogs: mockSetShowPvmLogs,
+  }),
+}));
+
 // Mock lucide-react icons
 vi.mock('lucide-react', () => ({
   X: () => <div data-testid="x-icon" />,
@@ -28,6 +37,7 @@ describe('SettingsDialog', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSetShowPvmLogs.mockReset();
     Object.defineProperty(window, 'sessionStorage', {
       value: mockSessionStorage,
       writable: true,
