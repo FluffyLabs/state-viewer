@@ -12,6 +12,7 @@ export interface JsonValidationResult {
   format: JsonFileFormat;
   formatDescription: string;
   availableStates: StfStateType[];
+  fileName?: string;
 }
 
 // Zod Schemas
@@ -385,4 +386,3 @@ export function convertCamelCaseToSnake(parsedJson: unknown): unknown {
   }
   return result;
 }
-

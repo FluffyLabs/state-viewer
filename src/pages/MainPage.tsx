@@ -16,6 +16,7 @@ export function MainPage() {
     updateUploadState,
     setExecutedState,
     clearUpload,
+    isRestoring,
     executionLog,
     logExecutionMessage,
     resetExecutionLog
@@ -31,6 +32,7 @@ export function MainPage() {
     extractedState,
     stateTitle: stateTitle(validStateType),
     selectedState: validStateType,
+    isRestoring,
   };
 
   const handleChangeView = useCallback((newTab: Tabs, stateType: StfStateType) => {

@@ -52,6 +52,7 @@ describe('UploadScreen', () => {
     isValidJson: false,
     format: 'unknown',
     formatDescription: '',
+    fileName: undefined,
   };
 
   const mockAppState: AppState = {
@@ -59,6 +60,7 @@ describe('UploadScreen', () => {
     extractedState: null,
     stateTitle: 'State Data',
     selectedState: 'post_state',
+    isRestoring: false,
   };
 
   const mockOnUpdateUploadState = vi.fn();
@@ -78,6 +80,10 @@ describe('UploadScreen', () => {
     changeStateType: mockChangeStateType,
   };
 
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('renders upload screen with initial state', () => {
     render(<UploadScreen {...defaultProps} />);
 
@@ -86,6 +92,44 @@ describe('UploadScreen', () => {
     expect(screen.getByText('JSON')).toBeInTheDocument();
     expect(screen.getByText('Upload')).toBeInTheDocument();
     expect(screen.getByTestId('upload-icon')).toBeInTheDocument();
+  });
+
+  it('blocks interactions while restoring data', () => {
+    render(
+      <UploadScreen
+        {...defaultProps}
+        appState={{
+          ...defaultProps.appState,
+          isRestoring: true,
+        }}
+      />
+    );
+
+    expect(screen.getAllByText('Restoring previous upload...').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole('button', { name: /STF Test Vector/i })).toBeDisabled();
+  });
+
+  it('clears uploaded file when clear button is clicked', async () => {
+    const file = new File(['{}'], 'state.json', { type: 'application/json' });
+    render(
+      <UploadScreen
+        {...defaultProps}
+        appState={{
+          ...defaultProps.appState,
+          uploadState: {
+            ...defaultProps.appState.uploadState,
+            file,
+            isValidJson: true,
+            fileName: file.name,
+          },
+        }}
+      />
+    );
+
+    const clearButton = screen.getByLabelText('Clear uploaded file');
+    await user.click(clearButton);
+
+    expect(mockOnClearUpload).toHaveBeenCalled();
   });
 
   it('opens manual editor dialog when button is clicked', async () => {

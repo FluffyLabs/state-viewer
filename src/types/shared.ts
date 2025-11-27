@@ -19,6 +19,7 @@ export interface UploadState {
   format: JsonFileFormat;
   formatDescription: string;
   availableStates?: StfStateType[];
+  fileName?: string;
 }
 
 export interface AppState {
@@ -26,6 +27,7 @@ export interface AppState {
   extractedState: ExtractedState | null;
   selectedState: StfStateType;
   stateTitle: string;
+  isRestoring: boolean;
 }
 
 export interface StoredFileData {
@@ -33,4 +35,5 @@ export interface StoredFileData {
   format: JsonFileFormat;
   formatDescription: string;
   availableStates?: StfStateType[];
+  fileName?: string;
 }

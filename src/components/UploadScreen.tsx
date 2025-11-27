@@ -1,6 +1,6 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, type MouseEvent } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, FileText, AlertCircle, Edit, FolderOpen } from 'lucide-react';
+import { Upload, FileText, AlertCircle, Edit, FolderOpen, X } from 'lucide-react';
 import JsonEditorDialog from './JsonEditorDialog';
 import { validateFile, validateJsonContent, type JsonValidationResult, getChainSpec } from '../utils';
 import { block, block_json, bytes, config, json_parser, logger, state_merkleization, transition, utils } from '@typeberry/lib';
@@ -61,12 +61,15 @@ export const UploadScreen = ({
   onAppendExecutionLog,
   onResetExecutionLog,
 }: UploadScreenProps) => {
-  const { uploadState, selectedState, extractedState } = appState;
+  const { uploadState, selectedState, extractedState, isRestoring } = appState;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formatError, setFormatError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isRunningBlock, setIsRunningBlock] = useState(false);
   const executedState = extractedState?.executedState;
+  const displayFileName = uploadState.file?.name ?? uploadState.fileName ?? null;
+  const displayFileSize = uploadState.file ? `${(uploadState.file.size / 1024).toFixed(1)} KB` : null;
+  const isUiBlocked = isLoading || isRestoring;
   
   const stateBlock = useMemo(() => {
     const block = extractedState?.block;
@@ -82,8 +85,11 @@ export const UploadScreen = ({
   }, [extractedState]);
 
   const clearUpload = useCallback(() => {
+    if (isRestoring) {
+      return;
+    }
     onClearUpload();
-  }, [onClearUpload]);
+  }, [onClearUpload, isRestoring]);
 
   const handleUploadStateWithStorage = useCallback((
     newState: UploadState | ((prev: UploadState) => UploadState),
@@ -98,6 +104,7 @@ export const UploadScreen = ({
     if (!file) return;
 
     const validation = await validateFile(file);
+    const validationWithName = { ...validation, fileName: file.name };
 
     const newUploadState = {
       file,
@@ -108,9 +115,10 @@ export const UploadScreen = ({
       formatDescription: validation.formatDescription,
       availableStates: validation.availableStates,
       selectedState: validation.availableStates?.includes('diff') ? 'diff' : validation.availableStates?.[0],
+      fileName: file.name,
     };
 
-    handleUploadStateWithStorage(newUploadState, validation);
+    handleUploadStateWithStorage(newUploadState, validationWithName);
   }, [clearUpload, handleUploadStateWithStorage]);
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
@@ -121,15 +129,28 @@ export const UploadScreen = ({
     },
     multiple: false,
     noClick: true, // Disable click on the dropzone area itself
+    disabled: isUiBlocked,
   });
 
+  const handleOpenFileDialog = useCallback(() => {
+    if (isLoading || isRestoring) {
+      return;
+    }
+    open();
+  }, [isLoading, isRestoring, open]);
+
   const handleManualEdit = useCallback(() => {
+    if (isUiBlocked) {
+      return;
+    }
     setIsDialogOpen(true);
-  }, []);
+  }, [isUiBlocked]);
 
   const handleSaveManualEdit = useCallback((content: string) => {
     const validateManualContent = async () => {
       const validation = validateJsonContent(content);
+      const derivedFileName = uploadState.file?.name ?? uploadState.fileName;
+      const validationWithName = { ...validation, fileName: derivedFileName };
 
       if (validation.isValid && validation.format === 'unknown') {
         setFormatError('The JSON is valid but does not match any of the known formats (JIP-4 Chain Spec, STF Test Vector, STF Genesis).');
@@ -148,23 +169,33 @@ export const UploadScreen = ({
         formatDescription: validation.formatDescription,
         availableStates: validation.availableStates,
         selectedState: validation.availableStates?.includes('diff') ? 'diff' : validation.availableStates?.[0],
-      }), validation);
+        fileName: derivedFileName,
+      }), validationWithName);
     };
 
     validateManualContent();
-  }, [handleUploadStateWithStorage]);
+  }, [handleUploadStateWithStorage, uploadState.file, uploadState.fileName]);
 
-  const handleExampleLoad = useCallback(async (exampleContent: () => Promise<string>) => {
+  const handleClearUploadedFile = useCallback((event?: MouseEvent) => {
+    event?.stopPropagation();
+    clearUpload();
+  }, [clearUpload]);
+
+  const handleExampleLoad = useCallback(async (example: Pick<ExampleFile, 'name' | 'content'>) => {
+    if (isUiBlocked) {
+      return;
+    }
     clearUpload();
     setIsLoading(true);
     let content = '';
     try {
-      content = await exampleContent();
+      content = await example.content();
     } finally {
       setIsLoading(false);
     }
 
     const validation = validateJsonContent(content);
+    const validationWithName = { ...validation, fileName: example.name };
 
     const newUploadState = {
       file: null,
@@ -175,10 +206,11 @@ export const UploadScreen = ({
       formatDescription: validation.formatDescription,
       availableStates: validation.availableStates,
       selectedState: validation.availableStates?.includes('diff') ? 'diff' : validation.availableStates?.[0],
+      fileName: example.name,
     };
 
-    handleUploadStateWithStorage(newUploadState, validation);
-  }, [clearUpload, handleUploadStateWithStorage]);
+    handleUploadStateWithStorage(newUploadState, validationWithName);
+  }, [clearUpload, handleUploadStateWithStorage, isUiBlocked]);
 
   async function runBlock(stateBlock: block.Block): Promise<void> {
     if (isRunningBlock) {
@@ -246,7 +278,8 @@ export const UploadScreen = ({
   }
 
   return (
-    <>
+    <div className="relative" aria-busy={isRestoring}>
+      <div className={isRestoring ? "pointer-events-none opacity-60" : undefined}>
       {uploadState.content === '' && (
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">
@@ -255,8 +288,8 @@ export const UploadScreen = ({
         <p className="text-muted-foreground">
           Upload a serialized state dump to inspect it or try loading one of the examples:{' '}
           <button
-            disabled={isLoading}
-            onClick={() => handleExampleLoad(EXAMPLE_FILES[0].content)}
+            disabled={isUiBlocked}
+            onClick={() => handleExampleLoad(EXAMPLE_FILES[0])}
             className="text-primary hover:text-primary/80 hover:underline transition-colors"
             title={EXAMPLE_FILES[0].description}
           >
@@ -264,8 +297,8 @@ export const UploadScreen = ({
           </button>
           ,{' '}
           <button
-            disabled={isLoading}
-            onClick={() => handleExampleLoad(EXAMPLE_FILES[2].content)}
+            disabled={isUiBlocked}
+            onClick={() => handleExampleLoad(EXAMPLE_FILES[2])}
             className="text-primary hover:text-primary/80 hover:underline transition-colors"
             title={EXAMPLE_FILES[2].description}
           >
@@ -273,8 +306,8 @@ export const UploadScreen = ({
           </button>
           ,{' '}
           <button
-            disabled={isLoading}
-            onClick={() => handleExampleLoad(EXAMPLE_FILES[1].content)}
+            disabled={isUiBlocked}
+            onClick={() => handleExampleLoad(EXAMPLE_FILES[1])}
             className="text-primary hover:text-primary/80 hover:underline transition-colors"
             title={EXAMPLE_FILES[1].description}
           >
@@ -282,8 +315,8 @@ export const UploadScreen = ({
           </button>
           ,{' '}
           <button
-            disabled={isLoading}
-            onClick={() => handleExampleLoad(EXAMPLE_FILES[3].content)}
+            disabled={isUiBlocked}
+            onClick={() => handleExampleLoad(EXAMPLE_FILES[3])}
             className="text-primary hover:text-primary/80 hover:underline transition-colors"
             title={EXAMPLE_FILES[3].description}
           >
@@ -293,13 +326,18 @@ export const UploadScreen = ({
         <p className="text-muted-foreground">
           Instead of loading full JAM state you can also try out&nbsp;
           <ExamplesModal
-            onSelect={(rows) => handleExampleLoad(async () => JSON.stringify({
-              state: rows
-            }, null, 2))}
-            button={(open) => (
+            onSelect={(rows) => handleExampleLoad({
+              name: 'Trie Example',
+              content: async () => JSON.stringify({ state: rows }, null, 2),
+            })}
+            button={(openExamples) => (
               <button
-                disabled={isLoading}
-                onClick={open}
+                disabled={isUiBlocked}
+                onClick={() => {
+                  if (!isUiBlocked) {
+                    openExamples();
+                  }
+                }}
                   className="text-primary hover:text-primary/80 hover:underline transition-colors"
                 title="open trie examples"
                 >
@@ -343,16 +381,33 @@ export const UploadScreen = ({
                 </p>
                 <p className="text-sm text-muted-foreground">&nbsp;</p>
               </div>
-            ) : uploadState.file ? (
+            ) : displayFileName ? (
               <div className="space-y-2">
-                <p className="text-foreground font-medium">{uploadState.file.name}</p>
-                <p className="text-sm text-muted-foreground">
-                  {(uploadState.file.size / 1024).toFixed(1)} KB
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-foreground font-medium">{displayFileName}</p>
+                  <button
+                    type="button"
+                    onClick={handleClearUploadedFile}
+                    disabled={isUiBlocked}
+                    aria-label="Clear uploaded file"
+                    className="inline-flex items-center justify-center rounded-full p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                {displayFileSize && (
+                  <p className="text-sm text-muted-foreground">
+                    {displayFileSize}
+                  </p>
+                )}
               </div>
-            ) : isLoading ?  (
+            ) : isLoading ? (
               <div className="space-y-2">
                 Loading example...
+              </div>
+            ) : isRestoring ? (
+              <div className="space-y-2">
+                Restoring previous upload...
               </div>
             ) : (
                 <div className="space-y-2">
@@ -367,13 +422,14 @@ export const UploadScreen = ({
             </div>
 
             {/* Action Buttons */}
-            {!isLoading && (
+            {!isUiBlocked && (
               <div className="flex flex-wrap gap-3 justify-center">
                 {/* Browse Button (if no file uploaded) */}
                   <Button
-                    onClick={open}
+                    onClick={handleOpenFileDialog}
                     variant="primary"
                     size="lg"
+                    disabled={isUiBlocked}
                   >
                     <FolderOpen className="h-4 w-4" />
                     <span>{(!uploadState.file && !uploadState.content) ? 'Upload' : 'Change'}</span>
@@ -383,6 +439,7 @@ export const UploadScreen = ({
                   onClick={handleManualEdit}
                   variant="secondary"
                   size="lg"
+                  disabled={isUiBlocked}
                 >
                   <Edit className="h-4 w-4" />
                   <span>{(!uploadState.file && !uploadState.content) ? 'JSON' : 'Edit'}</span>
@@ -447,6 +504,15 @@ export const UploadScreen = ({
         initialContent={uploadState.content || '{\n  \n}'}
         formatError={formatError}
       />
-    </>
+      </div>
+      {isRestoring && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 backdrop-blur">
+          <div className="flex items-center gap-3 text-muted-foreground">
+            <span className="inline-flex h-5 w-5 rounded-full border-2 border-muted-foreground border-b-transparent animate-spin" aria-hidden="true" />
+            <span>Restoring previous upload...</span>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
