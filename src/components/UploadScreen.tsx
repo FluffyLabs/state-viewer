@@ -48,8 +48,8 @@ export interface UploadScreenProps {
   onSetExecutedState: (state: RawState) => void;
   onClearUpload: () => void;
   changeStateType: (type: StfStateType) => void;
-  onAppendExecutionLog: (entry: string) => void;
-  onResetExecutionLog: () => void;
+  onSetExecutionLog: (log: string[]) => void;
+  showPvmLogs: boolean;
 }
 
 export const UploadScreen = ({
@@ -58,8 +58,8 @@ export const UploadScreen = ({
   onSetExecutedState,
   onClearUpload,
   changeStateType,
-  onAppendExecutionLog,
-  onResetExecutionLog,
+  onSetExecutionLog,
+  showPvmLogs,
 }: UploadScreenProps) => {
   const { uploadState, selectedState, extractedState, isRestoring } = appState;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -217,28 +217,21 @@ export const UploadScreen = ({
       return;
     }
 
-    onResetExecutionLog();
     setIsRunningBlock(true);
+    const logBuffer: string[] = [];
 
     const originalConsoleInfo = console.info;
     console.info = (...args: Parameters<typeof console.info>) => {
-      const serialized = args.map((arg) => {
-        if (typeof arg === 'string') {
-          return arg;
-        }
-        try {
-          return JSON.stringify(arg);
-        } catch {
-          return String(arg);
-        }
-      }).join(' ');
-      onAppendExecutionLog(serialized);
+      const serialized = args.map((arg) => String(arg)).join(' ');
+      logBuffer.push(serialized);
       originalConsoleInfo(...args);
     };
 
     logger.Logger.configureAllFromOptions({
       defaultLevel: logger.Level.TRACE,
-      modules: new Map(),
+      // TODO [todr] due to a bug in typeberry we need to pad the module name here.
+      // this should be fixed in next release so make sure to update it here as well.
+      modules: showPvmLogs ? new Map([["     pvm", logger.Level.INSANE], ["pvm", logger.Level.INSANE]]) : new Map(),
       workingDir: '/',
     });
 
@@ -274,6 +267,7 @@ export const UploadScreen = ({
     } finally {
       console.info = originalConsoleInfo;
       setIsRunningBlock(false);
+      onSetExecutionLog(logBuffer);
     }
   }
 

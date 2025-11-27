@@ -8,6 +8,7 @@ import {StfStateType} from '@/types/shared';
 import { calculateStateDiff, getChainSpecType } from '@/utils';
 import {Button} from '@fluffylabs/shared-ui';
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from '@/trie/components/ui/dialog';
+import { useFileContext } from '@/contexts/FileContext';
 
 export interface StateViewerProps {
   preState?: Record<string, string>;
@@ -28,8 +29,10 @@ export const StateViewer = ({
   executionLog = [],
   changeView,
 }: StateViewerProps) => {
+  const { showPvmLogs } = useFileContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [isExecutionLogOpen, setIsExecutionLogOpen] = useState(false);
+  const [filterPvmLogs, setFilterPvmLogs] = useState(true);
 
   const handleTabChange = useCallback((newTab: string) => {
     if (isValidTab(newTab)) {
@@ -45,6 +48,14 @@ export const StateViewer = ({
     }
     return Object.keys(calculateStateDiff(preState, state)).length;
   }, [stateType, preState, state]);
+
+  const filteredExecutionLog = useMemo(() => {
+    // If PVM logs are being captured and the user wants to filter them out
+    if (showPvmLogs && !filterPvmLogs) {
+      return executionLog.filter(line => !line.startsWith('INSANE'));
+    }
+    return executionLog;
+  }, [executionLog, showPvmLogs, filterPvmLogs]);
 
   return (
     <div>
@@ -108,10 +119,35 @@ export const StateViewer = ({
               Captured console output from the last executed block.
             </DialogDescription>
           </DialogHeader>
+          <div className="space-y-2 mt-2">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="filter-pvm-logs"
+                checked={showPvmLogs && filterPvmLogs}
+                onChange={(e) => setFilterPvmLogs(e.target.checked)}
+                disabled={!showPvmLogs}
+                className="h-4 w-4 rounded border-muted-foreground/30 disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+              <label
+                htmlFor="filter-pvm-logs"
+                className={`text-sm ${showPvmLogs ? 'text-foreground cursor-pointer' : 'text-muted-foreground cursor-not-allowed'}`}
+              >
+                Show PVM trace logs
+              </label>
+            </div>
+            {!showPvmLogs && (
+              <p className="text-xs text-muted-foreground ml-6">
+                PVM trace logs are disabled. Enable them in Settings to capture detailed execution traces.
+              </p>
+            )}
+          </div>
           <pre className="mt-2 max-h-64 w-full overflow-y-auto rounded-md border border-muted-foreground/30 bg-muted/20 p-3 font-mono text-sm text-foreground">
-            {executionLog.length > 0
-              ? executionLog.join('\n')
-              : 'No execution logs captured yet. Run the block to see trace output here.'}
+            {filteredExecutionLog.length > 0
+              ? filteredExecutionLog.join('\n')
+              : executionLog.length > 0
+                ? 'All logs filtered out. Check the "Show PVM trace logs" option above.'
+                : 'No execution logs captured yet. Run the block to see trace output here.'}
           </pre>
         </DialogContent>
       </Dialog>

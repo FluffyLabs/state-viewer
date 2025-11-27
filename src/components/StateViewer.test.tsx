@@ -2,6 +2,12 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import StateViewer from './StateViewer';
 
+vi.mock('@/contexts/FileContext', () => ({
+  useFileContext: () => ({
+    showPvmLogs: false,
+  }),
+}));
+
 // Mock the getChainSpecType function
 vi.mock('@/utils', () => ({
   getChainSpecType: vi.fn(() => 'tiny'),
