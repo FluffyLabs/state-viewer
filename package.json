@@ -40,7 +40,7 @@
     "tailwindcss": "^4.1.17",
     "tippy.js": "^6.3.7",
     "vite-bundle-analyzer": "^1.2.3",
-    "zod": "^4.1.12"
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
