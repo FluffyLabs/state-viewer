@@ -7,7 +7,6 @@ import * as block from '@typeberry/lib/block';
 import * as block_json from '@typeberry/lib/block-json';
 import * as bytes from '@typeberry/lib/bytes';
 import * as config from '@typeberry/lib/config';
-import * as crypto from '@typeberry/lib/crypto';
 import * as json_parser from '@typeberry/lib/json-parser';
 import * as logger from '@typeberry/lib/logger';
 import * as state_merkleization from '@typeberry/lib/state-merkleization';
@@ -18,8 +17,6 @@ import ExamplesModal from '@/trie/components/ExamplesModal';
 import type { AppState, RawState, StfStateType, UploadState } from '@/types/shared';
 import {StateKindSelector} from './StateKindSelector';
 import {Button} from '@fluffylabs/shared-ui';
-
-void crypto.initWasm();
 
 interface ExampleFile {
   name: string;

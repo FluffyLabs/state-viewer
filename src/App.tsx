@@ -9,6 +9,9 @@ import { FileProvider } from "@/contexts/FileContext";
 import {MainPage} from "./pages/MainPage";
 import {TriePage} from "./pages/TriePage";
 import { getChainSpecType } from "@/utils/chainSpecConfig";
+import * as crypto from '@typeberry/lib/crypto';
+
+void crypto.initWasm();
 
 const VersionDisplay = () => {
   const currentVersion = utils.CURRENT_VERSION as string;
