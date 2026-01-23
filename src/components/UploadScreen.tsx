@@ -82,13 +82,13 @@ export const UploadScreen = ({
   const displayFileSize = uploadState.file ? `${(uploadState.file.size / 1024).toFixed(1)} KB` : null;
   const isUiBlocked = isLoading || isRestoring;
   
-  const stateBlock = useMemo(() => {
-    const block = extractedState?.block;
-    if (block === undefined) {
+  const stateBlock = useMemo((): block.Block | undefined => {
+    const blockData = extractedState?.block;
+    if (blockData === undefined) {
       return undefined;
     }
     try {
-      return json_parser.parseFromJson(block, block_json.blockFromJson(getChainSpec()));
+      return json_parser.parseFromJson(blockData, block_json.blockFromJson(getChainSpec()));
     } catch (e) {
       console.warn('Unable to parse state block', e);
       return undefined;
@@ -254,12 +254,15 @@ export const UploadScreen = ({
         Object.entries(preState ?? {}).map(([key, val]) => ([bytes.Bytes.parseBytes(key, 31),  bytes.BytesBlob.parseBlob(val)]))
       );
       const state = state_merkleization.SerializedState.fromStateEntries(spec, hasher.blake2b, entries);
-      const stf = new transition.OnChain(spec, state, hasher, config.PvmBackend.BuiltIn, {
+      const stf = new transition.OnChain(spec, state, hasher, {
+        pvm: config.PvmBackend.BuiltIn,
+        accumulateSequentially: false,
+      }, {
         isAncestor(): boolean {
           return true;
         }
       });
-      const blockView = block.reencodeAsView(block.Block.Codec, stateBlock, spec);
+      const blockView = block.reencodeAsView(block.Block.Codec, stateBlock, spec) as block.BlockView;
       const headerHash = stf.hasher.header(blockView.header.view());
       const res = await stf.transition(blockView, headerHash.hash);
       if (res.isOk) {
