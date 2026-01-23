@@ -5,7 +5,9 @@
 
 import { validateJsonContent, type JsonValidationResult } from './jsonValidation';
 import { convertBinaryToJson } from './binaryConversion';
-import {bytes, codec, collections} from '@typeberry/lib';
+import * as bytes from '@typeberry/lib/bytes';
+import * as codec from '@typeberry/lib/codec';
+import * as collections from '@typeberry/lib/collections';
 
 /**
  * Validates a binary file by converting it to JSON and then validating the JSON

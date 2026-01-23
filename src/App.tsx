@@ -4,7 +4,7 @@ import { Header, AppsSidebar, Button } from "@fluffylabs/shared-ui";
 import { Settings } from "lucide-react";
 import ToolName from "@/assets/tool-name.svg";
 import SettingsDialog from "@/components/SettingsDialog";
-import { utils } from "@typeberry/lib";
+import * as utils  from "@typeberry/lib/utils";
 import { FileProvider } from "@/contexts/FileContext";
 import {MainPage} from "./pages/MainPage";
 import {TriePage} from "./pages/TriePage";

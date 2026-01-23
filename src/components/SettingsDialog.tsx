@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
-import { utils } from '@typeberry/lib';
+import * as utils from '@typeberry/lib/utils';
 import {Button} from '@fluffylabs/shared-ui';
 import { useFileContext } from '@/contexts/FileContext';
 

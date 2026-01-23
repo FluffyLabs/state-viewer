@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ServiceViewer from './ServiceViewer';
 import type { Service, StateAccess, ServiceAccountInfo } from '../types/service';
-import { bytes } from '@typeberry/lib';
+import * as bytes from '@typeberry/lib/bytes';
 
 // Mock ServiceIdsInput
 vi.mock('./service/ServiceIdsInput', () => ({
