@@ -262,7 +262,7 @@ export const UploadScreen = ({
           return true;
         }
       });
-      const blockView = block.reencodeAsView(block.Block.Codec, stateBlock, spec) as block.BlockView;
+      const blockView: block.BlockView = block.reencodeAsView(block.Block.Codec, stateBlock, spec);
       const headerHash = stf.hasher.header(blockView.header.view());
       const res = await stf.transition(blockView, headerHash.hash);
       if (res.isOk) {
