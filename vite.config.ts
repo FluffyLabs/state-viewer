@@ -36,7 +36,9 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['@typeberry/lib'],
+    // Exclude @typeberry/native from pre-bundling - it has a wrapper layer
+    // that provides camelCase API (verifyHeaderSeals) over snake_case WASM functions
+    exclude: ['@typeberry/native'],
     esbuildOptions: {
       // Preserve class names during dependency pre-bundling
       keepNames: true,

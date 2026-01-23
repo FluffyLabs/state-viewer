@@ -1,6 +1,9 @@
 import blake2b from "blake2b";
 import type { Service, StorageKey, PreimageHash, U32 } from '../../types/service';
-import { bytes, numbers, state_merkleization, hash } from '@typeberry/lib';
+import * as bytes from '@typeberry/lib/bytes';
+import * as numbers from '@typeberry/lib/numbers';
+import * as state_merkleization from '@typeberry/lib/state-merkleization';
+import * as hash from '@typeberry/lib/hash';
 import { ServiceData} from "./types";
 import { serviceData as serviceDataSerializer } from '../../constants/serviceFields';
 import {RawState} from "@/types/shared";
