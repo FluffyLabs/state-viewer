@@ -24,7 +24,7 @@
     "@radix-ui/react-dialog": "^1.1.15",
     "@tailwindcss/vite": "^4.1.17",
     "@typeberry/lib": "0.4.1-818bae8",
-    "@uiw/react-codemirror": "^4.25.3",
+    "@uiw/react-codemirror": "^4.25.4",
     "blake2b": "^2.1.4",
     "cytoscape": "^3.33.1",
     "cytoscape-elk": "^2.3.0",
