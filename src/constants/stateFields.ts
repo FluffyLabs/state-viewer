@@ -1,4 +1,4 @@
-import { state_merkleization as lib } from "@typeberry/lib";
+import * as lib from "@typeberry/lib/state-merkleization";
 
 export interface StateField {
   key: string;

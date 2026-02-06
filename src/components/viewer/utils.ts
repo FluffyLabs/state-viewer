@@ -1,4 +1,4 @@
-import {collections} from "@typeberry/lib";
+import * as collections from "@typeberry/lib/collections";
 
 export const CUT_LENGTH = 66;
 
@@ -10,6 +10,7 @@ export function toSmartString(item: unknown, options: {
   fullObject?: boolean,
   showBytesLength?: boolean,
 }): string {
+  console.log('toSmartString', item);
   const {
     fullObject = false,
     showBytesLength = false,
@@ -44,6 +45,7 @@ export function toSmartString(item: unknown, options: {
       return '{}';
     }
     if (fullObject) {
+      console.log(item);
       const itemRecord = item as Record<string, unknown>;
       return `{\n${Object.keys(item).map(key => `  ${key}: ${toSmartString(itemRecord[key], options)}`).join(',\n')}\n}`;
     }

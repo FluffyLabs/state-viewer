@@ -1,4 +1,5 @@
-import { codec, state_vectors } from '@typeberry/lib';
+import * as codec from '@typeberry/lib/codec';
+import * as state_vectors from '@typeberry/lib/state-vectors';
 import { getChainSpec } from './chainSpecConfig';
 /**
  * Binary file conversion utilities
