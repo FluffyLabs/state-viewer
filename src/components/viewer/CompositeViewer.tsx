@@ -1,9 +1,9 @@
 import { useState } from 'react';
+import * as collections from '@typeberry/lib/collections';
+import { Button } from '@fluffylabs/shared-ui';
 import ArrayViewer from './ArrayViewer';
 import ObjectViewer from './ObjectViewer';
 import ToStringViewer from './ToStringViewer';
-import {Button} from '@fluffylabs/shared-ui';
-import * as collections from '@typeberry/lib/collections';
 
 type DisplayMode = 'decoded' | 'raw' | 'string';
 

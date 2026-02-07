@@ -27,10 +27,10 @@ const CompositeDiff = ({
       return { content: rawValue, type: 'raw' };
     }
     if (displayMode === 'string') {
-      return { content: toSmartString(value, { fullObject: true }), type: 'text' };
+      return { content: toSmartString(value, { fullObject: true, showBytesLength }), type: 'text' };
     }
     // For decoded mode, we'll use stringified version for diff
-    return { content: toSmartString(value, { fullObject: true }), type: 'text' };
+    return { content: toSmartString(value, { fullObject: true, showBytesLength }), type: 'text' };
   };
 
   const computeLineDiff = (before: string, after: string): Array<{type: 'same' | 'removed' | 'added', line: string}> => {

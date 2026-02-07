@@ -3,11 +3,12 @@
  * Routes file validation between binary and JSON handlers
  */
 
-import { validateJsonContent, type JsonValidationResult } from './jsonValidation';
-import { convertBinaryToJson } from './binaryConversion';
 import * as bytes from '@typeberry/lib/bytes';
 import * as codec from '@typeberry/lib/codec';
 import * as collections from '@typeberry/lib/collections';
+
+import { validateJsonContent, type JsonValidationResult } from './jsonValidation';
+import { convertBinaryToJson } from './binaryConversion';
 
 /**
  * Validates a binary file by converting it to JSON and then validating the JSON

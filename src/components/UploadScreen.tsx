@@ -1,9 +1,9 @@
 import { useState, useCallback, useMemo, type MouseEvent } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, AlertCircle, Edit, FolderOpen, X } from 'lucide-react';
-import JsonEditorDialog from './JsonEditorDialog';
-import { validateFile, validateJsonContent, type JsonValidationResult, getChainSpec } from '../utils';
+import {Button} from '@fluffylabs/shared-ui';
 import * as block from '@typeberry/lib/block';
+import {Block, BlockView} from '@typeberry/lib/block';
 import * as block_json from '@typeberry/lib/block-json';
 import * as bytes from '@typeberry/lib/bytes';
 import * as config from '@typeberry/lib/config';
@@ -16,8 +16,8 @@ import * as utils from '@typeberry/lib/utils';
 import ExamplesModal from '@/trie/components/ExamplesModal';
 import type { AppState, RawState, StfStateType, UploadState } from '@/types/shared';
 import {StateKindSelector} from './StateKindSelector';
-import {Button} from '@fluffylabs/shared-ui';
-import {Block, BlockView} from '@typeberry/lib/block';
+import JsonEditorDialog from './JsonEditorDialog';
+import { validateFile, validateJsonContent, type JsonValidationResult, getChainSpec } from '../utils';
 
 interface ExampleFile {
   name: string;
@@ -80,18 +80,19 @@ export const UploadScreen = ({
   const displayFileSize = uploadState.file ? `${(uploadState.file.size / 1024).toFixed(1)} KB` : null;
   const isUiBlocked = isLoading || isRestoring;
   
+  const chainSpec = getChainSpec();
   const stateBlock = useMemo(() => {
     const block = extractedState?.block;
     if (block === undefined) {
       return undefined;
     }
     try {
-      return json_parser.parseFromJson<Block>(block, block_json.blockFromJson(getChainSpec()));
+      return json_parser.parseFromJson<Block>(block, block_json.blockFromJson(chainSpec));
     } catch (e) {
       console.warn('Unable to parse state block', e);
       return undefined;
     }
-  }, [extractedState]);
+  }, [extractedState, chainSpec]);
 
   const clearUpload = useCallback(() => {
     if (isRestoring) {
