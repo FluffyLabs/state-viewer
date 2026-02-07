@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { config, bytes, state_merkleization as lib, hash } from "@typeberry/lib";
+import * as config from "@typeberry/lib/config";
+import * as bytes from "@typeberry/lib/bytes";
+import * as lib from "@typeberry/lib/state-merkleization";
+import * as hash from "@typeberry/lib/hash";
 import { CompositeViewer, CompositeDiff } from './viewer';
 import ServiceViewer from './ServiceViewer';
 import type { StateAccess } from '../types/service';

@@ -1,14 +1,23 @@
 import { useState, useCallback, useMemo, type MouseEvent } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, AlertCircle, Edit, FolderOpen, X } from 'lucide-react';
-import JsonEditorDialog from './JsonEditorDialog';
-import { validateFile, validateJsonContent, type JsonValidationResult, getChainSpec } from '../utils';
-import { block, block_json, bytes, config, json_parser, logger, state_merkleization, transition, utils } from '@typeberry/lib';
+import {Button} from '@fluffylabs/shared-ui';
+import * as block from '@typeberry/lib/block';
+import {Block, BlockView} from '@typeberry/lib/block';
+import * as block_json from '@typeberry/lib/block-json';
+import * as bytes from '@typeberry/lib/bytes';
+import * as config from '@typeberry/lib/config';
+import * as json_parser from '@typeberry/lib/json-parser';
+import * as logger from '@typeberry/lib/logger';
+import * as state_merkleization from '@typeberry/lib/state-merkleization';
+import * as transition from '@typeberry/lib/transition';
+import * as utils from '@typeberry/lib/utils';
 
 import ExamplesModal from '@/trie/components/ExamplesModal';
 import type { AppState, RawState, StfStateType, UploadState } from '@/types/shared';
 import {StateKindSelector} from './StateKindSelector';
-import {Button} from '@fluffylabs/shared-ui';
+import JsonEditorDialog from './JsonEditorDialog';
+import { validateFile, validateJsonContent, type JsonValidationResult, getChainSpec } from '../utils';
 
 interface ExampleFile {
   name: string;
@@ -71,18 +80,19 @@ export const UploadScreen = ({
   const displayFileSize = uploadState.file ? `${(uploadState.file.size / 1024).toFixed(1)} KB` : null;
   const isUiBlocked = isLoading || isRestoring;
   
+  const chainSpec = getChainSpec();
   const stateBlock = useMemo(() => {
     const block = extractedState?.block;
     if (block === undefined) {
       return undefined;
     }
     try {
-      return json_parser.parseFromJson(block, block_json.blockFromJson(getChainSpec()));
+      return json_parser.parseFromJson<Block>(block, block_json.blockFromJson(chainSpec));
     } catch (e) {
       console.warn('Unable to parse state block', e);
       return undefined;
     }
-  }, [extractedState]);
+  }, [extractedState, chainSpec]);
 
   const clearUpload = useCallback(() => {
     if (isRestoring) {
@@ -243,12 +253,15 @@ export const UploadScreen = ({
         Object.entries(preState ?? {}).map(([key, val]) => ([bytes.Bytes.parseBytes(key, 31),  bytes.BytesBlob.parseBlob(val)]))
       );
       const state = state_merkleization.SerializedState.fromStateEntries(spec, hasher.blake2b, entries);
-      const stf = new transition.OnChain(spec, state, hasher, config.PvmBackend.BuiltIn, {
+      const stf = new transition.OnChain(spec, state, hasher, {
+        pvm: config.PvmBackend.BuiltIn,
+        accumulateSequentially: true,
+      }, {
         isAncestor(): boolean {
           return true;
         }
       });
-      const blockView = block.reencodeAsView(block.Block.Codec, stateBlock, spec);
+      const blockView: BlockView = block.reencodeAsView(block.Block.Codec, stateBlock, spec);
       const headerHash = stf.hasher.header(blockView.header.view());
       const res = await stf.transition(blockView, headerHash.hash);
       if (res.isOk) {

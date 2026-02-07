@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
+import { Button, cn } from '@fluffylabs/shared-ui';
+import * as hash from '@typeberry/lib/hash';
+
 import { discoverServiceEntries, getLookupHistoryValue, parsePreimageInput } from './serviceUtils';
 import ValueDisplay from './ValueDisplay';
 import CompositeDiff from '../viewer/CompositeDiff';
 import { Service } from '@/types/service';
 import { serviceLookupHistory } from '@/constants/serviceFields';
-import { Button, cn } from '@fluffylabs/shared-ui';
-import {hash} from '@typeberry/lib';
-import {RawState} from '@/types/shared';
+import { RawState } from '@/types/shared';
 
 export interface LookupHistoryQueryProps {
   preState?: RawState;
@@ -21,7 +22,7 @@ export interface LookupHistoryQueryProps {
 const libBlake2b = await hash.Blake2b.createHasher();
 
 const LookupHistoryQuery = ({ serviceId, preService, service, state, preState, isDiffMode = false, disabled = false }: LookupHistoryQueryProps) => {
-  const [hash, setHash] = useState('');
+  const [hashInput, setHashInput] = useState('');
   const [length, setLength] = useState('');
 
   const discoveredKeys = useMemo(() => {
@@ -33,15 +34,15 @@ const LookupHistoryQuery = ({ serviceId, preService, service, state, preState, i
   }, [state, preState, serviceId]);
 
   const handleQuery = () => {
-    if (hash && length && service) {
-      const result = getLookupHistoryValue(service, hash, length, state);
-      console.log(`LookupHistory[${serviceId}][${hash}][${length}]:`, result);
+    if (hashInput && length && service) {
+      const result = getLookupHistoryValue(service, hashInput, length, state);
+      console.log(`LookupHistory[${serviceId}][${hashInput}][${length}]:`, result);
     }
   };
 
   const rawKey = useMemo(() => {
     try {
-      const result = parsePreimageInput(hash);
+      const result = parsePreimageInput(hashInput);
       if (result.type === 'raw') {
         return result.key.toString();
       }
@@ -55,7 +56,7 @@ const LookupHistoryQuery = ({ serviceId, preService, service, state, preState, i
     } catch {
       return null;
     }
-  }, [service.serviceId, hash, length]);
+  }, [service.serviceId, hashInput, length]);
 
   const preRawValue = rawKey && preState ? preState[rawKey] : undefined;
   const postRawValue = rawKey ? state[rawKey] : undefined;
@@ -66,8 +67,8 @@ const LookupHistoryQuery = ({ serviceId, preService, service, state, preState, i
       <input
         type="text"
         placeholder="Preimage hash for lookup (0x-prefixed)"
-        value={hash}
-        onChange={(e) => setHash(e.target.value)}
+        value={hashInput}
+        onChange={(e) => setHashInput(e.target.value)}
         className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 bg-background dark:text-gray-100 rounded text-sm"
       />
       <input
@@ -80,7 +81,7 @@ const LookupHistoryQuery = ({ serviceId, preService, service, state, preState, i
       <Button
         size="sm"
         onClick={handleQuery}
-        disabled={!hash || !length || disabled}
+        disabled={!hashInput || !length || disabled}
       >
         Query
       </Button>
@@ -89,20 +90,20 @@ const LookupHistoryQuery = ({ serviceId, preService, service, state, preState, i
 
   const renderResults = () => (
     <div className="space-y-4">
-      {hash && length && !disabled && (
+      {hashInput && length && !disabled && (
         <div className="space-y-2 overflow-hidden">
           <div className="text-xs font-mono">Serialized key: {rawKey}</div>
           {isDiffMode && hasChanged ? (
             <CompositeDiff
-              beforeValue={preState && preService ? getLookupHistoryValue(preService, hash, length, preState) : undefined}
-              afterValue={getLookupHistoryValue(service, hash, length, state)}
+              beforeValue={preState && preService ? getLookupHistoryValue(preService, hashInput, length, preState) : undefined}
+              afterValue={getLookupHistoryValue(service, hashInput, length, state)}
               beforeRawValue={preRawValue}
               afterRawValue={postRawValue}
             />
           ) : (
             <div className="bg-gray-100 dark-bg-background p-2 rounded text-xs">
               <ValueDisplay
-                value={getLookupHistoryValue(service, hash, length, state)}
+                value={getLookupHistoryValue(service, hashInput, length, state)}
                 rawValue={postRawValue || preRawValue}
                 showModeToggle={true}
               />
