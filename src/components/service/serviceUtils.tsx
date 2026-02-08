@@ -1,9 +1,13 @@
 import blake2b from "blake2b";
+import * as bytes from '@typeberry/lib/bytes';
+import * as hash from '@typeberry/lib/hash';
+import * as numbers from '@typeberry/lib/numbers';
+import * as state_merkleization from '@typeberry/lib/state-merkleization';
+
 import type { Service, StorageKey, PreimageHash, U32 } from '../../types/service';
-import { bytes, numbers, state_merkleization, hash } from '@typeberry/lib';
-import { ServiceData} from "./types";
+import { ServiceData } from "./types";
 import { serviceData as serviceDataSerializer } from '../../constants/serviceFields';
-import {RawState} from "@/types/shared";
+import { RawState } from "@/types/shared";
 
 const hashBytes = (b: bytes.BytesBlob): bytes.Bytes<32> => {
   const hasher = blake2b(32);

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import CompositeViewer from './CompositeViewer';
 import { Button, ButtonGroup } from '@fluffylabs/shared-ui';
+import {toSmartString} from './utils';
 
 type DisplayMode = 'decoded' | 'raw' | 'string';
 
@@ -21,29 +22,15 @@ const CompositeDiff = ({
 }: CompositeDiffProps) => {
   const [displayMode, setDisplayMode] = useState<DisplayMode>('decoded');
 
-  const stringifyValue = (val: unknown): string => {
-    if (val === null) return 'null';
-    if (val === undefined) return 'undefined';
-    if (typeof val === 'string') return val;
-    if (typeof val === 'object' && 'toJSON' in val && typeof val.toJSON === 'function') {
-      return JSON.stringify(val.toJSON(), null, 2);
-    }
-    try {
-      return JSON.stringify(val, null, 2);
-    } catch {
-      return String(val);
-    }
-  };
-
   const getDisplayContent = (value: unknown, rawValue?: string): { content: string; type: 'raw' | 'text' } => {
     if (displayMode === 'raw' && rawValue !== undefined) {
       return { content: rawValue, type: 'raw' };
     }
     if (displayMode === 'string') {
-      return { content: stringifyValue(value), type: 'text' };
+      return { content: toSmartString(value, { fullObject: true, showBytesLength }), type: 'text' };
     }
     // For decoded mode, we'll use stringified version for diff
-    return { content: stringifyValue(value), type: 'text' };
+    return { content: toSmartString(value, { fullObject: true, showBytesLength }), type: 'text' };
   };
 
   const computeLineDiff = (before: string, after: string): Array<{type: 'same' | 'removed' | 'added', line: string}> => {

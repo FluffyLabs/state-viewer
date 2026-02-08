@@ -1,4 +1,4 @@
-import {collections} from "@typeberry/lib";
+import * as collections from "@typeberry/lib/collections";
 
 export const CUT_LENGTH = 66;
 

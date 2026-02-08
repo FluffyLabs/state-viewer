@@ -1,6 +1,6 @@
 import {StfStateType} from "@/types/shared";
 import {Button} from "@fluffylabs/shared-ui";
-import type { block } from '@typeberry/lib';
+import type * as block from '@typeberry/lib/block';
 import { Popover } from '@/components/ui/Popover';
 import {Loader2} from "lucide-react";
 

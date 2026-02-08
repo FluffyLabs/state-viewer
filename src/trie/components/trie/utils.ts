@@ -1,4 +1,4 @@
-import { trie } from "@typeberry/lib";
+import * as trie from "@typeberry/lib/trie";
 const { NodeType } = trie;
 
 export interface TreeNode {

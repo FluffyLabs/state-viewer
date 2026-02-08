@@ -6,7 +6,7 @@ import CompositeDiff from '../viewer/CompositeDiff';
 import { Service } from '@/types/service';
 import { servicePreimages } from '@/constants/serviceFields';
 import { Button, cn } from '@fluffylabs/shared-ui';
-import {hash} from '@typeberry/lib';
+import * as hash from '@typeberry/lib/hash';
 import {RawState} from '@/types/shared';
 
 export interface PreimageQueryProps {
