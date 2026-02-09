@@ -1,7 +1,8 @@
 import { useState, useCallback, useMemo, type MouseEvent } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, FileText, AlertCircle, Edit, FolderOpen, X } from 'lucide-react';
+import { Upload, FileText, AlertCircle, Edit, FolderOpen, X, Link as LinkIcon } from 'lucide-react';
 import {Button} from '@fluffylabs/shared-ui';
+import { Input } from '@/trie/components/ui/input';
 import * as block from '@typeberry/lib/block';
 import {Block, BlockView} from '@typeberry/lib/block';
 import * as block_json from '@typeberry/lib/block-json';
@@ -18,6 +19,7 @@ import type { AppState, RawState, StfStateType, UploadState } from '@/types/shar
 import {StateKindSelector} from './StateKindSelector';
 import JsonEditorDialog from './JsonEditorDialog';
 import { validateFile, validateJsonContent, type JsonValidationResult, getChainSpec } from '../utils';
+import {initWasm} from '@typeberry/lib/crypto';
 
 interface ExampleFile {
   name: string;
@@ -74,6 +76,8 @@ export const UploadScreen = ({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formatError, setFormatError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [urlInput, setUrlInput] = useState('');
+  const [showUrlInput, setShowUrlInput] = useState(false);
   const [isRunningBlock, setIsRunningBlock] = useState(false);
   const executedState = extractedState?.executedState;
   const displayFileName = uploadState.file?.name ?? uploadState.fileName ?? null;
@@ -130,6 +134,56 @@ export const UploadScreen = ({
 
     handleUploadStateWithStorage(newUploadState, validationWithName);
   }, [clearUpload, handleUploadStateWithStorage]);
+
+  const handleLoadUrl = useCallback(async () => {
+    if (!urlInput || isUiBlocked) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await fetch(urlInput);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
+      }
+      const blob = await response.blob();
+      const urlParts = urlInput.split('/');
+      let fileName = urlParts[urlParts.length - 1] || 'downloaded-state.json';
+      // Basic check if filename has extension, if not try to infer from content-type or default to .json
+      if (!fileName.includes('.')) {
+        if (blob.type.includes('json')) {
+          fileName += '.json';
+        } else if (blob.type.includes('octet-stream')) {
+          fileName += '.bin';
+        } else {
+          fileName += '.json'; // Default to json
+        }
+      }
+
+      const file = new File([blob], fileName, { type: blob.type });
+      // We need to call handleFileDrop but wait for it to finish.
+      // Since handleFileDrop is async, we can await it.
+      await handleFileDrop([file]);
+      setUrlInput(''); // Clear input on success
+    } catch (error) {
+      console.error("URL load error:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const isCors = errorMessage.toLowerCase().includes('failed to fetch') || errorMessage.toLowerCase().includes('networkerror');
+       
+      const finalError = isCors 
+        ? `Error loading URL (possibly CORS): ${errorMessage}. Try downloading the file and uploading it manually.`
+        : `Error loading URL: ${errorMessage}`;
+
+      // Update state with error
+      handleUploadStateWithStorage(prev => ({
+         ...prev,
+         error: finalError,
+         isValidJson: false,
+         file: null,
+         fileName: urlInput,
+      }));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [urlInput, isUiBlocked, handleFileDrop, handleUploadStateWithStorage]);
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop: handleFileDrop,
@@ -223,6 +277,7 @@ export const UploadScreen = ({
   }, [clearUpload, handleUploadStateWithStorage, isUiBlocked]);
 
   async function runBlock(stateBlock: block.Block): Promise<void> {
+
     if (isRunningBlock) {
       return;
     }
@@ -246,6 +301,7 @@ export const UploadScreen = ({
     });
 
     try {
+      await initWasm();
       const hasher = await transition.TransitionHasher.create();
       const spec = getChainSpec();
       const preState = extractedState?.preState;
@@ -451,9 +507,50 @@ export const UploadScreen = ({
                   <Edit className="h-4 w-4" />
                   <span>{(!uploadState.file && !uploadState.content) ? 'JSON' : 'Edit'}</span>
                 </Button>
+
+                {!uploadState.file && !uploadState.content && (
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowUrlInput(!showUrlInput);
+                    }}
+                    variant="secondary"
+                    size="lg"
+                    disabled={isUiBlocked}
+                  >
+                    <LinkIcon className="h-4 w-4" />
+                    <span>URL</span>
+                  </Button>
+                )}
               </div>
             )}
           </div>
+
+          {/* URL Load Section */}
+          {!uploadState.file && !uploadState.content && showUrlInput && (
+             <div className="mt-6 pt-4 border-t border-dashed border-muted-foreground/20">
+               <div className="flex items-center gap-2 max-w-lg mx-auto" onClick={(e) => e.stopPropagation()}>
+                 <Input 
+                   type="url" 
+                   placeholder="Paste URL to a state file..." 
+                   autoFocus
+                   value={urlInput}
+                   onChange={(e) => setUrlInput(e.target.value)}
+                   onKeyDown={(e) => e.key === 'Enter' && handleLoadUrl()}
+                   disabled={isUiBlocked}
+                   className="bg-background/50"
+                 />
+                 <Button
+                    onClick={handleLoadUrl}
+                    variant="secondary"
+                    disabled={!urlInput || isUiBlocked}
+                    title="Load from URL"
+                 >
+                    {isLoading ? <span className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" /> : <Upload className="h-4 w-4" />}
+                 </Button>
+               </div>
+             </div>
+          )}
         </div>
 
         {/* Error Message */}

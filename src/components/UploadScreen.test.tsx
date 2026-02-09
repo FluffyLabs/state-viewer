@@ -23,6 +23,7 @@ vi.mock('lucide-react', () => ({
   Edit: () => <div data-testid="edit-icon" />,
   X: () => <div data-testid="x-icon" />,
   FolderOpen: () => <div data-testid="folder-open-icon" />,
+  Link: () => <div data-testid="link-icon" />,
 }));
 
 // Mock window.matchMedia
