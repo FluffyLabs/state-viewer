@@ -17,6 +17,8 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "module": path.resolve(__dirname, "./src/mocks/module.js"),
+      "node:assert": path.resolve(__dirname, "./src/mocks/assert.js"),
     },
   },
   esbuild: {
