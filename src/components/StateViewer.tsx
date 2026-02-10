@@ -71,6 +71,7 @@ export const StateViewer = ({
     element.download = `${baseName}.trace`;
     document.body.appendChild(element);
     element.click();
+    URL.revokeObjectURL(element.href);
     document.body.removeChild(element);
   };
 
