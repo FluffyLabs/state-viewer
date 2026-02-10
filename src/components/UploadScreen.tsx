@@ -137,10 +137,18 @@ export const UploadScreen = ({
 
   const handleLoadUrl = useCallback(async () => {
     if (!urlInput || isUiBlocked) return;
-    
+
     setIsLoading(true);
     try {
-      const response = await fetch(urlInput);
+      // Rewrite GitHub blob URLs to raw.githubusercontent.com
+      let fetchUrl = urlInput;
+      const ghMatch = urlInput.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/(.+)$/);
+      if (ghMatch) {
+        const [, owner, repo, rest] = ghMatch;
+        fetchUrl = `https://raw.githubusercontent.com/${owner}/${repo}/refs/heads/${rest}`;
+      }
+
+      const response = await fetch(fetchUrl);
       if (!response.ok) {
         throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
       }
