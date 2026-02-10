@@ -9,6 +9,7 @@ import { calculateStateDiff, getChainSpecType } from '@/utils';
 import {Button} from '@fluffylabs/shared-ui';
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from '@/trie/components/ui/dialog';
 import { useFileContext } from '@/contexts/FileContext';
+import { Download } from 'lucide-react';
 
 export interface StateViewerProps {
   preState?: Record<string, string>;
@@ -17,6 +18,7 @@ export interface StateViewerProps {
   tab: TabsType;
   stateType: StfStateType;
   executionLog?: string[];
+  fileName?: string;
   changeView: (tab: TabsType, stateType: StfStateType) => void;
 }
 
@@ -27,6 +29,7 @@ export const StateViewer = ({
   tab,
   stateType,
   executionLog = [],
+  fileName,
   changeView,
 }: StateViewerProps) => {
   const { showPvmLogs } = useFileContext();
@@ -50,12 +53,27 @@ export const StateViewer = ({
   }, [stateType, preState, state]);
 
   const filteredExecutionLog = useMemo(() => {
+    // Always filter ecalli traces from UI
+    const logs = executionLog.filter(line => !line.includes('ecalli]'));
+
     // If PVM logs are being captured and the user wants to filter them out
     if (showPvmLogs && !filterPvmLogs) {
-      return executionLog.filter(line => !line.startsWith('INSANE'));
+      return logs.filter(line => !line.startsWith('INSANE'));
     }
-    return executionLog;
+    return logs;
   }, [executionLog, showPvmLogs, filterPvmLogs]);
+
+  const handleDownloadLog = () => {
+    const baseName = fileName ? fileName.replace(/\.[^/.]+$/, "") : "execution-log";
+    const element = document.createElement("a");
+    const file = new Blob([executionLog.join('\n')], {type: 'text/plain'});
+    element.href = URL.createObjectURL(file);
+    element.download = `${baseName}.trace`;
+    document.body.appendChild(element);
+    element.click();
+    URL.revokeObjectURL(element.href);
+    document.body.removeChild(element);
+  };
 
   return (
     <div>
@@ -120,21 +138,32 @@ export const StateViewer = ({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 mt-2">
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="filter-pvm-logs"
-                checked={showPvmLogs && filterPvmLogs}
-                onChange={(e) => setFilterPvmLogs(e.target.checked)}
-                disabled={!showPvmLogs}
-                className="h-4 w-4 rounded border-muted-foreground/30 disabled:opacity-50 disabled:cursor-not-allowed"
-              />
-              <label
-                htmlFor="filter-pvm-logs"
-                className={`text-sm ${showPvmLogs ? 'text-foreground cursor-pointer' : 'text-muted-foreground cursor-not-allowed'}`}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="filter-pvm-logs"
+                  checked={showPvmLogs && filterPvmLogs}
+                  onChange={(e) => setFilterPvmLogs(e.target.checked)}
+                  disabled={!showPvmLogs}
+                  className="h-4 w-4 rounded border-muted-foreground/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+                <label
+                  htmlFor="filter-pvm-logs"
+                  className={`text-sm ${showPvmLogs ? 'text-foreground cursor-pointer' : 'text-muted-foreground cursor-not-allowed'}`}
+                >
+                  Show PVM trace logs
+                </label>
+              </div>
+              <Button
+                  onClick={handleDownloadLog}
+                  variant="secondary"
+                  size="sm"
+                  className="gap-2"
               >
-                Show PVM trace logs
-              </label>
+                <Download className="h-4 w-4" />
+                Ecalli trace
+              </Button>
             </div>
             {!showPvmLogs && (
               <p className="text-xs text-muted-foreground ml-6">
@@ -154,5 +183,6 @@ export const StateViewer = ({
     </div>
   );
 };
+
 
 export default StateViewer;

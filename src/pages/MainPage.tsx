@@ -75,6 +75,7 @@ export function MainPage() {
           stateType={validStateType}
           executionLog={executionLog}
           changeView={handleChangeView}
+          fileName={uploadState.fileName}
         />
       )}
     </div>
