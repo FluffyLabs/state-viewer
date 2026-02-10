@@ -139,6 +139,20 @@ export const UploadScreen = ({
     if (!urlInput || isUiBlocked) return;
 
     setIsLoading(true);
+    let fileName = 'downloaded-state.json';
+    try {
+      const urlObj = new URL(urlInput);
+      const segments = urlObj.pathname.split('/');
+      const lastSegment = segments[segments.length - 1];
+      if (lastSegment) {
+        fileName = lastSegment;
+      }
+    } catch {
+      const parts = urlInput.split('/');
+      const fallback = parts[parts.length - 1];
+      if (fallback) fileName = fallback;
+    }
+
     try {
       // Rewrite GitHub blob URLs to raw.githubusercontent.com
       let fetchUrl = urlInput;
@@ -153,8 +167,7 @@ export const UploadScreen = ({
         throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
       }
       const blob = await response.blob();
-      const urlParts = urlInput.split('/');
-      let fileName = urlParts[urlParts.length - 1] || 'downloaded-state.json';
+      
       // Basic check if filename has extension, if not try to infer from content-type or default to .json
       if (!fileName.includes('.')) {
         if (blob.type.includes('json')) {
@@ -186,7 +199,7 @@ export const UploadScreen = ({
          error: finalError,
          isValidJson: false,
          file: null,
-         fileName: urlInput,
+         fileName: fileName,
       }));
     } finally {
       setIsLoading(false);
