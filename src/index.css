@@ -2,11 +2,6 @@
 @import "tailwindcss";
 @import "@fluffylabs/shared-ui/theme.css";
 
-@theme {
-  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "Inconsolata", ui-monospace, SFMono-Regular, monospace;
-}
-
 .text-brand-dark {
   color: var(--color-brand-dark);
 }
