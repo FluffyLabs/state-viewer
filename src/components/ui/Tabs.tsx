@@ -43,12 +43,10 @@ const TabsList = React.forwardRef<
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
   <ButtonGroup
-    ref={ref as React.Ref<HTMLDivElement>}
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ref={ref as any}
     role="tablist"
-    className={cn(
-      "inline-flex items-center justify-center rounded-lg py-1 text-muted-foreground",
-      className
-    )}
+    className={className}
     {...props}
   />
 ));
@@ -65,17 +63,15 @@ const TabsTrigger = React.forwardRef<
 
   return (
     <Button
-      ref={ref as React.Ref<HTMLButtonElement>}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ref={ref as any}
       role="tab"
       aria-selected={isActive}
       data-state={isActive ? "active" : "inactive"}
       variant={isActive ? "primary" : "tertiary"}
-      intent='neutralStrong'
+      intent="neutralStrong"
       size="sm"
-      className={cn(
-        "rounded-md data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm",
-        className
-      )}
+      className={className}
       onClick={() => context.onValueChange?.(value)}
       {...props}
     />
