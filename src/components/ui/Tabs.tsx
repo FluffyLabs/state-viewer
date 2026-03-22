@@ -45,10 +45,7 @@ const TabsList = React.forwardRef<
   <ButtonGroup
     ref={ref as React.Ref<HTMLDivElement>}
     role="tablist"
-    className={cn(
-      "inline-flex items-center justify-center rounded-lg py-1 text-muted-foreground",
-      className
-    )}
+    className={className}
     {...props}
   />
 ));
@@ -70,12 +67,9 @@ const TabsTrigger = React.forwardRef<
       aria-selected={isActive}
       data-state={isActive ? "active" : "inactive"}
       variant={isActive ? "primary" : "tertiary"}
-      intent='neutralStrong'
+      intent="neutralStrong"
       size="sm"
-      className={cn(
-        "rounded-md data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm",
-        className
-      )}
+      className={className}
       onClick={() => context.onValueChange?.(value)}
       {...props}
     />

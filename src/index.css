@@ -1,13 +1,12 @@
 @import "@fluffylabs/shared-ui/style.css";
 @import "tailwindcss";
-@custom-variant dark (&:where(.dark, .dark *));
+@import "@fluffylabs/shared-ui/theme.css";
 
 .text-brand-dark {
   color: var(--color-brand-dark);
 }
 
 html {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
