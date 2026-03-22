@@ -20,7 +20,6 @@ export default defineConfig({
       "module": path.resolve(__dirname, "./src/mocks/module.js"),
       "node:assert": path.resolve(__dirname, "./src/mocks/assert.js"),
     },
-    dedupe: ["react", "react-dom"],
   },
   esbuild: {
     // Preserve class names and function names to prevent mangling

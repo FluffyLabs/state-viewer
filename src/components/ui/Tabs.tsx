@@ -43,8 +43,7 @@ const TabsList = React.forwardRef<
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
   <ButtonGroup
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ref={ref as any}
+    ref={ref as React.Ref<HTMLDivElement>}
     role="tablist"
     className={className}
     {...props}
@@ -63,8 +62,7 @@ const TabsTrigger = React.forwardRef<
 
   return (
     <Button
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ref={ref as any}
+      ref={ref as React.Ref<HTMLButtonElement>}
       role="tab"
       aria-selected={isActive}
       data-state={isActive ? "active" : "inactive"}
