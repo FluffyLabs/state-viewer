@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, type MouseEvent } from 'react';
+import { useState, useCallback, useEffect, useMemo, type MouseEvent } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, AlertCircle, Edit, FolderOpen, X, Link as LinkIcon } from 'lucide-react';
 import {Button} from '@fluffylabs/shared-ui';
@@ -24,6 +24,7 @@ import {initWasm} from '@typeberry/lib/crypto';
 interface ExampleFile {
   name: string;
   description: string;
+  version: utils.GpVersion;
   content: () => Promise<string>;
 }
 
@@ -31,21 +32,25 @@ const EXAMPLE_FILES: ExampleFile[] = [
   {
     name: 'STF Test Vector',
     description: 'Example with pre-state and post-state data',
+    version: utils.GpVersion.V0_7_2,
     content: async () => JSON.stringify(await import('../utils/fixtures/00000041.json'), null, 2),
   },
   {
     name: 'JIP-4 Chain Spec',
     description: 'Genesis state from chain specification',
+    version: utils.GpVersion.V0_7_2,
     content: async () => JSON.stringify(await import('../utils/fixtures/dev-tiny.json'), null, 2)
   },
   {
     name: 'STF Genesis',
     description: 'Initial state with header information',
+    version: utils.GpVersion.V0_7_2,
     content: async () => JSON.stringify(await import('../utils/fixtures/genesis.json'), null, 2)
   },
   {
     name: 'Typeberry Config',
     description: 'Typeberry framework configuration',
+    version: utils.GpVersion.V0_7_2,
     content: async () => JSON.stringify(await import('../utils/fixtures/typeberry-dev.json'), null, 2),
   }
 ];
@@ -266,10 +271,7 @@ export const UploadScreen = ({
     clearUpload();
   }, [clearUpload]);
 
-  const handleExampleLoad = useCallback(async (example: Pick<ExampleFile, 'name' | 'content'>) => {
-    if (isUiBlocked) {
-      return;
-    }
+  const loadExampleContent = useCallback(async (example: Pick<ExampleFile, 'name' | 'content'>) => {
     clearUpload();
     setIsLoading(true);
     let content = '';
@@ -295,7 +297,37 @@ export const UploadScreen = ({
     };
 
     handleUploadStateWithStorage(newUploadState, validationWithName);
-  }, [clearUpload, handleUploadStateWithStorage, isUiBlocked]);
+  }, [clearUpload, handleUploadStateWithStorage]);
+
+  const handleExampleLoad = useCallback((example: ExampleFile) => {
+    if (isUiBlocked) {
+      return;
+    }
+
+    // If the example targets a different GP version, store the example name
+    // and reload the page with the correct version. After reload, the useEffect
+    // below picks up PENDING_EXAMPLE from sessionStorage and auto-loads it.
+    if (example.version !== utils.CURRENT_VERSION) {
+      window.sessionStorage.setItem('GP_VERSION', example.version);
+      window.sessionStorage.setItem('PENDING_EXAMPLE', example.name);
+      window.location.reload();
+      return;
+    }
+
+    loadExampleContent(example);
+  }, [isUiBlocked, loadExampleContent]);
+
+  // Auto-load a pending example after a version-switch reload (see handleExampleLoad above).
+  useEffect(() => {
+    const pendingName = window.sessionStorage.getItem('PENDING_EXAMPLE');
+    if (pendingName !== null) {
+      window.sessionStorage.removeItem('PENDING_EXAMPLE');
+      const example = EXAMPLE_FILES.find((e) => e.name === pendingName);
+      if (example) {
+        loadExampleContent(example);
+      }
+    }
+  }, [loadExampleContent]);
 
   async function runBlock(stateBlock: block.Block): Promise<void> {
 
@@ -410,7 +442,7 @@ export const UploadScreen = ({
         <p className="text-muted-foreground">
           Instead of loading full JAM state you can also try out&nbsp;
           <ExamplesModal
-            onSelect={(rows) => handleExampleLoad({
+            onSelect={(rows) => loadExampleContent({
               name: 'Trie Example',
               content: async () => JSON.stringify({ state: rows }, null, 2),
             })}
