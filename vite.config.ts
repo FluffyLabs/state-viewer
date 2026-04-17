@@ -38,7 +38,9 @@ export default defineConfig({
   optimizeDeps: {
     include: ['@typeberry/lib'],
     rolldownOptions: {
-      keepNames: true,
+      output: {
+        keepNames: true,
+      },
     },
   },
 });
