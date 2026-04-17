@@ -2,7 +2,6 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import tailwindcss from "@tailwindcss/vite";
-// import { adapter, analyzer } from 'vite-bundle-analyzer'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -12,7 +11,6 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    // adapter(analyzer())
   ],
   resolve: {
     alias: {
@@ -39,9 +37,10 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['@typeberry/lib'],
-    esbuildOptions: {
-      // Preserve class names during dependency pre-bundling
-      keepNames: true,
+    rolldownOptions: {
+      output: {
+        keepNames: true,
+      },
     },
   },
 });
