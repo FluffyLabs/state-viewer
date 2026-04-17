@@ -274,7 +274,7 @@ export const UploadScreen = ({
   const loadExampleContent = useCallback(async (example: Pick<ExampleFile, 'name' | 'content'>) => {
     clearUpload();
     setIsLoading(true);
-    let content = '';
+    let content: string;
     try {
       content = await example.content();
     } finally {
@@ -324,6 +324,7 @@ export const UploadScreen = ({
       window.sessionStorage.removeItem('PENDING_EXAMPLE');
       const example = EXAMPLE_FILES.find((e) => e.name === pendingName);
       if (example) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot auto-load after version-switch reload
         loadExampleContent(example);
       }
     }

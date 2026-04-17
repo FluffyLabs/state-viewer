@@ -1,6 +1,10 @@
 /// <reference types="vite/client" />
 /// <reference types="vitest/globals" />
 
+interface Window {
+  process: { env: Record<string, string | undefined> };
+}
+
 declare module "*.svg" {
   const content: string;
   export default content;

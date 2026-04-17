@@ -51,13 +51,13 @@ describe('validateJsonFile', () => {
   };
 
   const mockFileReader = (content: string) => {
-    const originalFileReader = global.FileReader;
-    global.FileReader = vi.fn(function() {
+    const originalFileReader = globalThis.FileReader;
+    globalThis.FileReader = vi.fn(function() {
       const reader = new MockFileReader();
       reader.simulateSuccess(content);
       return reader;
     }) as unknown as typeof FileReader;
-    return () => { global.FileReader = originalFileReader; };
+    return () => { globalThis.FileReader = originalFileReader; };
   };
 
   describe('JIP-4 Chainspec detection', () => {
@@ -284,8 +284,8 @@ describe('validateJsonFile', () => {
     it('should handle FileReader errors', async () => {
       const file = createMockFile('test.json', 'application/json');
 
-      const originalFileReader = global.FileReader;
-      global.FileReader = vi.fn(function() {
+      const originalFileReader = globalThis.FileReader;
+      globalThis.FileReader = vi.fn(function() {
         const reader = new MockFileReader();
         reader.simulateError();
         return reader;
@@ -302,7 +302,7 @@ describe('validateJsonFile', () => {
         availableStates: [],
       });
 
-      global.FileReader = originalFileReader;
+      globalThis.FileReader = originalFileReader;
     });
   });
 });
@@ -500,13 +500,13 @@ describe('extractInputData', () => {
 
 describe('Integration tests with fixture files', () => {
   const mockFileReaderWithContent = (content: string) => {
-    const originalFileReader = global.FileReader;
-    global.FileReader = vi.fn(function() {
+    const originalFileReader = globalThis.FileReader;
+    globalThis.FileReader = vi.fn(function() {
       const reader = new MockFileReader();
       reader.simulateSuccess(content);
       return reader;
     }) as unknown as typeof FileReader;
-    return () => { global.FileReader = originalFileReader; };
+    return () => { globalThis.FileReader = originalFileReader; };
   };
 
   it('should detect JIP-4 chainspec from dev-tiny.json fixture', async () => {

@@ -29,7 +29,6 @@ vi.mock('../ui', async () => {
   const Tabs = ({ children, value, onValueChange, ...props }: React.PropsWithChildren<{ value?: string; onValueChange?: (value: string) => void }>) => {
     const [internalValue, setInternalValue] = React.useState('info');
     const currentValue = value ?? internalValue;
-    // eslint-disable-next-line react-hooks/preserve-manual-memoization
     const handleValueChange = React.useCallback((newValue: string) => {
       if (value === undefined) {
         setInternalValue(newValue);
