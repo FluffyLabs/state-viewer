@@ -363,12 +363,18 @@ export const UploadScreen = ({
         Object.entries(preState ?? {}).map(([key, val]) => ([bytes.Bytes.parseBytes(key, 31),  bytes.BytesBlob.parseBlob(val)]))
       );
       const state = state_merkleization.SerializedState.fromStateEntries(spec, hasher.blake2b, entries);
-      const stf = new transition.OnChain(spec, state, hasher, {
-        pvm: config.PvmBackend.BuiltIn,
-        accumulateSequentially: true,
-      }, {
-        isAncestor(): boolean {
-          return true;
+      const stf = transition.OnChain.assemble({
+        chainSpec: spec,
+        state,
+        hasher,
+        options: {
+          pvm: config.PvmBackend.BuiltIn,
+          accumulateSequentially: true,
+        },
+        headerChain: {
+          isAncestor(): boolean {
+            return true;
+          }
         }
       });
       const blockView: BlockView = block.reencodeAsView(block.Block.Codec, stateBlock, spec);
